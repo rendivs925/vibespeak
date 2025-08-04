@@ -2,11 +2,22 @@
 name = "vibespeak"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Rendi Virgantara Setiawan <rendivirgantarasetiawan123@gmail.com>"]
+description = "A CLI tool for executing system commands using your voice, deeply personalized for advanced Linux workflows with i3, tmux, Alacritty, Neovim, and more. Vibespeak maps your spoken phrases to shell commands (via xdotool, i3-msg, etc.), enabling hands-free, voice-driven automation of your terminal environment."
+license = "MIT"
+repository = "https://github.com/rendivs925/vibespeak"
+homepage = "https://github.com/rendivs925/vibespeak"
+readme = "README.md"
+keywords = ["voice", "speech", "cli", "command", "i3", "tmux", "alacritty", "neovim", "automation"]
+categories = ["command-line-utilities", "audio", "accessibility"]
+documentation = "https://docs.rs/vibespeak"
 
 [dependencies]
 anyhow = "1.0.98"
 serde = { version = "1.0.219", features = ["derive"] }
 toml = "0.9.4"
 vosk = "0.3.1"
+
+[[bin]]
+name = "vibespeak"
+path = "src/main.rs"
