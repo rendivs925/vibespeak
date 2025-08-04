@@ -5,6 +5,9 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use vosk::{Model, Recognizer};
 
+const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
+const COMMANDS_PATH: &str = "config/commands.toml";
+
 fn start_rec() -> std::io::Result<std::process::Child> {
     Command::new("rec")
         .args(&[
@@ -28,19 +31,24 @@ fn start_rec() -> std::io::Result<std::process::Child> {
         .spawn()
 }
 
-fn is_prefix_of_any_command(prefix: &str, commands: &Vec<String>) -> bool {
+fn is_prefix_of_any_command(prefix: &str, commands: &[String]) -> bool {
     commands.iter().any(|cmd| cmd.starts_with(prefix))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = CommandConfig::load_from("config/commands.toml")?;
-    let model =
-        Model::new("model/vosk-model-small-en-us-0.15").ok_or("Failed to load Vosk model")?;
+    let config = CommandConfig::load_from(COMMANDS_PATH)
+        .map_err(|e| format!("Failed to load config: {e}"))?;
+
+    let model = Model::new(MODEL_PATH)
+        .ok_or(format!("Failed to load Vosk model at '{}'.\nPlease follow the instructions in the README to download and place the model.", MODEL_PATH))?;
 
     let commands: Vec<String> = config.commands.keys().map(|s| s.to_lowercase()).collect();
     let grammar: Vec<&str> = commands.iter().map(|s| s.as_str()).collect();
 
-    println!("Ready and listening...");
+    println!(
+        "Ready and listening for commands (model: {})...",
+        MODEL_PATH
+    );
 
     loop {
         let mut recognizer = Recognizer::new_with_grammar(&model, 16000.0, &grammar)
@@ -82,12 +90,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     if let Some(cmd) = config.commands.get(partial.as_str()) {
                         println!("Matched '{}': Running `{}`", partial, cmd);
-                        let _ = Command::new("sh")
-                            .arg("-c")
-                            .arg(cmd)
-                            .spawn()
-                            .expect("Failed to run command");
-
+                        if let Err(e) = Command::new("sh").arg("-c").arg(cmd).spawn() {
+                            eprintln!("Failed to run command: {e}");
+                        }
                         recognizer.reset();
                         last_partial.clear();
                         continue;
@@ -101,7 +106,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                // 200ms silence after prefix but no command
                 if !last_partial.is_empty() && last_speech.elapsed() >= Duration::from_millis(200) {
                     println!("Silence after prefix '{}', resetting.", last_partial);
                     recognizer.reset();
