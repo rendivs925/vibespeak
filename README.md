@@ -1,7 +1,6 @@
 # vibespeak
 
-**Vibespeak** is a CLI tool for hands-free, voice-driven automation of your Linux desktop.
-It listens to your speech and executes mapped system commands in real time, making it ideal for users of i3, tmux, Alacritty, Neovim, and terminal-centric workflows.
+Vibespeak is a CLI tool for hands-free, voice-driven automation of your Linux desktop. It listens to your speech and executes mapped system commands in real time, making it ideal for users of i3, tmux, Alacritty, Neovim, and terminal-centric workflows.
 
 ---
 
@@ -17,58 +16,43 @@ It listens to your speech and executes mapped system commands in real time, maki
 
 ---
 
-## How It Works
+## Quick Start
 
-Vibespeak maps spoken phrases to shell commands using a simple `[commands]` configuration.
-When you say a registered command (such as “split pane” or “workspace one”), Vibespeak runs the corresponding action using utilities like `xdotool` and `i3-msg`.
-
-**Example workflow:**
-
-- “split pane” &rarr; splits your current tmux window
-- “workspace one” &rarr; moves i3 to workspace 1
-- “zoom in” &rarr; increases font size in Alacritty
-- “save file” &rarr; saves the current file in Neovim
-- “clear” &rarr; clears your terminal
-
-See [`commands.toml`](./commands.toml) for a ready-made set of mappings.
-
----
-
-## Installation
-
-1. **Install Rust (if needed):**
-   ```sh
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-2. **Install system dependencies:**
-   On most Linux systems:
+1. **Install dependencies:**  
+   (for Ubuntu/Debian, adapt as needed for your distro)
 
    ```sh
-   sudo apt install libstdc++-12-dev libasound2-dev
+   sudo apt install xdotool i3-wm sox wget unzip libasound2-dev libstdc++-12-dev
    ```
 
-   You may also need a Vosk model for speech recognition.
-   Download a model and place it in your project folder as `model/`.
+2. **Clone this repository:**
 
-3. **Install vibespeak from source:**
    ```sh
    git clone https://github.com/rendivs925/vibespeak.git
    cd vibespeak
-   cargo install --path .
    ```
+
+3. **Run Vibespeak:**
+
+   - Using cargo directly (**recommended for development and first run**):
+
+     ```sh
+     cargo run --release
+     ```
+
+   - Or install locally (**useful for repeated use**):
+
+     ```sh
+     cargo install --path .
+     vibespeak
+     ```
 
 ---
 
 ## Usage
 
-Start Vibespeak in your terminal:
-
-```sh
-vibespeak
-```
-
-It will listen for voice commands and execute the mapped system actions.
-To customize your commands, edit `commands.toml` in the project directory.
+Vibespeak will listen for voice commands and execute the mapped system actions.
+To customize your commands, edit `config/commands.toml` in the project directory.
 
 ---
 
@@ -80,12 +64,10 @@ To customize your commands, edit `commands.toml` in the project directory.
 "vertical split"     = "xdotool key ctrl+a minus"
 "next pane"          = "xdotool key ctrl+a o"
 "pane zero"          = "xdotool key ctrl+a 0"
-# ...more commands
 
 # --- i3 Window Manager ---
 "workspace one"      = "i3-msg workspace 1"
 "move left"          = "i3-msg focus left"
-# ...more commands
 
 # --- General Shell ---
 "clear"              = "xdotool type 'clear'; xdotool key Return"
@@ -96,7 +78,7 @@ To customize your commands, edit `commands.toml` in the project directory.
 
 ## Customizing
 
-1. Open `commands.toml` in your preferred editor.
+1. Open `config/commands.toml` in your preferred editor.
 2. Add, edit, or remove any command-to-action mapping.
 3. Restart Vibespeak for changes to take effect.
 
@@ -106,8 +88,8 @@ To customize your commands, edit `commands.toml` in the project directory.
 
 - Linux (tested on modern desktop environments)
 - A working microphone
-- `xdotool`, `i3-msg`, and any other system utilities referenced in your command mappings
-- [Vosk](https://alphacephei.com/vosk) speech recognition model
+- The following utilities installed: `xdotool`, `i3-msg`, `sox`, `wget`, `unzip`, `libasound2-dev`, `libstdc++-12-dev`
+- [Vosk model](https://alphacephei.com/vosk/models) (see above for setup)
 
 ---
 
