@@ -16,6 +16,29 @@ Vibespeak is a CLI tool for hands-free, voice-driven automation of your Linux de
 
 ---
 
+## Dotfiles and Environment Compatibility
+
+Vibespeak is designed to work seamlessly with highly customized terminal workflows, including specific keybindings and configurations for **zsh**, **tmux**, **i3**, and related tools.
+
+**To ensure everything works out of the box:**
+
+- Use my [dotfiles](https://github.com/rendivs925/Dotfiles.git), which include recommended configs for zsh, tmux, i3, and more.
+- Some command mappings in `commands.toml` (such as custom tmux pane selection or i3 shortcuts) assume your environment matches these configurations.
+- If you use different keybindings or terminal tools, feel free to adapt your `commands.toml` to fit your setup.
+
+**Get started:**
+
+```sh
+git clone https://github.com/rendivs925/Dotfiles.git
+# Follow the instructions in that repo to apply the configs for zsh, tmux, i3, etc.
+```
+
+---
+
+If you already have your own customizations, review `commands.toml` and update any commands or keybindings as needed for your workflow.
+
+---
+
 ## Quick Start
 
 1. **Install dependencies:**  
