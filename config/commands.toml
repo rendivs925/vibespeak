@@ -4,10 +4,8 @@
 "pane vsplit"     = "xdotool key ctrl+a minus"
 "pane win"        = "xdotool key ctrl+a c"
 "pane reload"     = "xdotool key ctrl+a r"
-"pane next"       = "xdotool key ctrl+a o"
-"pane last"       = "xdotool key ctrl+a semicolon"
-"pane nextwin"    = "xdotool key ctrl+a n"
-"pane prevwin"    = "xdotool key ctrl+a p"
+"win next"    = "xdotool key ctrl+a n"
+"win prev"    = "xdotool key ctrl+a p"
 "pane zero"       = "xdotool key ctrl+a 0"
 "pane one"        = "xdotool key ctrl+a 1"
 "pane two"        = "xdotool key ctrl+a 2"
@@ -41,6 +39,8 @@
 "shell list"      = "xdotool type 'ls'; xdotool key Return"
 "shell history"   = "xdotool type 'history'; xdotool key Return"
 "shell htop"      = "xdotool type 'htop'; xdotool key Return"
+"shell neo"      = "xdotool type 'nvim'; xdotool key Return"
+"shell info"     = "xdotool type 'fastfetch'; xdotool key Return"
 
 # --- Alacritty Font Zoom ---
 "zoom in"         = "xdotool key ctrl+KP_Add"
@@ -90,6 +90,11 @@
 "neo insert"      = "xdotool key i"
 "neo visual"      = "xdotool key v"
 "neo find"        = "xdotool key Escape slash"
+"neo restore"     = "xdotool key space w r"
+"down"    = "xdotool key ctrl+d"    
+"up"      = "xdotool key ctrl+u"    
+# "up"    = "xdotool key ctrl+y"    
+# "down"  = "xdotool key ctrl+e"    
 
 # --- General Shortcuts ---
 "system lock"     = "i3lock"
