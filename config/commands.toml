@@ -34,7 +34,7 @@
 # --- Dev/terminal commands ---
 "start dev"        = "tmux send-keys -t 1 'cargo leptos watch' C-m"
 "check code"       = "tmux send-keys -t 1 'cargo check' C-m"
-"start style"      = "tmux send-keys -t 2 'yarn dev' C-m"
+"style"      = "tmux send-keys -t 2 'yarn dev' C-m"
 
 # --- Shell ---
 "clear screen"     = "xdotool type 'clear'; xdotool key Return"

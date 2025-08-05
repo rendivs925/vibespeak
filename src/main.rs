@@ -3,13 +3,12 @@ use config::CommandConfig;
 use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use vosk::{Model, Recognizer};
 
 const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
 const COMMANDS_PATH: &str = "config/commands.toml";
 const SILENCE_THRESHOLD: i16 = 60;
-const TYPING_SILENCE_TIMEOUT_MS: u64 = 8_000;
 
 fn start_rec() -> std::io::Result<std::process::Child> {
     Command::new("rec")
@@ -73,16 +72,9 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
 
     terminal::enable_raw_mode()?;
     let mut toggle_requested = false;
-    let mut last_voice_time = Instant::now();
-    let mut last_typed = String::new();
     let mut stop_reason = "[INFO] Exited typing mode.";
 
     'outer: loop {
-        if last_voice_time.elapsed().as_millis() > TYPING_SILENCE_TIMEOUT_MS as u128 {
-            stop_reason = "[INFO] Typing mode exited due to silence timeout.";
-            break 'outer;
-        }
-
         if event::poll(Duration::from_millis(2))? {
             if let Event::Key(KeyEvent {
                 code, modifiers, ..
@@ -113,40 +105,20 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
                 continue;
             }
 
-            let preview = recognizer.partial_result().partial.trim();
-
-            if !preview.is_empty() {
-                if preview.starts_with(&last_typed) {
-                    let delta = &preview[last_typed.len()..];
-                    if !delta.is_empty() {
-                        print!("\r[PREVIEW] {}", preview);
-                        std::io::stdout().flush().unwrap();
-                        let escaped = delta.replace("'", r"'\''");
-                        let send_cmd = format!("xdotool type '{}'", escaped);
-                        let _ = Command::new("sh").arg("-c").arg(&send_cmd).spawn();
-                        last_typed = preview.to_string();
-                    }
-                } else if !preview.is_empty() {
-                    let escaped = preview.replace("'", r"'\''");
-                    let send_cmd = format!("xdotool type '{}'", escaped);
-                    let _ = Command::new("sh").arg("-c").arg(&send_cmd).spawn();
-                    last_typed = preview.to_string();
-                }
-                last_voice_time = Instant::now();
-            }
-
             if recognizer.accept_waveform(&samples).unwrap() == vosk::DecodingState::Finalized {
                 match recognizer.result() {
                     vosk::CompleteResult::Single(sr) => {
                         let text = sr.text.trim();
-                        if !text.is_empty() && text == "type" {
+                        if !text.is_empty() && text != "type" {
+                            let escaped = text.replace("'", r"'\''");
+                            let send_cmd = format!("xdotool type '{}'", escaped);
+                            let _ = Command::new("sh").arg("-c").arg(&send_cmd).spawn();
+                        } else if text == "type" {
                             stop_reason =
                                 "[INFO] Voice command 'type' detected, toggling typing mode.";
                             toggle_requested = true;
                             break 'outer;
                         }
-
-                        last_typed.clear();
                         print!("\r{: <80}\r", "");
                         std::io::stdout().flush().unwrap();
                     }
@@ -204,10 +176,6 @@ fn main() -> anyhow::Result<()> {
         let mut audio = mic.stdout.take().unwrap();
         let mut buffer = [0u8; 256];
 
-        let mut last_partial = String::new();
-        let mut prefix_matched = false;
-        let mut prefix_start_time = Instant::now();
-
         'listen: loop {
             use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
             if event::poll(Duration::from_millis(2))? {
@@ -222,6 +190,7 @@ fn main() -> anyhow::Result<()> {
                     }
                 }
             }
+
             if let Ok(n) = audio.read(&mut buffer) {
                 if n == 0 {
                     println!("[INFO] End of audio stream, restarting recognizer.");
@@ -235,51 +204,32 @@ fn main() -> anyhow::Result<()> {
                     continue;
                 }
 
-                recognizer.accept_waveform(&samples).unwrap();
-                let partial = recognizer.partial_result().partial.trim().to_lowercase();
-
-                if !partial.is_empty() && partial != last_partial {
-                    println!("[DETECT] Partial: \"{}\"", partial);
-                    last_partial = partial.clone();
-
-                    if let Some(fuzzy_key) = best_fuzzy_match(&partial, &commands) {
-                        if fuzzy_key == "type" {
-                            println!("[INFO] Voice command 'type' detected, entering typing mode.");
-                            in_typing_mode = true;
-                            break 'listen;
+                if recognizer.accept_waveform(&samples).unwrap() == vosk::DecodingState::Finalized {
+                    match recognizer.result() {
+                        vosk::CompleteResult::Single(sr) => {
+                            let text = sr.text.trim().to_lowercase();
+                            if !text.is_empty() {
+                                println!("[FINAL] Detected: \"{}\"", text);
+                                if let Some(fuzzy_key) = best_fuzzy_match(&text, &commands) {
+                                    if fuzzy_key == "type" {
+                                        println!("[INFO] Voice command 'type' detected, entering typing mode.");
+                                        in_typing_mode = true;
+                                        break 'listen;
+                                    }
+                                    if let Some(cmd) = command_map.get(fuzzy_key) {
+                                        println!(
+                                            "[EXEC] Fuzzy matched \"{}\" → \"{}\". Running: `{}`",
+                                            text, fuzzy_key, cmd
+                                        );
+                                        let _ = Command::new("sh").arg("-c").arg(cmd).spawn();
+                                        break 'listen;
+                                    }
+                                }
+                            }
                         }
-                        if let Some(cmd) = command_map.get(fuzzy_key) {
-                            println!(
-                                "[EXEC] Fuzzy matched \"{}\" → \"{}\". Running: `{}`",
-                                partial, fuzzy_key, cmd
-                            );
-                            let _ = Command::new("sh").arg("-c").arg(cmd).spawn();
-                            break 'listen;
-                        }
+                        _ => {}
                     }
-
-                    prefix_matched = grammar.iter().any(|c| c.starts_with(&partial));
-                    if prefix_matched {
-                        prefix_start_time = Instant::now();
-                        println!(
-                            "[INFO] Prefix match \"{}\", waiting up to 500ms for completion...",
-                            partial
-                        );
-                    } else if !partial.is_empty() {
-                        println!(
-                            "[RESET] No command or prefix starts with '{}', resetting recognizer.",
-                            partial
-                        );
-                        break 'listen;
-                    }
-                }
-
-                if prefix_matched && prefix_start_time.elapsed() >= Duration::from_millis(500) {
-                    println!(
-                        "[RESET] Prefix '{}' incomplete after 500ms, resetting.",
-                        last_partial
-                    );
-                    break 'listen;
+                    recognizer.reset();
                 }
             }
         }
