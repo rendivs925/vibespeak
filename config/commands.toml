@@ -1,6 +1,5 @@
 [commands]
-"type on" = ""
-"type off" = ""
+"type" = ""
 # --- Tmux Control ---
 "pane split"      = "xdotool key ctrl+a bar"
 "pane vsplit"     = "xdotool key ctrl+a minus"
