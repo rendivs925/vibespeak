@@ -1,4 +1,6 @@
 [commands]
+"type on" = ""
+"type off" = ""
 # --- Tmux Control ---
 "pane split"      = "xdotool key ctrl+a bar"
 "pane vsplit"     = "xdotool key ctrl+a minus"
@@ -91,8 +93,8 @@
 "neo visual"      = "xdotool key v"
 "neo find"        = "xdotool key Escape slash"
 "neo restore"     = "xdotool key space w r"
-"down"    = "xdotool key ctrl+d"    
-"up"      = "xdotool key ctrl+u"    
+"neo down"    = "xdotool key ctrl+d"    
+"neo up"      = "xdotool key ctrl+u"    
 # "up"    = "xdotool key ctrl+y"    
 # "down"  = "xdotool key ctrl+e"    
 

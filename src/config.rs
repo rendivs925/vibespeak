@@ -1,7 +1,6 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct CommandConfig {
