@@ -1,5 +1,6 @@
 mod config;
 use config::CommandConfig;
+use regex::Regex;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
@@ -31,6 +32,33 @@ fn start_rec() -> std::io::Result<std::process::Child> {
         .spawn()
 }
 
+fn parse_command_and_count(phrase: &str) -> (String, usize) {
+    let re = Regex::new(
+        r"^(?P<cmd>.+?) (?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)$",
+    )
+    .unwrap();
+    if let Some(caps) = re.captures(phrase.trim()) {
+        let cmd = caps.name("cmd").unwrap().as_str().to_string();
+        let count_str = caps.name("count").unwrap().as_str();
+        let count = match count_str {
+            "one" => 1,
+            "two" => 2,
+            "three" => 3,
+            "four" => 4,
+            "five" => 5,
+            "six" => 6,
+            "seven" => 7,
+            "eight" => 8,
+            "nine" => 9,
+            "ten" => 10,
+            _ => count_str.parse::<usize>().unwrap_or(1),
+        };
+        (cmd, count)
+    } else {
+        (phrase.trim().to_string(), 1)
+    }
+}
+
 fn is_prefix_of_any_command(prefix: &str, commands: &[String]) -> bool {
     commands.iter().any(|cmd| cmd.starts_with(prefix))
 }
@@ -40,7 +68,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Failed to load config: {e}"))?;
 
     let model = Model::new(MODEL_PATH)
-        .ok_or(format!("Failed to load Vosk model at '{}'.\nPlease follow the instructions in the README to download and place the model.", MODEL_PATH))?;
+        .ok_or(format!(
+            "Failed to load Vosk model at '{}'.\nPlease follow the instructions in the README to download and place the model.",
+            MODEL_PATH
+        ))?;
 
     let commands: Vec<String> = config.commands.keys().map(|s| s.to_lowercase()).collect();
     let grammar: Vec<&str> = commands.iter().map(|s| s.as_str()).collect();
@@ -86,19 +117,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if !partial.is_empty() && partial != last_partial {
                     last_speech = Instant::now();
                     last_partial = partial.clone();
-                    println!("Heard: '{}'", partial);
 
-                    if let Some(cmd) = config.commands.get(partial.as_str()) {
-                        println!("Matched '{}': Running `{}`", partial, cmd);
-                        if let Err(e) = Command::new("sh").arg("-c").arg(cmd).spawn() {
-                            eprintln!("Failed to run command: {e}");
+                    let (cmd_phrase, count) = parse_command_and_count(&partial);
+
+                    println!(
+                        "Heard: '{}', base command: '{}', repeat: {}",
+                        partial, cmd_phrase, count
+                    );
+
+                    if let Some(cmd) = config.commands.get(cmd_phrase.as_str()) {
+                        println!(
+                            "Matched '{}': Running `{}` {} time(s)",
+                            cmd_phrase, cmd, count
+                        );
+                        for _ in 0..count {
+                            if let Err(e) = Command::new("sh").arg("-c").arg(cmd).spawn() {
+                                eprintln!("Failed to run command: {e}");
+                            }
                         }
                         recognizer.reset();
                         last_partial.clear();
                         continue;
                     }
 
-                    if !is_prefix_of_any_command(&partial, &commands) {
+                    if !is_prefix_of_any_command(&cmd_phrase, &commands) {
                         println!("No command or prefix match for '{}', resetting.", partial);
                         recognizer.reset();
                         last_partial.clear();
@@ -106,7 +148,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                if !last_partial.is_empty() && last_speech.elapsed() >= Duration::from_millis(200) {
+                if !last_partial.is_empty() && last_speech.elapsed() >= Duration::from_millis(1000)
+                {
                     println!("Silence after prefix '{}', resetting.", last_partial);
                     recognizer.reset();
                     last_partial.clear();
