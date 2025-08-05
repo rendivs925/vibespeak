@@ -6,8 +6,8 @@
 "pane vsplit"     = "xdotool key ctrl+a minus"
 "pane win"        = "xdotool key ctrl+a c"
 "pane reload"     = "xdotool key ctrl+a r"
-"win next"    = "xdotool key ctrl+a n"
-"win prev"    = "xdotool key ctrl+a p"
+"win next"        = "xdotool key ctrl+a n"
+"win prev"        = "xdotool key ctrl+a p"
 "pane zero"       = "xdotool key ctrl+a 0"
 "pane one"        = "xdotool key ctrl+a 1"
 "pane two"        = "xdotool key ctrl+a 2"
@@ -37,12 +37,12 @@
 "dev style"       = "tmux send-keys -t 2 'yarn dev' C-m"
 
 # --- Shell ---
-"shell clear"     = "xdotool type 'clear'; xdotool key Return"
-"shell list"      = "xdotool type 'ls'; xdotool key Return"
-"shell history"   = "xdotool type 'history'; xdotool key Return"
-"shell htop"      = "xdotool type 'htop'; xdotool key Return"
-"shell neo"      = "xdotool type 'nvim'; xdotool key Return"
-"shell info"     = "xdotool type 'fastfetch'; xdotool key Return"
+"clear"     = "xdotool type 'clear'; xdotool key Return"
+"list"      = "xdotool type 'ls'; xdotool key Return"
+"history"   = "xdotool type 'history'; xdotool key Return"
+"htop"      = "xdotool type 'htop'; xdotool key Return"
+"neo"      = "xdotool type 'nvim'; xdotool key Return"
+"info"     = "xdotool type 'fastfetch'; xdotool key Return"
 
 # --- Alacritty Font Zoom ---
 "zoom in"         = "xdotool key ctrl+KP_Add"
