@@ -4,7 +4,6 @@ use config::CommandConfig;
 use crossterm::event::{self, Event, KeyCode};
 use std::io::Read;
 use std::process::{Command, Stdio};
-use std::thread::sleep;
 use std::time::Duration as StdDuration;
 use std::time::{Duration, Instant};
 use vosk::{CompleteResult, DecodingState, Model, Recognizer};
@@ -118,7 +117,7 @@ fn main() -> anyhow::Result<()> {
                     last_speech = Instant::now();
 
                     if partial == "type on" {
-                        typing_mode(&model);
+                        let _ = typing_mode(&model);
                         break;
                     }
 
