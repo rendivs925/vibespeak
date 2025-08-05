@@ -65,7 +65,7 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
         .arg("3000")
         .spawn();
 
-    println!("[INFO] Progressive typing mode ON. Press Esc to exit, or Win+T to toggle.");
+    println!("[INFO] Typing mode (dictation) ON. Press Esc to exit, or Win+T to toggle.");
     let mut recognizer = Recognizer::new(model, 16000.0).unwrap();
     let mut mic = start_rec().unwrap();
     let mut audio = mic.stdout.take().unwrap();
@@ -74,7 +74,6 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
     terminal::enable_raw_mode()?;
     let mut toggle_requested = false;
     let mut last_voice_time = Instant::now();
-
     let mut last_typed = String::new();
     let mut stop_reason = "[INFO] Exited typing mode.";
 
@@ -115,6 +114,7 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
             }
 
             let preview = recognizer.partial_result().partial.trim();
+
             if !preview.is_empty() {
                 if preview.starts_with(&last_typed) {
                     let delta = &preview[last_typed.len()..];
@@ -145,6 +145,7 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
                             toggle_requested = true;
                             break 'outer;
                         }
+
                         last_typed.clear();
                         print!("\r{: <80}\r", "");
                         std::io::stdout().flush().unwrap();
