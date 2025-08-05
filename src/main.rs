@@ -1,6 +1,5 @@
 mod config;
 use config::CommandConfig;
-use regex::Regex;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
@@ -30,33 +29,6 @@ fn start_rec() -> std::io::Result<std::process::Child> {
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
-}
-
-fn parse_command_and_count(phrase: &str) -> (String, usize) {
-    let re = Regex::new(
-        r"^(?P<cmd>.+?) (?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)$",
-    )
-    .unwrap();
-    if let Some(caps) = re.captures(phrase.trim()) {
-        let cmd = caps.name("cmd").unwrap().as_str().to_string();
-        let count_str = caps.name("count").unwrap().as_str();
-        let count = match count_str {
-            "one" => 1,
-            "two" => 2,
-            "three" => 3,
-            "four" => 4,
-            "five" => 5,
-            "six" => 6,
-            "seven" => 7,
-            "eight" => 8,
-            "nine" => 9,
-            "ten" => 10,
-            _ => count_str.parse::<usize>().unwrap_or(1),
-        };
-        (cmd, count)
-    } else {
-        (phrase.trim().to_string(), 1)
-    }
 }
 
 fn is_prefix_of_any_command(prefix: &str, commands: &[String]) -> bool {
@@ -118,29 +90,72 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     last_speech = Instant::now();
                     last_partial = partial.clone();
 
-                    let (cmd_phrase, count) = parse_command_and_count(&partial);
-
-                    println!(
-                        "Heard: '{}', base command: '{}', repeat: {}",
-                        partial, cmd_phrase, count
-                    );
-
-                    if let Some(cmd) = config.commands.get(cmd_phrase.as_str()) {
-                        println!(
-                            "Matched '{}': Running `{}` {} time(s)",
-                            cmd_phrase, cmd, count
-                        );
-                        for _ in 0..count {
-                            if let Err(e) = Command::new("sh").arg("-c").arg(cmd).spawn() {
-                                eprintln!("Failed to run command: {e}");
-                            }
+                    if let Some(cmd) = config.commands.get(partial.as_str()) {
+                        println!("Matched '{}': Running `{}`", partial, cmd);
+                        if let Err(e) = Command::new("sh").arg("-c").arg(cmd).spawn() {
+                            eprintln!("Failed to run command: {e}");
                         }
+
+                        // Enter dictation mode after "neo find"
+                        if partial == "neo find" {
+                            println!(
+                                "Dictation mode: Please say your Neovim search (max 5 seconds)..."
+                            );
+                            let mut free_recognizer = Recognizer::new(&model, 16000.0)
+                                .ok_or("Failed to create free-text recognizer")?;
+                            let mut search_text = String::new();
+                            let dictation_start = Instant::now();
+
+                            // Dictation loop (max 5 sec or until something is spoken)
+                            while dictation_start.elapsed() < Duration::from_secs(5) {
+                                if let Ok(n) = audio.read(&mut buffer) {
+                                    if n == 0 {
+                                        break;
+                                    }
+                                    let samples: Vec<i16> = buffer[..n]
+                                        .chunks_exact(2)
+                                        .map(|b| i16::from_le_bytes([b[0], b[1]]))
+                                        .collect();
+                                    free_recognizer.accept_waveform(&samples)?;
+                                    let text =
+                                        free_recognizer.partial_result().partial.trim().to_string();
+                                    if !text.is_empty() && text != search_text {
+                                        search_text = text;
+                                        println!("Heard search: '{}'", search_text);
+                                    }
+                                }
+                            }
+
+                            if !search_text.is_empty() {
+                                // Send the search text as keystrokes to Neovim
+                                let escaped = search_text.replace("'", r"'\''"); // escape single quotes
+                                let send_cmd = format!("xdotool type '{}'", escaped);
+                                println!("Typing into Neovim: {}", escaped);
+                                if let Err(e) = Command::new("sh").arg("-c").arg(&send_cmd).spawn()
+                                {
+                                    eprintln!("Failed to type search query: {e}");
+                                }
+                                // Send Return to execute search
+                                if let Err(e) =
+                                    Command::new("xdotool").arg("key").arg("Return").spawn()
+                                {
+                                    eprintln!("Failed to send Return: {e}");
+                                }
+                            } else {
+                                println!("No search text heard.");
+                            }
+
+                            recognizer.reset();
+                            last_partial.clear();
+                            continue;
+                        }
+
                         recognizer.reset();
                         last_partial.clear();
                         continue;
                     }
 
-                    if !is_prefix_of_any_command(&cmd_phrase, &commands) {
+                    if !is_prefix_of_any_command(&partial, &commands) {
                         println!("No command or prefix match for '{}', resetting.", partial);
                         recognizer.reset();
                         last_partial.clear();
@@ -148,7 +163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
 
-                if !last_partial.is_empty() && last_speech.elapsed() >= Duration::from_millis(1000)
+                if !last_partial.is_empty() && last_speech.elapsed() >= Duration::from_millis(1200)
                 {
                     println!("Silence after prefix '{}', resetting.", last_partial);
                     recognizer.reset();
