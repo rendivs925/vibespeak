@@ -1,9 +1,11 @@
 mod config;
 
 use config::CommandConfig;
+use crossterm::event::{self, Event, KeyCode};
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
+use std::time::Duration as StdDuration;
 use std::time::{Duration, Instant};
 use vosk::{CompleteResult, DecodingState, Model, Recognizer};
 
@@ -31,14 +33,26 @@ fn start_rec() -> std::io::Result<std::process::Child> {
         .spawn()
 }
 
-fn typing_mode(model: &Model) {
-    println!("Typing mode ON. Say 'type off' to exit.");
+fn typing_mode(model: &Model) -> anyhow::Result<()> {
+    println!("Typing mode ON. Press Esc to exit.");
+
     let mut recognizer = Recognizer::new(model, 16000.0).unwrap();
     let mut mic = start_rec().unwrap();
     let mut audio = mic.stdout.take().unwrap();
     let mut buffer = [0u8; 4096];
 
+    crossterm::terminal::enable_raw_mode()?;
+
     loop {
+        if event::poll(StdDuration::from_millis(1_00))? {
+            if let Event::Key(key_event) = event::read()? {
+                if key_event.code == KeyCode::Esc {
+                    println!("Typing mode OFF (Esc pressed).");
+                    break;
+                }
+            }
+        }
+
         if let Ok(n) = audio.read(&mut buffer) {
             if n == 0 {
                 break;
@@ -52,10 +66,6 @@ fn typing_mode(model: &Model) {
                 match recognizer.result() {
                     CompleteResult::Single(sr) => {
                         let text = sr.text.trim();
-                        if text == "type off" {
-                            println!("Typing mode OFF.");
-                            break;
-                        }
                         if !text.is_empty() {
                             let escaped = text.replace("'", r"'\''");
                             let send_cmd = format!("xdotool type '{}'", escaped);
@@ -70,6 +80,9 @@ fn typing_mode(model: &Model) {
             }
         }
     }
+
+    crossterm::terminal::disable_raw_mode()?;
+    Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
