@@ -99,6 +99,6 @@
 "open terminal"    = "alacritty"
 "open browser"     = "firefox"
 "show menu"        = "dmenu_run"
-"open files"       = "thunar"
+"open files"       = "ranger"
 "go to end"        = "xdotool key End"
 "go to home"       = "xdotool key Home"
