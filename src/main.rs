@@ -147,6 +147,8 @@ fn typing_mode(model: &Model) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
+    use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+
     let config = CommandConfig::load_from(COMMANDS_PATH)?;
     let command_map: HashMap<_, _> = config
         .commands
@@ -162,22 +164,13 @@ fn main() -> anyhow::Result<()> {
         "[INFO] Ready. Say a command or 'type' for typing mode. Win+T also toggles typing mode."
     );
 
-    let mut in_typing_mode = false;
-
     loop {
-        if in_typing_mode {
-            typing_mode(&model)?;
-            in_typing_mode = false;
-            continue;
-        }
-
         let mut recognizer = Recognizer::new_with_grammar(&model, 16000.0, &grammar).unwrap();
         let mut mic = start_rec()?;
         let mut audio = mic.stdout.take().unwrap();
         let mut buffer = [0u8; 256];
 
-        'listen: loop {
-            use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+        'main_listen: loop {
             if event::poll(Duration::from_millis(2))? {
                 if let Event::Key(KeyEvent {
                     code, modifiers, ..
@@ -185,8 +178,9 @@ fn main() -> anyhow::Result<()> {
                 {
                     if code == KeyCode::Char('t') && modifiers.contains(KeyModifiers::SUPER) {
                         println!("[INFO] Toggling typing mode (Win+T)");
-                        in_typing_mode = true;
-                        break 'listen;
+                        typing_mode(&model)?;
+                        println!("[INFO] Returning to listening mode.");
+                        break 'main_listen;
                     }
                 }
             }
@@ -194,12 +188,13 @@ fn main() -> anyhow::Result<()> {
             if let Ok(n) = audio.read(&mut buffer) {
                 if n == 0 {
                     println!("[INFO] End of audio stream, restarting recognizer.");
-                    break;
+                    break 'main_listen;
                 }
                 let samples: Vec<i16> = buffer[..n]
                     .chunks_exact(2)
                     .map(|b| i16::from_le_bytes([b[0], b[1]]))
                     .collect();
+
                 if samples.iter().all(|&x| x.abs() < SILENCE_THRESHOLD) {
                     continue;
                 }
@@ -213,8 +208,9 @@ fn main() -> anyhow::Result<()> {
                                 if let Some(fuzzy_key) = best_fuzzy_match(&text, &commands) {
                                     if fuzzy_key == "type" {
                                         println!("[INFO] Voice command 'type' detected, entering typing mode.");
-                                        in_typing_mode = true;
-                                        break 'listen;
+                                        typing_mode(&model)?;
+                                        println!("[INFO] Returning to listening mode.");
+                                        break 'main_listen;
                                     }
                                     if let Some(cmd) = command_map.get(fuzzy_key) {
                                         println!(
@@ -222,7 +218,6 @@ fn main() -> anyhow::Result<()> {
                                             text, fuzzy_key, cmd
                                         );
                                         let _ = Command::new("sh").arg("-c").arg(cmd).spawn();
-                                        break 'listen;
                                     }
                                 }
                             }
