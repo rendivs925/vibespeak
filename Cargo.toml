@@ -18,18 +18,12 @@ anyhow = "1.0.98"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.39", features = ["full"] }
-async-trait = "0.1"
-
-# Voice processing
-vosk = "0.3.1"
-# tts = "0.25"  # Temporarily disabled due to missing system dependencies
-cpal = "0.15"
-rodio = "0.17"
-
-# Web & networking
-warp = "0.3"
 tokio-tungstenite = "0.20"
 webrtc = "0.9"
+libloading = "0.8"
+async-trait = "0.1"
+warp = "0.3"
+vosk = "0.3"
 
 # Legacy CLI (for backward compatibility)
 crossterm = "0.29.0"

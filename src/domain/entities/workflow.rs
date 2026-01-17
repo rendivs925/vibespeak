@@ -120,6 +120,17 @@ pub enum VariableValue {
     Json(serde_json::Value),
 }
 
+impl std::fmt::Display for VariableValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VariableValue::String(s) => write!(f, "{}", s),
+            VariableValue::Number(n) => write!(f, "{}", n),
+            VariableValue::Boolean(b) => write!(f, "{}", b),
+            VariableValue::Json(j) => write!(f, "{}", j),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ErrorStrategy {
     Stop,                        // Stop workflow on error

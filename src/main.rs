@@ -4,12 +4,14 @@ mod infrastructure;
 mod presentation;
 mod shared;
 
-use crate::application::services::VoiceProcessingService;
+use crate::application::services::{VoiceProcessingService, VoiceCommandProcessor};
+use crate::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
 use crate::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter};
 use crate::infrastructure::config::SystemConfig;
 use crate::presentation::web::WebServer;
 use crate::shared::{Error, Result};
 use std::sync::Arc;
+use std::collections::HashMap;
 
 const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
 const CONFIG_PATH: &str = "config/system.json";
@@ -37,32 +39,58 @@ async fn main() -> Result<()> {
     // Initialize infrastructure adapters
     let speech_recognition = Arc::new(VoskAdapter::new(
         &system_config.settings.vosk_model_path,
-        system_config.settings.sample_rate,
+        system_config.settings.sample_rate
     )?);
 
     let text_to_speech = Arc::new(TtsAdapter::new()?);
 
     // Create command interpreter with system commands
     let command_interpreter = Arc::new(FuzzyCommandInterpreter::new(
-        system_config
-            .commands
-            .iter()
+        system_config.commands.iter()
             .map(|cmd| (cmd.text.clone(), format!("{:?}", cmd.action)))
-            .collect(),
+            .collect()
     ));
 
-    // Initialize application services
-    let voice_service = VoiceProcessingService::new(
+    // Initialize plugin system
+    let mut plugin_registry = PluginRegistry::new();
+    plugin_registry.register(Box::new(BuiltinCommandsPlugin)).unwrap();
+    let plugin_registry = Arc::new(plugin_registry);
+
+    // Initialize script executor
+    let script_executor = Arc::new(ScriptExecutor::new());
+
+    // Initialize browser automation
+    let browser_service = Arc::new(ChromiumBrowserService::new());
+
+    // Initialize workflow executor
+    let workflow_executor = Arc::new(DefaultWorkflowExecutor::new(
+        script_executor.clone(),
+        browser_service.clone(),
+    ));
+
+    // Initialize voice command processor
+    let voice_processor = VoiceCommandProcessor::new(
         speech_recognition.clone(),
         text_to_speech.clone(),
         command_interpreter,
+        script_executor,
+        browser_service,
+        workflow_executor,
+        plugin_registry,
     );
 
     // Initialize services
+    let voice_service = VoiceProcessingService::new(
+        speech_recognition,
+        text_to_speech,
+        Arc::new(FuzzyCommandInterpreter::new(HashMap::new())), // Simplified for legacy compatibility
+    );
+
     voice_service.initialize().await?;
     tracing::info!("Voice services initialized successfully");
 
     // Start web server for configuration and control
+    let voice_processor = Arc::new(voice_processor);
     let voice_service = Arc::new(voice_service);
     let web_port = system_config.settings.web_server_port;
     let web_server = WebServer::new(voice_service.clone(), system_config);
