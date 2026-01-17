@@ -70,13 +70,13 @@ impl VoiceCommandProcessor {
 
         // Step 3: Execute based on interpretation
         let execution_result = match interpreted.action {
-            crate::domain::services::CommandAction::Execute(command) => {
+            crate::domain::services::CommandAction::Execute(ref command) => {
                 self.execute_shell_command(&command).await?
             }
-            crate::domain::services::CommandAction::Workflow(workflow_id) => {
+            crate::domain::services::CommandAction::Workflow(ref workflow_id) => {
                 self.execute_workflow(&workflow_id).await?
             }
-            crate::domain::services::CommandAction::Script(script_id) => {
+            crate::domain::services::CommandAction::Script(ref script_id) => {
                 self.execute_script(&script_id).await?
             }
             crate::domain::services::CommandAction::Integration(ref service) => {
@@ -185,7 +185,7 @@ impl VoiceCommandProcessor {
 
         // Try built-in commands plugin first
         if let Some(plugin) = self.plugin_registry.get_plugin(&"builtin-commands".to_string()) {
-            match plugin.execute(input).await {
+            match plugin.execute(&input).await {
                 Ok(result) if result.success => return Ok(result),
                 _ => {} // Continue to other plugins
             }
@@ -198,7 +198,7 @@ impl VoiceCommandProcessor {
             }
 
             if let Some(plugin) = self.plugin_registry.get_plugin(&plugin_id) {
-                match plugin.execute(input.clone()).await {
+                match plugin.execute(&input).await {
                     Ok(result) if result.success => return Ok(result),
                     _ => continue,
                 }

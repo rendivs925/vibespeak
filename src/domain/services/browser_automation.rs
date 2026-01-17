@@ -113,9 +113,13 @@ impl BrowserAutomationService for ChromiumBrowserService {
     }
 
     async fn execute_action(&self, session_id: &str, action: BrowserAction) -> Result<BrowserResult> {
-        let sessions = self.sessions.lock().unwrap();
-        let instance = sessions.get(session_id)
-            .ok_or_else(|| Error::Infrastructure(format!("Session {} not found", session_id)))?;
+        // Check if session exists first
+        {
+            let sessions = self.sessions.lock().unwrap();
+            if !sessions.contains_key(session_id) {
+                return Err(Error::Infrastructure(format!("Session {} not found", session_id)));
+            }
+        }
 
         match action {
             BrowserAction::Navigate(url) => {
@@ -163,7 +167,6 @@ impl BrowserAutomationService for ChromiumBrowserService {
         tokio::fs::write(path, b"PNG placeholder - actual screenshot would be captured here")
             .await
             .map_err(|e| Error::Infrastructure(format!("Failed to create screenshot: {}", e)))?;
-
         Ok(())
     }
 
@@ -183,6 +186,48 @@ impl BrowserAutomationService for ChromiumBrowserService {
         }
 
         Ok(())
+    }
+
+    async fn wait_for_element(&self, session_id: &str, selector: &str) -> Result<BrowserResult> {
+        tracing::info!("Waiting for element {} in session {}", selector, session_id);
+        // Simulate waiting
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        Ok(BrowserResult {
+            success: true,
+            data: serde_json::json!({"waited_for": selector}),
+            screenshot_path: None,
+            page_content: None,
+        })
+    }
+
+    async fn execute_javascript(&self, session_id: &str, script: &str) -> Result<BrowserResult> {
+        tracing::info!("Executing JavaScript in session {}", session_id);
+        Ok(BrowserResult {
+            success: true,
+            data: serde_json::json!({"executed": script}),
+            screenshot_path: None,
+            page_content: None,
+        })
+    }
+
+    async fn get_element_text(&self, session_id: &str, selector: &str) -> Result<BrowserResult> {
+        tracing::info!("Getting text from {} in session {}", selector, session_id);
+        Ok(BrowserResult {
+            success: true,
+            data: serde_json::json!({"text": "Sample element text"}),
+            screenshot_path: None,
+            page_content: Some("Sample element text".to_string()),
+        })
+    }
+
+    async fn scroll_page(&self, session_id: &str, x: i32, y: i32) -> Result<BrowserResult> {
+        tracing::info!("Scrolling by ({}, {}) in session {}", x, y, session_id);
+        Ok(BrowserResult {
+            success: true,
+            data: serde_json::json!({"scrolled": {"x": x, "y": y}}),
+            screenshot_path: None,
+            page_content: None,
+        })
     }
 }
 

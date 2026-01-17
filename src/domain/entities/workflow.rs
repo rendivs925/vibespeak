@@ -84,6 +84,8 @@ pub struct ScriptExecution {
     pub arguments: Vec<String>,
     pub timeout: std::time::Duration,
     pub security_level: crate::shared::SecurityLevel,
+    pub working_directory: Option<String>,
+    pub environment: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -148,9 +148,9 @@ impl DefaultWorkflowExecutor {
             }
             WorkflowStep::Conditional(condition, then_step, else_step) => {
                 if self.evaluate_condition(condition, variables).await? {
-                    self.execute_step(then_step, variables).await
+                    Box::pin(self.execute_step(then_step, variables)).await
                 } else {
-                    self.execute_step(else_step, variables).await
+                    Box::pin(self.execute_step(else_step, variables)).await
                 }
             }
             WorkflowStep::Wait(duration) => {

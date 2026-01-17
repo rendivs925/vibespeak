@@ -26,14 +26,14 @@ pub enum PluginCapability {
     IntegrationProvider(String),
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct PluginContext {
     pub config: HashMap<String, serde_json::Value>,
     pub shared_data: HashMap<String, serde_json::Value>,
     pub plugin_registry: Arc<PluginRegistry>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PluginInput {
     pub command: String,
     pub parameters: HashMap<String, serde_json::Value>,
@@ -51,11 +51,10 @@ pub struct PluginOutput {
 pub trait VoicePlugin: Send + Sync {
     fn metadata(&self) -> PluginMetadata;
     async fn initialize(&self, context: &PluginContext) -> Result<()>;
-    async fn execute(&self, input: PluginInput) -> Result<PluginOutput>;
+    async fn execute(&self, input: &PluginInput) -> Result<PluginOutput>;
     async fn cleanup(&self) -> Result<()>;
 }
 
-#[derive(Debug)]
 pub struct PluginRegistry {
     plugins: HashMap<PluginId, Box<dyn VoicePlugin>>,
     libraries: Vec<Library>, // Keep libraries loaded
@@ -157,7 +156,7 @@ impl VoicePlugin for BuiltinCommandsPlugin {
         Ok(())
     }
 
-    async fn execute(&self, input: PluginInput) -> Result<PluginOutput> {
+    async fn execute(&self, input: &PluginInput) -> Result<PluginOutput> {
         match input.command.as_str() {
             "hello" | "hi" => Ok(PluginOutput {
                 success: true,

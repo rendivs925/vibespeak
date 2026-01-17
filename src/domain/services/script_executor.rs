@@ -1,8 +1,8 @@
 use crate::shared::{Result, Error, ScriptType, SecurityLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::process::{Command, Stdio};
 use std::time::Duration;
+use tokio::process::Command;
 use tokio::time::timeout;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,28 +136,15 @@ impl ScriptExecutor {
             cmd.env(key, value);
         }
 
-        // Set up pipes for stdout/stderr
-        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-        // Execute with timeout
-        let spawn_result = cmd.spawn();
-        match timeout(script.timeout, async move { spawn_result }).await {
-            Ok(Ok(mut child)) => {
-                match timeout(script.timeout, child.wait_with_output()).await {
-                    Ok(Ok(output)) => {
-                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                        Ok((output.status.code().unwrap_or(-1), stdout, stderr))
-                    }
-                    Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to read output: {}", e))),
-                    Err(_) => {
-                        let _ = child.kill().await;
-                        Err(Error::Infrastructure("Script execution timed out".to_string()))
-                    }
-                }
+        // Execute with timeout using tokio::process::Command
+        match tokio::time::timeout(script.timeout, cmd.output()).await {
+            Ok(Ok(output)) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                Ok((output.status.code().unwrap_or(-1), stdout, stderr))
             }
-            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to spawn process: {}", e))),
-            Err(_) => Err(Error::Infrastructure("Script spawn timed out".to_string())),
+            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to execute command: {}", e))),
+            Err(_) => Err(Error::Infrastructure("Script execution timed out".to_string())),
         }
     }
 
@@ -207,28 +194,15 @@ impl ScriptExecutor {
             cmd.env(key, value);
         }
 
-        // Set up pipes
-        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-        // Execute with timeout
-        let spawn_result = cmd.spawn();
-        match timeout(script.timeout, async move { spawn_result }).await {
-            Ok(Ok(mut child)) => {
-                match timeout(script.timeout, child.wait_with_output()).await {
-                    Ok(Ok(output)) => {
-                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                        Ok((output.status.code().unwrap_or(-1), stdout, stderr))
-                    }
-                    Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to read output: {}", e))),
-                    Err(_) => {
-                        let _ = child.kill().await;
-                        Err(Error::Infrastructure("Script execution timed out".to_string()))
-                    }
-                }
+        // Execute with timeout using tokio::process::Command
+        match tokio::time::timeout(script.timeout, cmd.output()).await {
+            Ok(Ok(output)) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                Ok((output.status.code().unwrap_or(-1), stdout, stderr))
             }
-            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to spawn process: {}", e))),
-            Err(_) => Err(Error::Infrastructure("Script spawn timed out".to_string())),
+            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to execute command: {}", e))),
+            Err(_) => Err(Error::Infrastructure("Script execution timed out".to_string())),
         }
     }
 }
