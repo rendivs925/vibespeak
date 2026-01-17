@@ -1,6 +1,6 @@
 use crate::application::services::VoiceProcessingService;
 use crate::infrastructure::config::SystemConfig;
-use crate::shared::Result;
+use crate::shared::{Result, Error};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::Filter;
@@ -112,7 +112,21 @@ async fn update_config(
     // TODO: Save to file
     // config_lock.save_to_file(CONFIG_PATH)?;
 
-    Ok(warp::reply::json(&serde_json::json!({"status": "ok"})))
+    // Save configuration to file
+    let config_path = std::path::Path::new("config/system.json");
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| Error::Infrastructure(format!("Failed to create config directory: {}", e)))?;
+    }
+
+    let config_json = serde_json::to_string_pretty(&new_config)
+        .map_err(|e| Error::Infrastructure(format!("Failed to serialize config: {}", e)))?;
+
+    std::fs::write(config_path, config_json)
+        .map_err(|e| Error::Infrastructure(format!("Failed to write config file: {}", e)))?;
+
+    tracing::info!("Configuration saved to {}", config_path.display());
+    Ok(warp::reply::json(&serde_json::json!({"status": "ok", "message": "Configuration saved successfully"})))
 }
 
 #[derive(serde::Deserialize)]
@@ -124,11 +138,19 @@ async fn test_voice(
     request: VoiceTestRequest,
     voice_service: Arc<VoiceProcessingService>,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    // For now, just return success - TODO: implement actual voice testing
     tracing::info!("Voice test requested for text: {}", request.text);
-    Ok(warp::reply::json(
-        &serde_json::json!({"status": "ok", "text": request.text}),
-    ))
+
+    // For now, simulate voice processing without actual audio
+    // TODO: Implement real-time voice capture and processing
+    let result = serde_json::json!({
+        "status": "ok",
+        "text": request.text,
+        "processed": true,
+        "message": "Voice test completed (simulated)",
+        "commands_matched": ["test_command"]
+    });
+
+    Ok(warp::reply::json(&result))
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {

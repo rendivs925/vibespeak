@@ -104,9 +104,8 @@ impl VoiceCommandProcessor {
     }
 
     pub async fn speak_response(&self, text: &str) -> Result<()> {
-        let _audio_samples = self.text_to_speech.synthesize(text, None).await?;
-        // TODO: Play audio samples using rodio
-        tracing::info!("Speaking: {}", text);
+        // TODO: Implement audio playback for TTS responses
+        tracing::info!("Speaking response: {}", text);
         Ok(())
     }
 
@@ -134,12 +133,12 @@ impl VoiceCommandProcessor {
     async fn execute_workflow(&self, workflow_id: &str) -> Result<serde_json::Value> {
         tracing::info!("Executing workflow: {}", workflow_id);
 
-        // TODO: Load workflow from repository
+        // TODO: Add workflow repository to dependencies
         // For now, return placeholder
         Ok(serde_json::json!({
             "workflow_id": workflow_id,
             "status": "not_implemented",
-            "message": "Workflow execution not yet implemented"
+            "message": "Workflow repository not yet integrated"
         }))
     }
 
@@ -242,16 +241,20 @@ impl VoiceCommandProcessor {
     // Workflow management
     pub async fn create_workflow(&self, workflow: Workflow) -> Result<String> {
         self.workflow_executor.validate_workflow(&workflow).await?;
+
         // TODO: Save workflow to repository
-        tracing::info!("Workflow '{}' created", workflow.name);
+        // For now, just validate and return ID
+        tracing::info!("Workflow '{}' validated and ready for creation", workflow.name);
         Ok(workflow.id)
     }
 
     pub async fn execute_workflow_by_name(&self, name: &str) -> Result<serde_json::Value> {
-        // TODO: Load workflow by name and execute
+        // TODO: Load workflow by name from repository
+        tracing::info!("Workflow execution requested: {}", name);
         Ok(serde_json::json!({
             "workflow": name,
-            "status": "not_implemented"
+            "status": "not_implemented",
+            "message": "Workflow repository integration pending"
         }))
     }
 

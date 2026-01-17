@@ -19,3 +19,6 @@ pub trait SessionRepository: Send + Sync {
     async fn find_by_id(&self, id: &SessionId) -> Result<Option<RecognitionSession>>;
     async fn find_active_sessions(&self) -> Result<Vec<RecognitionSession>>;
 }
+
+// Implementations
+pub mod command_repository;

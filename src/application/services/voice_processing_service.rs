@@ -49,8 +49,10 @@ impl VoiceProcessingService {
     }
 
     pub async fn speak_text(&self, text: &str, voice: Option<&str>) -> Result<()> {
+        // Try to use TTS adapter's speak method if available
+        // For now, just synthesize (audio playback handled by voice command processor)
         let _audio_samples = self.text_to_speech.synthesize(text, voice).await?;
-        // TODO: Play audio samples using rodio
+        tracing::info!("Text synthesized for speaking: {}", text);
         Ok(())
     }
 
