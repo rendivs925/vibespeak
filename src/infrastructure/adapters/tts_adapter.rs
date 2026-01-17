@@ -1,5 +1,5 @@
 use crate::domain::services::TextToSpeechService;
-use crate::shared::{Result, Error};
+use crate::shared::{Error, Result};
 use async_trait::async_trait;
 
 pub struct TtsAdapter {
@@ -9,7 +9,9 @@ pub struct TtsAdapter {
 
 impl TtsAdapter {
     pub fn new() -> Result<Self> {
-        tracing::warn!("TTS adapter initialized but TTS is disabled due to missing speech-dispatcher");
+        tracing::warn!(
+            "TTS adapter initialized but TTS is disabled due to missing speech-dispatcher"
+        );
         Ok(Self {})
     }
 }

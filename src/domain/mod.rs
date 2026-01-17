@@ -1,7 +1,7 @@
 pub mod entities;
-pub mod value_objects;
-pub mod services;
 pub mod events;
+pub mod services;
+pub mod value_objects;
 
 // Re-export commonly used types
 pub use entities::*;

@@ -1,4 +1,4 @@
-use crate::shared::{CommandId, Result, Error};
+use crate::shared::{CommandId, Error, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +35,9 @@ impl VoiceCommand {
             return Err(Error::Domain("Command text cannot be empty".to_string()));
         }
         if self.confidence < 0.0 || self.confidence > 1.0 {
-            return Err(Error::Domain("Confidence must be between 0.0 and 1.0".to_string()));
+            return Err(Error::Domain(
+                "Confidence must be between 0.0 and 1.0".to_string(),
+            ));
         }
         Ok(())
     }
@@ -44,10 +46,10 @@ impl VoiceCommand {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommandAction {
     ShellCommand(String),
-    Workflow(String),          // Reference to workflow ID
-    Script(String),           // Reference to script ID
-    IntegrationCall(String),  // API call to integration
-    Composite(Vec<String>),   // Multiple shell commands
+    Workflow(String),        // Reference to workflow ID
+    Script(String),          // Reference to script ID
+    IntegrationCall(String), // API call to integration
+    Composite(Vec<String>),  // Multiple shell commands
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

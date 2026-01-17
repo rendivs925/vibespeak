@@ -1,6 +1,6 @@
-use crate::domain::services::SpeechRecognitionService;
 use crate::domain::entities::RecognitionResult;
-use crate::shared::{AudioSample, Result, Error};
+use crate::domain::services::SpeechRecognitionService;
+use crate::shared::{AudioSample, Error, Result};
 use async_trait::async_trait;
 use std::sync::Arc;
 use vosk::{Model, Recognizer};
@@ -12,8 +12,12 @@ pub struct VoskAdapter {
 
 impl VoskAdapter {
     pub fn new(model_path: &str, sample_rate: f32) -> Result<Self> {
-        let model = Model::new(model_path)
-            .ok_or_else(|| Error::Infrastructure(format!("Failed to load Vosk model from path: {}", model_path)))?;
+        let model = Model::new(model_path).ok_or_else(|| {
+            Error::Infrastructure(format!(
+                "Failed to load Vosk model from path: {}",
+                model_path
+            ))
+        })?;
 
         Ok(Self {
             model: Arc::new(model),
@@ -30,7 +34,8 @@ impl SpeechRecognitionService for VoskAdapter {
             .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer".to_string()))?;
 
         // Process the audio - Vosk expects &[i16]
-        let _state = recognizer.accept_waveform(&audio.data)
+        let _state = recognizer
+            .accept_waveform(&audio.data)
             .map_err(|e| Error::Audio(format!("Failed to process audio waveform: {:?}", e)))?;
 
         // Get the final result

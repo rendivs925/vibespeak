@@ -1,5 +1,7 @@
-use crate::domain::services::{CommandInterpreter, InterpretedCommand, CommandContext, CommandAction};
-use crate::shared::{Result, Error};
+use crate::domain::services::{
+    CommandAction, CommandContext, CommandInterpreter, InterpretedCommand,
+};
+use crate::shared::{Error, Result};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use strsim::jaro_winkler;
@@ -23,7 +25,8 @@ impl FuzzyCommandInterpreter {
         for command_text in self.commands.keys() {
             let similarity = jaro_winkler(input, command_text);
 
-            if similarity > 0.85 { // High confidence threshold
+            if similarity > 0.85 {
+                // High confidence threshold
                 match best_match {
                     Some((_, best_sim)) if similarity > best_sim => {
                         best_match = Some((command_text.clone(), similarity));

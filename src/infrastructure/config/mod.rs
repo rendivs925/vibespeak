@@ -1,7 +1,7 @@
+use crate::shared::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use crate::shared::Result;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommandConfig {
@@ -88,11 +88,13 @@ impl SystemConfig {
         let mut config = Self::default();
 
         // Convert TOML commands to new format
-        config.commands = toml_config.commands.iter()
+        config.commands = toml_config
+            .commands
+            .iter()
             .map(|(text, action)| {
                 let mut command = crate::domain::entities::VoiceCommand::new(
                     text.clone(),
-                    crate::domain::entities::CommandAction::ShellCommand(action.clone())
+                    crate::domain::entities::CommandAction::ShellCommand(action.clone()),
                 );
                 command.category = "legacy".to_string();
                 command

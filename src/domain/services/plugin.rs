@@ -1,4 +1,4 @@
-use crate::shared::{Result, Error, PluginId};
+use crate::shared::{Error, PluginId, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -64,7 +64,10 @@ impl PluginRegistry {
     pub fn register(&mut self, plugin: Box<dyn VoicePlugin>) -> Result<()> {
         let metadata = plugin.metadata();
         if self.plugins.contains_key(&metadata.id) {
-            return Err(Error::Plugin(format!("Plugin {} already registered", metadata.id)));
+            return Err(Error::Plugin(format!(
+                "Plugin {} already registered",
+                metadata.id
+            )));
         }
         self.plugins.insert(metadata.id, plugin);
         Ok(())

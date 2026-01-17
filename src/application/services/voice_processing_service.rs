@@ -1,4 +1,7 @@
-use crate::domain::services::{SpeechRecognitionService, TextToSpeechService, CommandInterpreter, InterpretedCommand, CommandContext};
+use crate::domain::services::{
+    CommandContext, CommandInterpreter, InterpretedCommand, SpeechRecognitionService,
+    TextToSpeechService,
+};
 use crate::shared::{AudioSample, Result};
 use std::sync::Arc;
 
@@ -34,7 +37,10 @@ impl VoiceProcessingService {
         };
 
         // Interpret the recognized text as a command
-        let interpreted = self.command_interpreter.interpret(&recognition_result.text, &context).await?;
+        let interpreted = self
+            .command_interpreter
+            .interpret(&recognition_result.text, &context)
+            .await?;
 
         Ok(RecognitionResult {
             recognition: recognition_result,

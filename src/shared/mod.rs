@@ -82,9 +82,9 @@ impl AudioSample {
 // Security levels for script execution
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SecurityLevel {
-    Sandboxed,  // Restricted execution
-    Trusted,    // Full access to user-approved paths
-    Isolated,   // Container/VM execution
+    Sandboxed, // Restricted execution
+    Trusted,   // Full access to user-approved paths
+    Isolated,  // Container/VM execution
 }
 
 impl fmt::Display for SecurityLevel {

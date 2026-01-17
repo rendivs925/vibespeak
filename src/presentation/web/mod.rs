@@ -20,17 +20,14 @@ impl WebServer {
 
     pub async fn run(self, port: u16) -> Result<()> {
         // Static files route
-        let static_files = warp::path("static")
-            .and(warp::fs::dir("web/static"));
+        let static_files = warp::path("static").and(warp::fs::dir("web/static"));
 
         // API routes
         let api = self.api_routes();
 
         // Main interface route
-        let index = warp::path::end()
-            .map(|| {
-                warp::reply::html(include_str!("../../../web/index.html"))
-            });
+        let index =
+            warp::path::end().map(|| warp::reply::html(include_str!("../../../web/index.html")));
 
         let routes = index
             .or(static_files)
@@ -38,14 +35,14 @@ impl WebServer {
             .with(warp::cors().allow_any_origin());
 
         tracing::info!("Starting web server on port {}", port);
-        warp::serve(routes)
-            .run(([127, 0, 0, 1], port))
-            .await;
+        warp::serve(routes).run(([127, 0, 0, 1], port)).await;
 
         Ok(())
     }
 
-    fn api_routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    fn api_routes(
+        &self,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         let config_get = warp::path("api")
             .and(warp::path("config"))
             .and(warp::get())
@@ -71,22 +68,29 @@ impl WebServer {
     }
 }
 
-fn with_config(config: Arc<RwLock<SystemConfig>>) -> impl Filter<Extract = (Arc<RwLock<SystemConfig>>,), Error = std::convert::Infallible> + Clone {
+fn with_config(
+    config: Arc<RwLock<SystemConfig>>,
+) -> impl Filter<Extract = (Arc<RwLock<SystemConfig>>,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || config.clone())
 }
 
-fn with_voice_service(service: Arc<VoiceProcessingService>) -> impl Filter<Extract = (Arc<VoiceProcessingService>,), Error = std::convert::Infallible> + Clone {
+fn with_voice_service(
+    service: Arc<VoiceProcessingService>,
+) -> impl Filter<Extract = (Arc<VoiceProcessingService>,), Error = std::convert::Infallible> + Clone
+{
     warp::any().map(move || service.clone())
 }
 
-async fn get_config(config: Arc<RwLock<SystemConfig>>) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+async fn get_config(
+    config: Arc<RwLock<SystemConfig>>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
     let config = config.read().await;
     Ok(warp::reply::json(&*config))
 }
 
 async fn update_config(
     new_config: SystemConfig,
-    config: Arc<RwLock<SystemConfig>>
+    config: Arc<RwLock<SystemConfig>>,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
     let mut config_lock = config.write().await;
     *config_lock = new_config;
@@ -104,9 +108,11 @@ struct VoiceTestRequest {
 
 async fn test_voice(
     request: VoiceTestRequest,
-    voice_service: Arc<VoiceProcessingService>
+    voice_service: Arc<VoiceProcessingService>,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
     // For now, just return success - TODO: implement actual voice testing
     tracing::info!("Voice test requested for text: {}", request.text);
-    Ok(warp::reply::json(&serde_json::json!({"status": "ok", "text": request.text})))
+    Ok(warp::reply::json(
+        &serde_json::json!({"status": "ok", "text": request.text}),
+    ))
 }

@@ -1,8 +1,8 @@
 // Repository interfaces for data persistence
 // TODO: Implement concrete repository implementations
 
-use crate::domain::entities::{VoiceCommand, RecognitionSession};
-use crate::shared::{Result, CommandId, SessionId};
+use crate::domain::entities::{RecognitionSession, VoiceCommand};
+use crate::shared::{CommandId, Result, SessionId};
 use async_trait::async_trait;
 
 #[async_trait]

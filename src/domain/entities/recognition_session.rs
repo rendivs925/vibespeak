@@ -1,4 +1,4 @@
-use crate::shared::{SessionId, AudioSample};
+use crate::shared::{AudioSample, SessionId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -41,7 +41,9 @@ impl RecognitionSession {
 
     pub fn get_duration(&self) -> Option<std::time::Duration> {
         self.end_time.map(|end| {
-            (end - self.start_time).to_std().unwrap_or(std::time::Duration::from_secs(0))
+            (end - self.start_time)
+                .to_std()
+                .unwrap_or(std::time::Duration::from_secs(0))
         })
     }
 }

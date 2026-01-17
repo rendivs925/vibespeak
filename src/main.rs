@@ -1,14 +1,14 @@
-mod domain;
 mod application;
+mod domain;
 mod infrastructure;
 mod presentation;
 mod shared;
 
-use crate::infrastructure::config::SystemConfig;
-use crate::infrastructure::adapters::{VoskAdapter, TtsAdapter, FuzzyCommandInterpreter};
 use crate::application::services::VoiceProcessingService;
+use crate::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter};
+use crate::infrastructure::config::SystemConfig;
 use crate::presentation::web::WebServer;
-use crate::shared::{Result, Error};
+use crate::shared::{Error, Result};
 use std::sync::Arc;
 
 const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
@@ -37,16 +37,18 @@ async fn main() -> Result<()> {
     // Initialize infrastructure adapters
     let speech_recognition = Arc::new(VoskAdapter::new(
         &system_config.settings.vosk_model_path,
-        system_config.settings.sample_rate
+        system_config.settings.sample_rate,
     )?);
 
     let text_to_speech = Arc::new(TtsAdapter::new()?);
 
     // Create command interpreter with system commands
     let command_interpreter = Arc::new(FuzzyCommandInterpreter::new(
-        system_config.commands.iter()
+        system_config
+            .commands
+            .iter()
             .map(|cmd| (cmd.text.clone(), format!("{:?}", cmd.action)))
-            .collect()
+            .collect(),
     ));
 
     // Initialize application services
@@ -69,7 +71,10 @@ async fn main() -> Result<()> {
         }
     });
 
-    tracing::info!("Vibespeak web interface available at http://localhost:{}", WEB_PORT);
+    tracing::info!(
+        "Vibespeak web interface available at http://localhost:{}",
+        WEB_PORT
+    );
     tracing::info!("System ready. Press Ctrl+C to exit.");
 
     // Wait for shutdown signal
@@ -94,7 +99,10 @@ async fn run_legacy_cli(voice_service: &VoiceProcessingService) -> Result<()> {
     tracing::info!("Legacy CLI mode - voice recognition ready");
 
     // Get available commands
-    let available_commands = voice_service.command_interpreter.get_available_commands().await?;
+    let available_commands = voice_service
+        .command_interpreter
+        .get_available_commands()
+        .await?;
     tracing::info!("Loaded {} commands", available_commands.len());
 
     // Get available voices

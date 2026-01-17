@@ -1,4 +1,4 @@
-use crate::shared::{WorkflowId, Result, Error};
+use crate::shared::{Error, Result, WorkflowId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -37,7 +37,9 @@ impl Workflow {
             return Err(Error::Domain("Workflow name cannot be empty".to_string()));
         }
         if self.steps.is_empty() {
-            return Err(Error::Domain("Workflow must have at least one step".to_string()));
+            return Err(Error::Domain(
+                "Workflow must have at least one step".to_string(),
+            ));
         }
         Ok(())
     }
@@ -66,13 +68,13 @@ pub enum WorkflowStep {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BrowserAction {
     Navigate(String),
-    Click(String),      // CSS selector
+    Click(String),        // CSS selector
     Type(String, String), // selector, text
     WaitForElement(String),
-    Screenshot(String), // filename
+    Screenshot(String),    // filename
     ExecuteScript(String), // JavaScript code
-    GetText(String),    // selector -> text
-    Scroll(i32, i32),   // x, y offset
+    GetText(String),       // selector -> text
+    Scroll(i32, i32),      // x, y offset
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,8 +107,8 @@ pub enum ComparisonOperator {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Variable {
     Static(String),
-    Dynamic(String), // expression to evaluate
-    FromContext(String), // extract from voice context
+    Dynamic(String),                 // expression to evaluate
+    FromContext(String),             // extract from voice context
     FromIntegration(String, String), // from external service
 }
 
@@ -120,8 +122,8 @@ pub enum VariableValue {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ErrorStrategy {
-    Stop,           // Stop workflow on error
-    Continue,       // Continue to next step
-    Retry(u32),     // Retry N times
+    Stop,                        // Stop workflow on error
+    Continue,                    // Continue to next step
+    Retry(u32),                  // Retry N times
     Fallback(Box<WorkflowStep>), // Execute fallback step
 }
