@@ -1,15 +1,9 @@
-mod application;
-mod domain;
-mod infrastructure;
-mod presentation;
-mod shared;
-
-use crate::application::services::{VoiceProcessingService, VoiceCommandProcessor};
-use crate::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
-use crate::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter};
-use crate::infrastructure::config::SystemConfig;
-use crate::presentation::web::WebServer;
-use crate::shared::{Error, Result};
+use vibespeak::application::services::{VoiceProcessingService, VoiceCommandProcessor};
+use vibespeak::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
+use vibespeak::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter};
+use vibespeak::infrastructure::config::SystemConfig;
+use vibespeak::presentation::web::WebServer;
+use vibespeak::shared::{Error, Result};
 use std::sync::Arc;
 use std::collections::HashMap;
 

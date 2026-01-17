@@ -38,6 +38,13 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+[lib]
+name = "vibespeak"
+path = "src/lib.rs"
+
 [[bin]]
 name = "vibespeak"
 path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = "3.10"
