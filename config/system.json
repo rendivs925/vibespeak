@@ -1,0 +1,14 @@
+{
+  "commands": [],
+  "workflows": [],
+  "scripts": [],
+  "settings": {
+    "vosk_model_path": "model/vosk-model-small-en-us-0.15",
+    "sample_rate": 16000.0,
+    "audio_device": null,
+    "web_server_port": 8080,
+    "enable_tts": true,
+    "enable_webrtc": false,
+    "security_level": "Trusted"
+  }
+}

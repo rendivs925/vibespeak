@@ -1,232 +1,113 @@
-mod config;
-use config::CommandConfig;
-use std::collections::{HashMap, HashSet};
-use std::io::{Read, Write};
-use std::process::{Command, Stdio};
-use std::time::Duration;
-use vosk::{Model, Recognizer};
+mod domain;
+mod application;
+mod infrastructure;
+mod presentation;
+mod shared;
+
+use crate::infrastructure::config::SystemConfig;
+use crate::infrastructure::adapters::{VoskAdapter, TtsAdapter, FuzzyCommandInterpreter};
+use crate::application::services::VoiceProcessingService;
+use crate::presentation::web::WebServer;
+use crate::shared::{Result, Error};
+use std::sync::Arc;
 
 const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
-const COMMANDS_PATH: &str = "config/commands.toml";
-const SILENCE_THRESHOLD: i16 = 60;
+const CONFIG_PATH: &str = "config/system.json";
+const WEB_PORT: u16 = 8080;
 
-fn start_rec() -> std::io::Result<std::process::Child> {
-    Command::new("rec")
-        .args(&[
-            "-q",
-            "-r",
-            "16000",
-            "-c",
-            "1",
-            "-b",
-            "16",
-            "-e",
-            "signed-integer",
-            "-t",
-            "raw",
-            "-",
-        ])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-}
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
-fn best_fuzzy_match<'a>(phrase: &str, commands: &'a HashSet<String>) -> Option<&'a str> {
-    use strsim::jaro_winkler;
-    let mut best: Option<(&str, f64)> = None;
-    for cmd in commands.iter() {
-        let sim = jaro_winkler(phrase, cmd);
-        if sim > 0.91 {
-            if let Some((_, best_sim)) = best {
-                if sim > best_sim {
-                    best = Some((cmd.as_str(), sim));
-                }
-            } else {
-                best = Some((cmd.as_str(), sim));
-            }
-        }
-    }
-    best.map(|(cmd, _)| cmd)
-}
+    tracing::info!("Starting Vibespeak Voice Automation System");
 
-fn typing_mode(model: &Model) -> anyhow::Result<()> {
-    use crossterm::{
-        event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
-        terminal,
+    // Load or create system configuration
+    let system_config = if std::path::Path::new(CONFIG_PATH).exists() {
+        SystemConfig::load_from_file(CONFIG_PATH)?
+    } else {
+        tracing::info!("Creating default system configuration");
+        let config = SystemConfig::default();
+        config.save_to_file(CONFIG_PATH)?;
+        config
     };
 
-    let _ = Command::new("notify-send")
-        .arg("Voice Typing Mode")
-        .arg("Voice typing is now ACTIVE. Press Esc or Win+T to exit.")
-        .arg("-i")
-        .arg("dialog-information")
-        .arg("-t")
-        .arg("3000")
-        .spawn();
+    // Initialize infrastructure adapters
+    let speech_recognition = Arc::new(VoskAdapter::new(
+        &system_config.settings.vosk_model_path,
+        system_config.settings.sample_rate
+    )?);
 
-    println!("[INFO] Typing mode (dictation) ON. Press Esc to exit, or Win+T to toggle.");
-    let mut recognizer = Recognizer::new(model, 16000.0).unwrap();
-    let mut mic = start_rec().unwrap();
-    let mut audio = mic.stdout.take().unwrap();
-    let mut buffer = [0u8; 256];
+    let text_to_speech = Arc::new(TtsAdapter::new()?);
 
-    terminal::enable_raw_mode()?;
-    let mut toggle_requested = false;
-    let mut stop_reason = "[INFO] Exited typing mode.";
+    // Create command interpreter with system commands
+    let command_interpreter = Arc::new(FuzzyCommandInterpreter::new(
+        system_config.commands.iter()
+            .map(|cmd| (cmd.text.clone(), format!("{:?}", cmd.action)))
+            .collect()
+    ));
 
-    'outer: loop {
-        if event::poll(Duration::from_millis(2))? {
-            if let Event::Key(KeyEvent {
-                code, modifiers, ..
-            }) = event::read()?
-            {
-                if code == KeyCode::Esc {
-                    stop_reason = "[INFO] Exiting typing mode (Esc key)";
-                    break 'outer;
-                }
-                if code == KeyCode::Char('t') && modifiers.contains(KeyModifiers::SUPER) {
-                    stop_reason = "[INFO] Toggling typing mode (Win+T)";
-                    toggle_requested = true;
-                    break 'outer;
-                }
-            }
+    // Initialize application services
+    let voice_service = VoiceProcessingService::new(
+        speech_recognition.clone(),
+        text_to_speech.clone(),
+        command_interpreter,
+    );
+
+    // Initialize services
+    voice_service.initialize().await?;
+    tracing::info!("Voice services initialized successfully");
+
+    // Start web server for configuration and control
+    let voice_service = Arc::new(voice_service);
+    let web_server = WebServer::new(voice_service.clone(), system_config);
+    let server_handle = tokio::spawn(async move {
+        if let Err(e) = web_server.run(WEB_PORT).await {
+            tracing::error!("Web server error: {}", e);
         }
+    });
 
-        if let Ok(n) = audio.read(&mut buffer) {
-            if n == 0 {
-                stop_reason = "[INFO] End of audio stream, exiting typing mode.";
-                break;
-            }
-            let samples: Vec<i16> = buffer[..n]
-                .chunks_exact(2)
-                .map(|b| i16::from_le_bytes([b[0], b[1]]))
-                .collect();
-            if samples.iter().all(|&x| x.abs() < SILENCE_THRESHOLD) {
-                continue;
-            }
+    tracing::info!("Vibespeak web interface available at http://localhost:{}", WEB_PORT);
+    tracing::info!("System ready. Press Ctrl+C to exit.");
 
-            if recognizer.accept_waveform(&samples).unwrap() == vosk::DecodingState::Finalized {
-                match recognizer.result() {
-                    vosk::CompleteResult::Single(sr) => {
-                        let text = sr.text.trim();
-                        if !text.is_empty() && text != "type" {
-                            let escaped = text.replace("'", r"'\''");
-                            let send_cmd = format!("xdotool type '{}'", escaped);
-                            let _ = Command::new("sh").arg("-c").arg(&send_cmd).spawn();
-                        } else if text == "type" {
-                            stop_reason =
-                                "[INFO] Voice command 'type' detected, toggling typing mode.";
-                            toggle_requested = true;
-                            break 'outer;
-                        }
-                        print!("\r{: <80}\r", "");
-                        std::io::stdout().flush().unwrap();
-                    }
-                    _ => {}
-                }
-                recognizer.reset();
-            }
+    // Wait for shutdown signal
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => {
+            tracing::info!("Received shutdown signal, stopping services...");
+            server_handle.abort();
+            voice_service.shutdown().await?;
+            tracing::info!("Shutdown complete");
+        }
+        Err(err) => {
+            tracing::error!("Failed to listen for shutdown signal: {}", err);
         }
     }
-    terminal::disable_raw_mode()?;
 
-    let _ = Command::new("notify-send")
-        .arg("Voice Typing Mode")
-        .arg("Voice typing is now OFF.")
-        .arg("-i")
-        .arg("dialog-information")
-        .arg("-t")
-        .arg("2000")
-        .spawn();
-
-    println!("{stop_reason}");
-    if toggle_requested {
-        return Ok(());
-    }
     Ok(())
 }
 
-fn main() -> anyhow::Result<()> {
-    use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+async fn run_legacy_cli(voice_service: &VoiceProcessingService) -> Result<()> {
+    // TODO: Implement legacy CLI using new architecture
+    // For now, just show that the system is working
+    tracing::info!("Legacy CLI mode - voice recognition ready");
 
-    let config = CommandConfig::load_from(COMMANDS_PATH)?;
-    let command_map: HashMap<_, _> = config
-        .commands
-        .iter()
-        .map(|(k, v)| (k.trim().to_lowercase(), v.clone()))
-        .collect();
+    // Get available commands
+    let available_commands = voice_service.command_interpreter.get_available_commands().await?;
+    tracing::info!("Loaded {} commands", available_commands.len());
 
-    let commands: HashSet<String> = command_map.keys().cloned().collect();
-    let grammar: Vec<&str> = commands.iter().map(|s| s.as_str()).collect();
-    let model = Model::new(MODEL_PATH).unwrap();
+    // Get available voices
+    let voices = voice_service.text_to_speech.get_available_voices().await?;
+    tracing::info!("Available TTS voices: {:?}", voices);
 
-    println!(
-        "[INFO] Ready. Say a command or 'type' for typing mode. Win+T also toggles typing mode."
-    );
+    tracing::info!("System ready. Press Ctrl+C to exit.");
 
-    loop {
-        let mut recognizer = Recognizer::new_with_grammar(&model, 16000.0, &grammar).unwrap();
-        let mut mic = start_rec()?;
-        let mut audio = mic.stdout.take().unwrap();
-        let mut buffer = [0u8; 256];
-
-        'main_listen: loop {
-            if event::poll(Duration::from_millis(2))? {
-                if let Event::Key(KeyEvent {
-                    code, modifiers, ..
-                }) = event::read()?
-                {
-                    if code == KeyCode::Char('t') && modifiers.contains(KeyModifiers::SUPER) {
-                        println!("[INFO] Toggling typing mode (Win+T)");
-                        typing_mode(&model)?;
-                        println!("[INFO] Returning to listening mode.");
-                        break 'main_listen;
-                    }
-                }
-            }
-
-            if let Ok(n) = audio.read(&mut buffer) {
-                if n == 0 {
-                    println!("[INFO] End of audio stream, restarting recognizer.");
-                    break 'main_listen;
-                }
-                let samples: Vec<i16> = buffer[..n]
-                    .chunks_exact(2)
-                    .map(|b| i16::from_le_bytes([b[0], b[1]]))
-                    .collect();
-
-                if samples.iter().all(|&x| x.abs() < SILENCE_THRESHOLD) {
-                    continue;
-                }
-
-                if recognizer.accept_waveform(&samples).unwrap() == vosk::DecodingState::Finalized {
-                    match recognizer.result() {
-                        vosk::CompleteResult::Single(sr) => {
-                            let text = sr.text.trim().to_lowercase();
-                            if !text.is_empty() {
-                                println!("[FINAL] Detected: \"{}\"", text);
-                                if let Some(fuzzy_key) = best_fuzzy_match(&text, &commands) {
-                                    if fuzzy_key == "type" {
-                                        println!("[INFO] Voice command 'type' detected, entering typing mode.");
-                                        typing_mode(&model)?;
-                                        println!("[INFO] Returning to listening mode.");
-                                        break 'main_listen;
-                                    }
-                                    if let Some(cmd) = command_map.get(fuzzy_key) {
-                                        println!(
-                                            "[EXEC] Fuzzy matched \"{}\" → \"{}\". Running: `{}`",
-                                            text, fuzzy_key, cmd
-                                        );
-                                        let _ = Command::new("sh").arg("-c").arg(cmd).spawn();
-                                    }
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                    recognizer.reset();
-                }
-            }
-        }
+    // Keep running until interrupted
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => tracing::info!("Received Ctrl+C, shutting down..."),
+        Err(err) => tracing::error!("Failed to listen for shutdown signal: {}", err),
     }
+
+    Ok(())
 }
