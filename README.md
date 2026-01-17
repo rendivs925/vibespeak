@@ -4,14 +4,14 @@ A comprehensive voice-controlled automation platform that transforms your comput
 
 ## Features
 
-- 🎤 **Advanced Voice Recognition** - Powered by Vosk for offline, privacy-focused speech recognition
-- 🔊 **Text-to-Speech** - Natural voice synthesis with multiple voice options
-- 🌐 **Browser Automation** - Control web browsers programmatically
-- 🔧 **Extensible Plugin System** - Add custom commands, workflows, and integrations
-- 📱 **Web-Based Configuration** - Intuitive browser interface for all settings
-- 🚀 **Remote Access** - Tailscale integration for global access
-- ⚡ **Real-time Processing** - Low-latency voice command execution
-- 🔒 **Privacy-First** - All processing local, no cloud dependencies
+- **Advanced Voice Recognition** - Powered by Vosk for offline, privacy-focused speech recognition
+- **Text-to-Speech** - Natural voice synthesis with multiple voice options
+- **Browser Automation** - Control web browsers programmatically
+- **Extensible Plugin System** - Add custom commands, workflows, and integrations
+- **Web-Based Configuration** - Intuitive browser interface for all settings
+- **Remote Access** - Tailscale integration for global access
+- **Real-time Processing** - Low-latency voice command execution
+- **Privacy-First** - All processing local, no cloud dependencies
 
 ## Table of Contents
 
@@ -689,4 +689,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ for privacy-focused voice automation**
+**Built with love for privacy-focused voice automation**
