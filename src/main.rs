@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
 const CONFIG_PATH: &str = "config/system.json";
-const WEB_PORT: u16 = 8080;
+// Web port is now read from configuration
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -64,16 +64,17 @@ async fn main() -> Result<()> {
 
     // Start web server for configuration and control
     let voice_service = Arc::new(voice_service);
+    let web_port = system_config.settings.web_server_port;
     let web_server = WebServer::new(voice_service.clone(), system_config);
     let server_handle = tokio::spawn(async move {
-        if let Err(e) = web_server.run(WEB_PORT).await {
+        if let Err(e) = web_server.run(web_port).await {
             tracing::error!("Web server error: {}", e);
         }
     });
 
     tracing::info!(
         "Vibespeak web interface available at http://localhost:{}",
-        WEB_PORT
+        web_port
     );
     tracing::info!("System ready. Press Ctrl+C to exit.");
 
