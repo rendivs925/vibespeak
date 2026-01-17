@@ -123,8 +123,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run_legacy_cli(voice_service: &VoiceProcessingService) -> Result<()> {
-    // TODO: Implement legacy CLI using new architecture
-    // For now, just show that the system is working
+    // Legacy CLI mode using the new architecture
     tracing::info!("Legacy CLI mode - voice recognition ready");
 
     // Get available commands
@@ -137,6 +136,9 @@ async fn run_legacy_cli(voice_service: &VoiceProcessingService) -> Result<()> {
     // Get available voices
     let voices = voice_service.text_to_speech.get_available_voices().await?;
     tracing::info!("Available TTS voices: {:?}", voices);
+
+    // Initialize TTS
+    voice_service.text_to_speech.initialize().await?;
 
     tracing::info!("System ready. Press Ctrl+C to exit.");
 

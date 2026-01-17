@@ -1,5 +1,5 @@
 // Presentation layer modules
-// TODO: Implement CLI, web, and API interfaces
+// Provides CLI, web, and API interfaces for the voice automation system
 
 pub mod api;
 pub mod cli;

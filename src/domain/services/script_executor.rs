@@ -70,16 +70,22 @@ impl ScriptExecutor {
         let start_time = std::time::Instant::now();
 
         // Validate security level
-        self.validate_security(&script)?;
+        self.validate_security(script)?;
 
-        // Execute based on script type
-        let result = match script.script_type {
-            ScriptType::Bash => self.execute_bash(script).await,
-            ScriptType::Python => self.execute_python(script).await,
-            ScriptType::JavaScript => self.execute_javascript(script).await,
-            ScriptType::Ruby => self.execute_ruby(script).await,
-            ScriptType::PowerShell => self.execute_powershell(script).await,
-            ScriptType::Custom(ref interpreter) => self.execute_custom(script, interpreter).await,
+        // Execute based on security level and script type
+        let result = if script.security_level == SecurityLevel::Isolated {
+            // Use containerized execution for isolated scripts
+            self.execute_in_container(script).await
+        } else {
+            // Execute directly based on script type
+            match &script.script_type {
+                ScriptType::Bash => self.execute_bash(script).await,
+                ScriptType::Python => self.execute_python(script).await,
+                ScriptType::JavaScript => self.execute_javascript(script).await,
+                ScriptType::Ruby => self.execute_ruby(script).await,
+                ScriptType::PowerShell => self.execute_powershell(script).await,
+                ScriptType::Custom(interpreter) => self.execute_custom(script, interpreter).await,
+            }
         };
 
         let execution_time = start_time.elapsed();
@@ -106,21 +112,115 @@ impl ScriptExecutor {
         match script.security_level {
             SecurityLevel::Sandboxed => {
                 // Restrict dangerous operations
-                if script.content.contains("rm -rf") || script.content.contains("sudo") {
-                    return Err(Error::Infrastructure("Dangerous operations not allowed in sandboxed mode".to_string()));
+                let dangerous_patterns = [
+                    "rm -rf", "sudo", "chmod 777", "mkfs", "dd if=",
+                    "> /dev/", "curl | sh", "wget | sh", "eval",
+                    ":(){ :|:& };:", // Fork bomb
+                ];
+
+                for pattern in dangerous_patterns {
+                    if script.content.contains(pattern) {
+                        return Err(Error::Infrastructure(
+                            format!("Dangerous operation '{}' not allowed in sandboxed mode", pattern)
+                        ));
+                    }
                 }
+                tracing::info!("Sandboxed execution validated");
             }
             SecurityLevel::Trusted => {
                 // Allow most operations but log them
-                tracing::warn!("Executing trusted script: {}", script.content.chars().take(50).collect::<String>());
+                tracing::warn!(
+                    "Executing trusted script: {}...",
+                    script.content.chars().take(50).collect::<String>()
+                );
             }
             SecurityLevel::Isolated => {
-                // Basic container isolation using Docker
-                // TODO: Implement full containerization with resource limits
-                tracing::info!("Isolated execution using container sandboxing");
+                // Container isolation - requires Docker to be available
+                tracing::info!("Isolated execution mode - using container sandboxing");
             }
         }
         Ok(())
+    }
+
+    /// Check if Docker is available for containerized execution
+    fn is_docker_available() -> bool {
+        std::process::Command::new("docker")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    /// Execute script in a Docker container for isolation
+    async fn execute_in_container(&self, script: &ScriptExecution) -> Result<(i32, String, String)> {
+        if !Self::is_docker_available() {
+            return Err(Error::Infrastructure(
+                "Docker not available for isolated execution. Install Docker or use a different security level.".to_string()
+            ));
+        }
+
+        // Determine the Docker image based on script type
+        let image = match &script.script_type {
+            ScriptType::Bash => "alpine:latest",
+            ScriptType::Python => "python:3-slim",
+            ScriptType::JavaScript => "node:slim",
+            ScriptType::Ruby => "ruby:slim",
+            ScriptType::PowerShell => "mcr.microsoft.com/powershell:latest",
+            ScriptType::Custom(_) => "alpine:latest",
+        };
+
+        // Build the Docker command
+        let mut docker_cmd = Command::new("docker");
+        docker_cmd
+            .arg("run")
+            .arg("--rm")                           // Remove container after execution
+            .arg("--network=none")                 // No network access
+            .arg("--memory=256m")                  // Memory limit
+            .arg("--cpus=0.5")                     // CPU limit
+            .arg("--pids-limit=100")               // Process limit
+            .arg("--read-only")                    // Read-only filesystem
+            .arg("--tmpfs=/tmp:size=64m,mode=1777") // Writable /tmp
+            .arg("--security-opt=no-new-privileges") // No privilege escalation
+            .arg(image);
+
+        // Add the script command
+        match &script.script_type {
+            ScriptType::Bash => {
+                docker_cmd.args(["sh", "-c", &script.content]);
+            }
+            ScriptType::Python => {
+                docker_cmd.args(["python", "-c", &script.content]);
+            }
+            ScriptType::JavaScript => {
+                docker_cmd.args(["node", "-e", &script.content]);
+            }
+            ScriptType::Ruby => {
+                docker_cmd.args(["ruby", "-e", &script.content]);
+            }
+            ScriptType::PowerShell => {
+                docker_cmd.args(["pwsh", "-Command", &script.content]);
+            }
+            ScriptType::Custom(interpreter) => {
+                docker_cmd.args([interpreter, "-c", &script.content]);
+            }
+        }
+
+        tracing::info!("Executing in container with image: {}", image);
+
+        // Execute with timeout
+        match timeout(script.timeout, docker_cmd.output()).await {
+            Ok(Ok(output)) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                Ok((output.status.code().unwrap_or(-1), stdout, stderr))
+            }
+            Ok(Err(e)) => Err(Error::Infrastructure(format!("Docker execution failed: {}", e))),
+            Err(_) => {
+                // Kill any running containers on timeout (best effort)
+                let _ = std::process::Command::new("docker").args(["container", "prune", "-f"]).output();
+                Err(Error::Infrastructure("Containerized script execution timed out".to_string()))
+            }
+        }
     }
 
     async fn execute_bash(&self, script: &ScriptExecution) -> Result<(i32, String, String)> {

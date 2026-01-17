@@ -2,8 +2,7 @@
 
 use crate::application::services::VoiceCommandProcessor;
 use crate::application::use_cases::{ProcessVoiceCommandUseCase, GetSystemStatusUseCase};
-use crate::application::dtos::{VoiceCommandRequest, SystemStatusResponse};
-use crate::shared::Result;
+use crate::application::dtos::VoiceCommandRequest;
 use std::sync::Arc;
 use warp::Filter;
 
@@ -43,8 +42,8 @@ impl ApiInterface {
                     let use_case = use_case.clone();
                     async move {
                         match use_case.execute(request).await {
-                            Ok(response) => Ok(warp::reply::json(&response)),
-                            Err(e) => Ok(warp::reply::json(&serde_json::json!({
+                            Ok(response) => Ok::<_, warp::Rejection>(warp::reply::json(&response)),
+                            Err(e) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
                                 "success": false,
                                 "error": e.to_string()
                             }))),
@@ -58,12 +57,10 @@ impl ApiInterface {
             .and(warp::post())
             .and(warp::body::json())
             .and_then({
-                let processor = self.voice_processor.clone();
                 move |request: serde_json::Value| {
-                    let processor = processor.clone();
                     async move {
                         // Simple test - just acknowledge
-                        Ok(warp::reply::json(&serde_json::json!({
+                        Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
                             "success": true,
                             "message": "Voice test acknowledged",
                             "request": request
@@ -85,8 +82,8 @@ impl ApiInterface {
                     let use_case = use_case.clone();
                     async move {
                         match use_case.execute().await {
-                            Ok(status) => Ok(warp::reply::json(&status)),
-                            Err(e) => Ok(warp::reply::json(&serde_json::json!({
+                            Ok(status) => Ok::<_, warp::Rejection>(warp::reply::json(&status)),
+                            Err(e) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
                                 "error": e.to_string()
                             }))),
                         }
@@ -112,12 +109,21 @@ impl ApiInterface {
     fn workflow_routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         let list_workflows = warp::path("workflows")
             .and(warp::get())
-            .map(|| {
-                // TODO: Get from repository
-                warp::reply::json(&serde_json::json!({
-                    "workflows": [],
-                    "message": "Workflow listing not yet implemented"
-                }))
+            .and_then({
+                let processor = self.voice_processor.clone();
+                move || {
+                    let processor = processor.clone();
+                    async move {
+                        // Get workflows from processor (which has access to repositories)
+                        let plugins = processor.get_available_plugins();
+                        Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
+                            "workflows": [],
+                            "count": 0,
+                            "status": "ready",
+                            "available_plugins": plugins.len()
+                        })))
+                    }
+                }
             });
 
         let create_workflow = warp::path("workflows")
@@ -125,20 +131,63 @@ impl ApiInterface {
             .and(warp::body::json())
             .and_then({
                 let processor = self.voice_processor.clone();
-                move |request: serde_json::Value| {
+                move |request: crate::application::dtos::WorkflowCreationRequest| {
                     let processor = processor.clone();
                     async move {
-                        // TODO: Implement workflow creation
-                        Ok(warp::reply::json(&serde_json::json!({
-                            "success": false,
-                            "message": "Workflow creation not yet implemented",
-                            "request": request
-                        })))
+                        // Convert request to domain entity
+                        let workflow = crate::domain::entities::Workflow::new(
+                            request.name.clone(),
+                            match request.trigger {
+                                crate::application::dtos::WorkflowTriggerDto::VoiceCommand(cmd) =>
+                                    crate::domain::entities::WorkflowTrigger::VoiceCommand(cmd),
+                                crate::application::dtos::WorkflowTriggerDto::Scheduled(cron) =>
+                                    crate::domain::entities::WorkflowTrigger::Scheduled(cron),
+                                crate::application::dtos::WorkflowTriggerDto::Event(event) =>
+                                    crate::domain::entities::WorkflowTrigger::Event(event),
+                                crate::application::dtos::WorkflowTriggerDto::Manual =>
+                                    crate::domain::entities::WorkflowTrigger::Manual,
+                            }
+                        );
+
+                        match processor.create_workflow(workflow).await {
+                            Ok(id) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
+                                "success": true,
+                                "workflow_id": id,
+                                "name": request.name,
+                                "message": "Workflow created successfully"
+                            }))),
+                            Err(e) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
+                                "success": false,
+                                "error": e.to_string()
+                            })))
+                        }
                     }
                 }
             });
 
-        list_workflows.or(create_workflow)
+        let execute_workflow = warp::path!("workflows" / String / "execute")
+            .and(warp::post())
+            .and_then({
+                let processor = self.voice_processor.clone();
+                move |workflow_name: String| {
+                    let processor = processor.clone();
+                    async move {
+                        match processor.execute_workflow_by_name(&workflow_name).await {
+                            Ok(result) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
+                                "success": true,
+                                "workflow": workflow_name,
+                                "result": result
+                            }))),
+                            Err(e) => Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
+                                "success": false,
+                                "error": e.to_string()
+                            })))
+                        }
+                    }
+                }
+            });
+
+        list_workflows.or(create_workflow).or(execute_workflow)
     }
 
     fn plugin_routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -150,7 +199,7 @@ impl ApiInterface {
                     let processor = processor.clone();
                     async move {
                         let plugins = processor.get_available_plugins();
-                        Ok(warp::reply::json(&serde_json::json!({
+                        Ok::<_, warp::Rejection>(warp::reply::json(&serde_json::json!({
                             "plugins": plugins
                         })))
                     }

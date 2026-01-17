@@ -107,23 +107,42 @@ async fn update_config(
     config: Arc<RwLock<SystemConfig>>,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
     let mut config_lock = config.write().await;
-    *config_lock = new_config;
-
-    // TODO: Save to file
-    // config_lock.save_to_file(CONFIG_PATH)?;
+    *config_lock = new_config.clone();
 
     // Save configuration to file
     let config_path = std::path::Path::new("config/system.json");
+
+    // Create parent directory
     if let Some(parent) = config_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| Error::Infrastructure(format!("Failed to create config directory: {}", e)))?;
+        if let Err(e) = std::fs::create_dir_all(parent) {
+            tracing::error!("Failed to create config directory: {}", e);
+            return Ok(warp::reply::json(&serde_json::json!({
+                "status": "error",
+                "message": format!("Failed to create config directory: {}", e)
+            })));
+        }
     }
 
-    let config_json = serde_json::to_string_pretty(&new_config)
-        .map_err(|e| Error::Infrastructure(format!("Failed to serialize config: {}", e)))?;
+    // Serialize config
+    let config_json = match serde_json::to_string_pretty(&new_config) {
+        Ok(json) => json,
+        Err(e) => {
+            tracing::error!("Failed to serialize config: {}", e);
+            return Ok(warp::reply::json(&serde_json::json!({
+                "status": "error",
+                "message": format!("Failed to serialize config: {}", e)
+            })));
+        }
+    };
 
-    std::fs::write(config_path, config_json)
-        .map_err(|e| Error::Infrastructure(format!("Failed to write config file: {}", e)))?;
+    // Write to file
+    if let Err(e) = std::fs::write(config_path, config_json) {
+        tracing::error!("Failed to write config file: {}", e);
+        return Ok(warp::reply::json(&serde_json::json!({
+            "status": "error",
+            "message": format!("Failed to write config file: {}", e)
+        })));
+    }
 
     tracing::info!("Configuration saved to {}", config_path.display());
     Ok(warp::reply::json(&serde_json::json!({"status": "ok", "message": "Configuration saved successfully"})))
@@ -140,14 +159,38 @@ async fn test_voice(
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
     tracing::info!("Voice test requested for text: {}", request.text);
 
-    // For now, simulate voice processing without actual audio
-    // TODO: Implement real-time voice capture and processing
+    // Get available commands and try to match
+    let available_commands = match voice_service.command_interpreter.get_available_commands().await {
+        Ok(cmds) => cmds,
+        Err(_) => vec![],
+    };
+
+    // Try to find matching commands using fuzzy matching
+    let text_lower = request.text.to_lowercase();
+    let matched_commands: Vec<String> = available_commands
+        .iter()
+        .filter(|cmd| {
+            let cmd_lower = cmd.to_lowercase();
+            cmd_lower.contains(&text_lower) || text_lower.contains(&cmd_lower) ||
+            strsim::jaro_winkler(&text_lower, &cmd_lower) > 0.7
+        })
+        .cloned()
+        .collect();
+
+    // Synthesize TTS response if text was provided
+    let tts_status = match voice_service.text_to_speech.synthesize(&request.text, None).await {
+        Ok(samples) => format!("TTS generated {} samples", samples.len()),
+        Err(e) => format!("TTS error: {}", e),
+    };
+
     let result = serde_json::json!({
         "status": "ok",
         "text": request.text,
         "processed": true,
-        "message": "Voice test completed (simulated)",
-        "commands_matched": ["test_command"]
+        "message": "Voice test completed",
+        "commands_matched": matched_commands,
+        "available_commands": available_commands.len(),
+        "tts_status": tts_status
     });
 
     Ok(warp::reply::json(&result))

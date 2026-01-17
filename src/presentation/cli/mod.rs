@@ -114,10 +114,29 @@ impl CliInterface {
 
     fn list_commands(&self) {
         println!("Available voice commands:");
-        // TODO: Get from command repository
-        println!("  hello - Greeting response");
-        println!("  status - System status");
-        println!("  (More commands available via web interface)");
+
+        // Get commands from the plugin system
+        let plugins = self.voice_processor.get_available_plugins();
+
+        // List built-in commands
+        println!("  Built-in commands:");
+        println!("    hello      - Greeting response");
+        println!("    status     - System status");
+        println!("    help       - Show available commands");
+        println!("    time       - Current time");
+        println!("    date       - Current date");
+
+        // List plugin-provided commands
+        for plugin in &plugins {
+            if !plugin.capabilities.is_empty() {
+                println!("\n  {} plugin commands:", plugin.name);
+                for cap in &plugin.capabilities {
+                    println!("    {:?}", cap);
+                }
+            }
+        }
+
+        println!("\n  (Configure more commands via web interface at http://localhost:8080)");
         println!();
     }
 
@@ -127,7 +146,8 @@ impl CliInterface {
 
         for plugin in plugins {
             println!("  {} v{} - {}", plugin.name, plugin.version, plugin.description);
-            println!("    Capabilities: {}", plugin.capabilities.join(", "));
+            let caps: Vec<String> = plugin.capabilities.iter().map(|c| format!("{:?}", c)).collect();
+            println!("    Capabilities: {}", caps.join(", "));
         }
         println!();
     }
