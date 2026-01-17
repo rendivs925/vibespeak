@@ -30,7 +30,7 @@ A comprehensive voice-controlled automation platform that transforms your comput
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/vibespeak.git
+git clone https://github.com/rendivs925/vibespeak.git
 cd vibespeak
 
 # Run setup (installs dependencies and creates config)
@@ -45,12 +45,14 @@ Open http://localhost:8080 in your browser to configure and use Vibespeak.
 ## System Requirements
 
 ### Minimum Requirements
+
 - **OS**: Linux (Arch, Ubuntu, Fedora), macOS 10.15+, Windows 10+
 - **RAM**: 2GB
 - **Disk**: 500MB free space
 - **Microphone**: Any standard audio input device
 
 ### Recommended Requirements
+
 - **OS**: Linux (Arch/Ubuntu)
 - **RAM**: 4GB+
 - **Disk**: 2GB free space (including voice models)
@@ -62,25 +64,30 @@ Open http://localhost:8080 in your browser to configure and use Vibespeak.
 #### Required System Packages
 
 **Arch Linux:**
+
 ```bash
 sudo pacman -S vosk-api speech-dispatcher alsa-utils
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt install libvosk-dev speech-dispatcher alsa-utils
 ```
 
 **macOS (using Homebrew):**
+
 ```bash
 brew install vosk speech-dispatcher
 ```
 
 **Windows:**
+
 - Download Vosk from: https://alphacephei.com/vosk/models
 - Install from releases page
 
 #### Rust Toolchain
+
 ```bash
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -92,6 +99,7 @@ cargo --version  # Should be 1.70+
 ```
 
 #### Optional: Web Development Tools
+
 ```bash
 # Node.js for web interface development
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -117,6 +125,7 @@ make setup
 ```
 
 This will:
+
 - Check system dependencies
 - Install web development tools (if available)
 - Generate default configuration
@@ -173,11 +182,11 @@ unzip vosk-model-en-us-0.22.zip
 
 ### Available Models
 
-| Model | Size | Accuracy | Use Case |
-|-------|------|----------|----------|
-| `vosk-model-small-en-us-0.15` | 40MB | Good | Development, resource-constrained |
-| `vosk-model-en-us-0.22` | 1.8GB | Excellent | Production, high accuracy |
-| `vosk-model-en-us-0.22-lgraph` | 120MB | Very Good | Production, balanced |
+| Model                          | Size  | Accuracy  | Use Case                          |
+| ------------------------------ | ----- | --------- | --------------------------------- |
+| `vosk-model-small-en-us-0.15`  | 40MB  | Good      | Development, resource-constrained |
+| `vosk-model-en-us-0.22`        | 1.8GB | Excellent | Production, high accuracy         |
+| `vosk-model-en-us-0.22-lgraph` | 120MB | Very Good | Production, balanced              |
 
 ## Configuration
 
@@ -211,6 +220,7 @@ The main configuration file is `config/system.json`:
 ### Advanced Configuration
 
 #### Audio Settings
+
 ```json
 {
   "settings": {
@@ -223,6 +233,7 @@ The main configuration file is `config/system.json`:
 ```
 
 #### Security Settings
+
 ```json
 {
   "settings": {
@@ -234,6 +245,7 @@ The main configuration file is `config/system.json`:
 ```
 
 #### Network Settings
+
 ```json
 {
   "settings": {
@@ -309,6 +321,7 @@ Create multi-step automation sequences:
 Execute custom scripts via voice:
 
 **Bash Script Example:**
+
 ```bash
 # Save as deploy.sh
 #!/bin/bash
@@ -373,18 +386,23 @@ vibespeak/
 ### Adding New Features
 
 #### 1. Domain Logic
+
 Add business rules to `src/domain/`
 
 #### 2. Application Services
+
 Implement use cases in `src/application/`
 
 #### 3. Infrastructure
+
 Add external integrations in `src/infrastructure/`
 
 #### 4. Web Interface
+
 Update `web/index.html` and API endpoints
 
 #### 5. Plugins
+
 Implement in `src/domain/services/plugin.rs`
 
 ### Testing
@@ -433,6 +451,7 @@ make docker
 ### Alternative Remote Access
 
 #### SSH Tunneling
+
 ```bash
 # Local access
 ssh -L 8080:localhost:8080 user@remote-server
@@ -441,6 +460,7 @@ ssh -L 8080:localhost:8080 user@remote-server
 ```
 
 #### VPN Setup
+
 ```bash
 # WireGuard or OpenVPN configuration
 # Bind Vibespeak to VPN interface
@@ -451,10 +471,13 @@ ssh -L 8080:localhost:8080 user@remote-server
 ### Common Issues
 
 #### 1. "Vosk model not found"
+
 ```
 Error: Failed to load Vosk model
 ```
+
 **Solution:**
+
 ```bash
 # Verify model exists
 ls -la model/
@@ -466,10 +489,13 @@ unzip vosk-model-small-en-us-0.15.zip
 ```
 
 #### 2. "Audio device not found"
+
 ```
 Error: No audio input device available
 ```
+
 **Solution:**
+
 ```bash
 # List available devices
 arecord -l
@@ -483,10 +509,13 @@ arecord -l
 ```
 
 #### 3. "Port already in use"
+
 ```
 Error: Address already in use (os error 98)
 ```
+
 **Solution:**
+
 ```bash
 # Kill process using port 8080
 sudo lsof -ti:8080 | xargs kill -9
@@ -500,10 +529,13 @@ sudo lsof -ti:8080 | xargs kill -9
 ```
 
 #### 4. "Permission denied"
+
 ```
 Error: Permission denied (os error 13)
 ```
+
 **Solution:**
+
 ```bash
 # Run with appropriate permissions
 sudo ./target/release/vibespeak
@@ -513,7 +545,9 @@ sudo usermod -a -G audio $USER
 ```
 
 #### 5. Web interface not loading
+
 **Check:**
+
 ```bash
 # Verify server is running
 curl http://localhost:8080/api/config
@@ -526,11 +560,13 @@ sudo ufw allow 8080
 ### Performance Issues
 
 #### High CPU Usage
+
 - Reduce model size (use smaller Vosk model)
 - Disable TTS if not needed
 - Lower audio sample rate
 
 #### High Memory Usage
+
 - Use smaller voice models
 - Disable unused plugins
 - Monitor with `htop` or `top`
@@ -538,12 +574,14 @@ sudo ufw allow 8080
 ### Audio Quality Issues
 
 #### Poor Recognition Accuracy
+
 - Use larger Vosk model
 - Improve microphone quality
 - Reduce background noise
 - Speak clearly and closer to microphone
 
 #### Audio Stuttering
+
 - Check CPU usage during recognition
 - Reduce concurrent processes
 - Use wired microphone instead of Bluetooth
@@ -631,8 +669,8 @@ GET  /api/logs            # System logs
 // Voice recognition
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  if (data.type === 'recognition_result') {
-    console.log('Recognized:', data.text);
+  if (data.type === "recognition_result") {
+    console.log("Recognized:", data.text);
   }
 };
 ```
@@ -690,3 +728,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with love for privacy-focused voice automation**
+
