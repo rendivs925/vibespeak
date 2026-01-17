@@ -9,6 +9,9 @@
     "web_server_port": 4000,
     "enable_tts": true,
     "enable_webrtc": false,
-    "security_level": "Trusted"
+    "security_level": "Trusted",
+    "tailscale_enabled": false,
+    "web_server_bind": "127.0.0.1:4000",
+    "tailscale_hostname": "vibespeak"
   }
 }

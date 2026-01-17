@@ -19,6 +19,20 @@ impl WebServer {
     }
 
     pub async fn run(self, port: u16) -> Result<()> {
+        let config = self.config.read().await;
+
+        // Determine bind address
+        let bind_addr = if config.settings.tailscale_enabled {
+            // Parse bind address from config
+            if let Some(bind_addr) = &config.settings.web_server_bind {
+                parse_bind_address(bind_addr)?
+            } else {
+                ([127, 0, 0, 1], port)
+            }
+        } else {
+            ([127, 0, 0, 1], port)
+        };
+
         // Static files route
         let static_files = warp::path("static").and(warp::fs::dir("web/static"));
 
@@ -34,8 +48,8 @@ impl WebServer {
             .or(api)
             .with(warp::cors().allow_any_origin());
 
-        tracing::info!("Starting web server on port {}", port);
-        warp::serve(routes).run(([127, 0, 0, 1], port)).await;
+        tracing::info!("Starting web server on {}:{}", format_ip(bind_addr.0), bind_addr.1);
+        warp::serve(routes).run(bind_addr).await;
 
         Ok(())
     }
@@ -115,4 +129,47 @@ async fn test_voice(
     Ok(warp::reply::json(
         &serde_json::json!({"status": "ok", "text": request.text}),
     ))
+}
+
+fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {
+    // Parse "ip:port" format
+    let parts: Vec<&str> = bind_addr.split(':').collect();
+    if parts.len() != 2 {
+        return Err(crate::shared::Error::Configuration(
+            format!("Invalid bind address format: {}", bind_addr)
+        ));
+    }
+
+    let ip_str = parts[0];
+    let port_str = parts[1];
+
+    // Parse IP address
+    let ip_parts: Vec<&str> = ip_str.split('.').collect();
+    if ip_parts.len() != 4 {
+        return Err(crate::shared::Error::Configuration(
+            format!("Invalid IP address format: {}", ip_str)
+        ));
+    }
+
+    let mut ip = [0u8; 4];
+    for (i, part) in ip_parts.iter().enumerate() {
+        ip[i] = part.parse().map_err(|_| {
+            crate::shared::Error::Configuration(
+                format!("Invalid IP address part: {}", part)
+            )
+        })?;
+    }
+
+    // Parse port
+    let port: u16 = port_str.parse().map_err(|_| {
+        crate::shared::Error::Configuration(
+            format!("Invalid port number: {}", port_str)
+        )
+    })?;
+
+    Ok((ip, port))
+}
+
+fn format_ip(ip: [u8; 4]) -> String {
+    format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3])
 }

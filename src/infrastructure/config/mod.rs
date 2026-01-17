@@ -40,6 +40,9 @@ pub struct SystemSettings {
     pub enable_tts: bool,
     pub enable_webrtc: bool,
     pub security_level: crate::shared::SecurityLevel,
+    pub tailscale_enabled: bool,
+    pub web_server_bind: Option<String>,
+    pub tailscale_hostname: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -62,6 +65,9 @@ impl Default for SystemSettings {
             enable_tts: true,
             enable_webrtc: false, // Start with local audio
             security_level: crate::shared::SecurityLevel::Trusted,
+            tailscale_enabled: false,
+            web_server_bind: Some("127.0.0.1:8080".to_string()),
+            tailscale_hostname: Some("vibespeak".to_string()),
         }
     }
 }
