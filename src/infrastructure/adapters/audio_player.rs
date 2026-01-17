@@ -1,36 +1,82 @@
-use crate::shared::{Result, Error};
-use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use crate::shared::{Error, Result};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use std::time::Duration;
 
-/// Audio player using rodio for cross-platform audio playback
+/// Audio player using cpal for cross-platform audio playback
 pub struct AudioPlayer {
-    stream_handle: Arc<OutputStreamHandle>,
-    _stream: OutputStream,
+    device: cpal::Device,
+    config: cpal::SupportedStreamConfig,
     is_playing: Arc<AtomicBool>,
     stop_flag: Arc<AtomicBool>,
 }
 
-// Safety: AudioPlayer is Send+Sync because we use Arc for shared state
+// Safety: cpal::Device is Send+Sync on supported platforms and we only share atomic state across threads.
 unsafe impl Send for AudioPlayer {}
 unsafe impl Sync for AudioPlayer {}
 
 impl AudioPlayer {
     pub fn new() -> Result<Self> {
-        let (stream, stream_handle) = OutputStream::try_default()
-            .map_err(|e| Error::Audio(format!("Failed to initialize audio output: {}", e)))?;
+        let host = cpal::default_host();
+        let device = host
+            .default_output_device()
+            .ok_or_else(|| Error::Audio("No output device available".to_string()))?;
 
-        tracing::info!("Audio player initialized with default output device");
+        let config = device
+            .default_output_config()
+            .map_err(|e| Error::Audio(format!("Failed to get default output config: {}", e)))?;
+
+        let device_name = device
+            .name()
+            .unwrap_or_else(|_| "Unknown device".to_string());
+
+        tracing::info!(
+            "Audio player initialized with default output device: {} (sample_rate: {}, channels: {})",
+            device_name,
+            config.sample_rate().0,
+            config.channels()
+        );
 
         Ok(Self {
-            _stream: stream,
-            stream_handle: Arc::new(stream_handle),
+            device,
+            config,
             is_playing: Arc::new(AtomicBool::new(false)),
             stop_flag: Arc::new(AtomicBool::new(false)),
         })
     }
 
-    /// Play PCM audio data
+    /// Pick a SupportedStreamConfig matching requested sample rate if possible, else fallback to default.
+    fn select_config(&self, sample_rate: u32) -> Result<cpal::SupportedStreamConfig> {
+        if sample_rate == self.config.sample_rate().0 {
+            return Ok(self.config.clone());
+        }
+
+        let supported_configs = self
+            .device
+            .supported_output_configs()
+            .map_err(|e| Error::Audio(format!("Failed to get supported configs: {}", e)))?;
+
+        let target = cpal::SampleRate(sample_rate);
+
+        for cfg in supported_configs {
+            if cfg.channels() >= 1
+                && cfg.min_sample_rate() <= target
+                && cfg.max_sample_rate() >= target
+            {
+                return Ok(cfg.with_sample_rate(target));
+            }
+        }
+
+        Err(Error::Audio(format!(
+            "Sample rate {} Hz not supported",
+            sample_rate
+        )))
+    }
+
+    /// Play PCM audio data (i16 mono). This awaits until playback finishes or stop() is called.
     pub async fn play_pcm_data(&self, data: &[i16], sample_rate: u32) -> Result<()> {
         if data.is_empty() {
             return Ok(());
@@ -39,36 +85,214 @@ impl AudioPlayer {
         self.stop_flag.store(false, Ordering::SeqCst);
         self.is_playing.store(true, Ordering::SeqCst);
 
-        // Convert i16 samples to f32 (owned data for the closure)
-        let samples: Vec<f32> = data.iter()
-            .map(|&s| s as f32 / i16::MAX as f32)
-            .collect();
-        let sample_count = samples.len();
+        // Convert i16 samples to f32 in [-1.0, 1.0]
+        let samples_f32: Vec<f32> = data.iter().map(|&s| s as f32 / i16::MAX as f32).collect();
 
-        // Create a source from the samples
-        let source = PcmSource::new(samples, sample_rate, 1);
+        let device = self.device.clone();
+        let cfg = self.select_config(sample_rate)?;
+        let stream_cfg: cpal::StreamConfig = cfg.clone().into();
 
-        let stream_handle = self.stream_handle.clone();
+        let channels = stream_cfg.channels as usize;
+
         let is_playing = self.is_playing.clone();
         let stop_flag = self.stop_flag.clone();
 
-        tokio::task::spawn_blocking(move || {
-            if let Ok(sink) = Sink::try_new(&stream_handle) {
-                sink.append(source);
-                tracing::debug!("Playing {} samples at {} Hz", sample_count, sample_rate);
+        // Shared playback position (in frames = mono sample index)
+        let samples = Arc::new(samples_f32);
+        let position = Arc::new(Mutex::new(0usize));
 
-                // Poll for completion or stop signal
-                while !sink.empty() && !stop_flag.load(Ordering::SeqCst) {
-                    std::thread::sleep(Duration::from_millis(50));
+        tokio::task::spawn_blocking(move || -> Result<()> {
+            let err_fn = |err| tracing::error!("Audio stream error: {}", err);
+
+            match cfg.sample_format() {
+                cpal::SampleFormat::F32 => {
+                    let samples = samples.clone();
+                    let position = position.clone();
+                    let is_playing = is_playing.clone();
+                    let stop_flag = stop_flag.clone();
+
+                    let stream = device
+                        .build_output_stream(
+                            &stream_cfg,
+                            move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                                if stop_flag.load(Ordering::SeqCst) {
+                                    // Fill silence and end
+                                    for v in output.iter_mut() {
+                                        *v = 0.0;
+                                    }
+                                    is_playing.store(false, Ordering::SeqCst);
+                                    return;
+                                }
+
+                                let mut pos = position.lock().unwrap();
+
+                                // output is interleaved: frames * channels
+                                let frames = output.len() / channels;
+
+                                for frame in 0..frames {
+                                    let sample = if *pos < samples.len() {
+                                        let s = samples[*pos];
+                                        *pos += 1;
+                                        s
+                                    } else {
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        0.0
+                                    };
+
+                                    let base = frame * channels;
+                                    for ch in 0..channels {
+                                        output[base + ch] = sample;
+                                    }
+                                }
+                            },
+                            err_fn,
+                            None,
+                        )
+                        .map_err(|e| {
+                            Error::Audio(format!("Failed to build output stream: {}", e))
+                        })?;
+
+                    stream
+                        .play()
+                        .map_err(|e| Error::Audio(format!("Failed to start playback: {}", e)))?;
+
+                    // Keep stream alive until done or stopped
+                    while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst) {
+                        std::thread::sleep(Duration::from_millis(20));
+                    }
+
+                    drop(stream);
+                    Ok(())
                 }
 
-                if stop_flag.load(Ordering::SeqCst) {
-                    sink.stop();
+                cpal::SampleFormat::I16 => {
+                    let samples = samples.clone();
+                    let position = position.clone();
+                    let is_playing = is_playing.clone();
+                    let stop_flag = stop_flag.clone();
+
+                    let stream = device
+                        .build_output_stream(
+                            &stream_cfg,
+                            move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
+                                if stop_flag.load(Ordering::SeqCst) {
+                                    for v in output.iter_mut() {
+                                        *v = 0;
+                                    }
+                                    is_playing.store(false, Ordering::SeqCst);
+                                    return;
+                                }
+
+                                let mut pos = position.lock().unwrap();
+                                let frames = output.len() / channels;
+
+                                for frame in 0..frames {
+                                    let sample_f32 = if *pos < samples.len() {
+                                        let s = samples[*pos];
+                                        *pos += 1;
+                                        s
+                                    } else {
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        0.0
+                                    };
+
+                                    let sample_i16 =
+                                        (sample_f32.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+
+                                    let base = frame * channels;
+                                    for ch in 0..channels {
+                                        output[base + ch] = sample_i16;
+                                    }
+                                }
+                            },
+                            err_fn,
+                            None,
+                        )
+                        .map_err(|e| {
+                            Error::Audio(format!("Failed to build output stream: {}", e))
+                        })?;
+
+                    stream
+                        .play()
+                        .map_err(|e| Error::Audio(format!("Failed to start playback: {}", e)))?;
+
+                    while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst) {
+                        std::thread::sleep(Duration::from_millis(20));
+                    }
+
+                    drop(stream);
+                    Ok(())
                 }
+
+                cpal::SampleFormat::U16 => {
+                    let samples = samples.clone();
+                    let position = position.clone();
+                    let is_playing = is_playing.clone();
+                    let stop_flag = stop_flag.clone();
+
+                    let stream = device
+                        .build_output_stream(
+                            &stream_cfg,
+                            move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
+                                if stop_flag.load(Ordering::SeqCst) {
+                                    for v in output.iter_mut() {
+                                        *v = u16::MAX / 2;
+                                    }
+                                    is_playing.store(false, Ordering::SeqCst);
+                                    return;
+                                }
+
+                                let mut pos = position.lock().unwrap();
+                                let frames = output.len() / channels;
+
+                                for frame in 0..frames {
+                                    let sample_f32 = if *pos < samples.len() {
+                                        let s = samples[*pos];
+                                        *pos += 1;
+                                        s
+                                    } else {
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        0.0
+                                    };
+
+                                    // map [-1,1] -> [0, u16::MAX]
+                                    let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
+                                        * 0.5
+                                        * u16::MAX as f32)
+                                        as u16;
+
+                                    let base = frame * channels;
+                                    for ch in 0..channels {
+                                        output[base + ch] = u;
+                                    }
+                                }
+                            },
+                            err_fn,
+                            None,
+                        )
+                        .map_err(|e| {
+                            Error::Audio(format!("Failed to build output stream: {}", e))
+                        })?;
+
+                    stream
+                        .play()
+                        .map_err(|e| Error::Audio(format!("Failed to start playback: {}", e)))?;
+
+                    while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst) {
+                        std::thread::sleep(Duration::from_millis(20));
+                    }
+
+                    drop(stream);
+                    Ok(())
+                }
+                other => Err(Error::Audio(format!(
+                    "Unsupported sample format: {:?}",
+                    other
+                ))),
             }
-            is_playing.store(false, Ordering::SeqCst);
-        }).await
-            .map_err(|e| Error::Audio(format!("Playback task failed: {}", e)))?;
+        })
+        .await
+        .map_err(|e| Error::Audio(format!("Playback task failed: {}", e)))??;
 
         Ok(())
     }
@@ -82,66 +306,229 @@ impl AudioPlayer {
         self.stop_flag.store(false, Ordering::SeqCst);
         self.is_playing.store(true, Ordering::SeqCst);
 
-        let samples: Vec<f32> = data.iter()
-            .map(|&s| s as f32 / i16::MAX as f32)
-            .collect();
+        let device = self.device.clone();
+        let cfg = match self.select_config(sample_rate) {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("Failed to select config: {}", e);
+                self.is_playing.store(false, Ordering::SeqCst);
+                return;
+            }
+        };
+        let stream_cfg: cpal::StreamConfig = cfg.clone().into();
+        let channels = stream_cfg.channels as usize;
 
-        let source = PcmSource::new(samples, sample_rate, 1);
-        let stream_handle = self.stream_handle.clone();
+        let samples_f32: Vec<f32> = data.iter().map(|&s| s as f32 / i16::MAX as f32).collect();
+
+        let samples = Arc::new(samples_f32);
+        let position = Arc::new(Mutex::new(0usize));
+
         let is_playing = self.is_playing.clone();
         let stop_flag = self.stop_flag.clone();
 
         std::thread::spawn(move || {
-            if let Ok(sink) = Sink::try_new(&stream_handle) {
-                sink.append(source);
+            let err_fn = |err| tracing::error!("Audio stream error: {}", err);
 
-                while !sink.empty() && !stop_flag.load(Ordering::SeqCst) {
-                    std::thread::sleep(Duration::from_millis(50));
-                }
+            let run = || -> Result<()> {
+                match cfg.sample_format() {
+                    cpal::SampleFormat::F32 => {
+                        let samples = samples.clone();
+                        let position = position.clone();
+                        let is_playing = is_playing.clone();
+                        let stop_flag = stop_flag.clone();
 
-                if stop_flag.load(Ordering::SeqCst) {
-                    sink.stop();
+                        let stream = device
+                            .build_output_stream(
+                                &stream_cfg,
+                                move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag.load(Ordering::SeqCst) {
+                                        for v in output.iter_mut() {
+                                            *v = 0.0;
+                                        }
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        return;
+                                    }
+
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
+
+                                    for frame in 0..frames {
+                                        let sample = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
+
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = sample;
+                                        }
+                                    }
+                                },
+                                err_fn,
+                                None,
+                            )
+                            .map_err(|e| {
+                                Error::Audio(format!("Failed to build output stream: {}", e))
+                            })?;
+
+                        stream.play().map_err(|e| {
+                            Error::Audio(format!("Failed to start playback: {}", e))
+                        })?;
+
+                        while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst)
+                        {
+                            std::thread::sleep(Duration::from_millis(20));
+                        }
+
+                        drop(stream);
+                        Ok(())
+                    }
+
+                    cpal::SampleFormat::I16 => {
+                        let samples = samples.clone();
+                        let position = position.clone();
+                        let is_playing = is_playing.clone();
+                        let stop_flag = stop_flag.clone();
+
+                        let stream = device
+                            .build_output_stream(
+                                &stream_cfg,
+                                move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag.load(Ordering::SeqCst) {
+                                        for v in output.iter_mut() {
+                                            *v = 0;
+                                        }
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        return;
+                                    }
+
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
+
+                                    for frame in 0..frames {
+                                        let sample_f32 = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
+
+                                        let sample_i16 =
+                                            (sample_f32.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = sample_i16;
+                                        }
+                                    }
+                                },
+                                err_fn,
+                                None,
+                            )
+                            .map_err(|e| {
+                                Error::Audio(format!("Failed to build output stream: {}", e))
+                            })?;
+
+                        stream.play().map_err(|e| {
+                            Error::Audio(format!("Failed to start playback: {}", e))
+                        })?;
+
+                        while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst)
+                        {
+                            std::thread::sleep(Duration::from_millis(20));
+                        }
+
+                        drop(stream);
+                        Ok(())
+                    }
+
+                    cpal::SampleFormat::U16 => {
+                        let samples = samples.clone();
+                        let position = position.clone();
+                        let is_playing = is_playing.clone();
+                        let stop_flag = stop_flag.clone();
+
+                        let stream = device
+                            .build_output_stream(
+                                &stream_cfg,
+                                move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag.load(Ordering::SeqCst) {
+                                        for v in output.iter_mut() {
+                                            *v = u16::MAX / 2;
+                                        }
+                                        is_playing.store(false, Ordering::SeqCst);
+                                        return;
+                                    }
+
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
+
+                                    for frame in 0..frames {
+                                        let sample_f32 = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
+
+                                        let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
+                                            * 0.5
+                                            * u16::MAX as f32)
+                                            as u16;
+
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = u;
+                                        }
+                                    }
+                                },
+                                err_fn,
+                                None,
+                            )
+                            .map_err(|e| {
+                                Error::Audio(format!("Failed to build output stream: {}", e))
+                            })?;
+
+                        stream.play().map_err(|e| {
+                            Error::Audio(format!("Failed to start playback: {}", e))
+                        })?;
+
+                        while is_playing.load(Ordering::SeqCst) && !stop_flag.load(Ordering::SeqCst)
+                        {
+                            std::thread::sleep(Duration::from_millis(20));
+                        }
+
+                        drop(stream);
+                        Ok(())
+                    }
+
+                    other => Err(Error::Audio(format!(
+                        "Unsupported sample format: {:?}",
+                        other
+                    ))),
                 }
+            };
+
+            if let Err(e) = run() {
+                tracing::error!("Nonblocking playback error: {}", e);
+                is_playing.store(false, Ordering::SeqCst);
             }
-            is_playing.store(false, Ordering::SeqCst);
         });
     }
 
     /// Play audio from a file
-    pub async fn play_file(&self, path: &str) -> Result<()> {
-        let path = path.to_string();
-        let stream_handle = self.stream_handle.clone();
-        let is_playing = self.is_playing.clone();
-        let stop_flag = self.stop_flag.clone();
-
-        self.stop_flag.store(false, Ordering::SeqCst);
-        self.is_playing.store(true, Ordering::SeqCst);
-
-        tokio::task::spawn_blocking(move || -> Result<()> {
-            let file = std::fs::File::open(&path)
-                .map_err(|e| Error::Audio(format!("Failed to open audio file: {}", e)))?;
-
-            let source = rodio::Decoder::new(std::io::BufReader::new(file))
-                .map_err(|e| Error::Audio(format!("Failed to decode audio file: {}", e)))?;
-
-            if let Ok(sink) = Sink::try_new(&stream_handle) {
-                sink.append(source);
-                tracing::info!("Playing audio file: {}", path);
-
-                while !sink.empty() && !stop_flag.load(Ordering::SeqCst) {
-                    std::thread::sleep(Duration::from_millis(50));
-                }
-
-                if stop_flag.load(Ordering::SeqCst) {
-                    sink.stop();
-                }
-            }
-            is_playing.store(false, Ordering::SeqCst);
-            Ok(())
-        }).await
-            .map_err(|e| Error::Audio(format!("Playback task failed: {}", e)))??;
-
-        Ok(())
+    pub async fn play_file(&self, _path: &str) -> Result<()> {
+        Err(Error::Audio(
+            "File playback not yet implemented with CPAL. Use play_pcm_data instead.".to_string(),
+        ))
     }
 
     /// Stop current playback
@@ -153,58 +540,5 @@ impl AudioPlayer {
     /// Check if currently playing
     pub fn is_playing(&self) -> bool {
         self.is_playing.load(Ordering::SeqCst)
-    }
-}
-
-/// Custom PCM source for rodio
-struct PcmSource {
-    samples: Vec<f32>,
-    sample_rate: u32,
-    channels: u16,
-    position: usize,
-}
-
-impl PcmSource {
-    fn new(samples: Vec<f32>, sample_rate: u32, channels: u16) -> Self {
-        Self {
-            samples,
-            sample_rate,
-            channels,
-            position: 0,
-        }
-    }
-}
-
-impl Iterator for PcmSource {
-    type Item = f32;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.position < self.samples.len() {
-            let sample = self.samples[self.position];
-            self.position += 1;
-            Some(sample)
-        } else {
-            None
-        }
-    }
-}
-
-impl Source for PcmSource {
-    fn current_frame_len(&self) -> Option<usize> {
-        Some(self.samples.len() - self.position)
-    }
-
-    fn channels(&self) -> u16 {
-        self.channels
-    }
-
-    fn sample_rate(&self) -> u32 {
-        self.sample_rate
-    }
-
-    fn total_duration(&self) -> Option<Duration> {
-        let samples = self.samples.len() as u64;
-        let duration_secs = samples / (self.sample_rate as u64 * self.channels as u64).max(1);
-        Some(Duration::from_secs(duration_secs))
     }
 }
