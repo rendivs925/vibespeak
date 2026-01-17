@@ -182,7 +182,7 @@ impl AudioPlayer {
                                     for frame in 0..frames {
                                         let sample = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);
@@ -243,7 +243,7 @@ impl AudioPlayer {
                                     for frame in 0..frames {
                                         let sample_f32 = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);
@@ -306,7 +306,7 @@ impl AudioPlayer {
                                     for frame in 0..frames {
                                         let sample_f32 = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);
@@ -417,7 +417,7 @@ impl AudioPlayer {
                                     for frame in 0..frames {
                                         let sample = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);
@@ -475,13 +475,10 @@ impl AudioPlayer {
                                     let mut pos = position.lock().unwrap();
                                     let frames = output.len() / channels;
 
-                                    let mut pos = position.lock().unwrap();
-                                    let frames = output.len() / channels;
-
                                     for frame in 0..frames {
                                         let sample_f32 = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);
@@ -539,16 +536,13 @@ impl AudioPlayer {
                                             return;
                                         }
 
-                                    let mut pos = position.lock().unwrap();
-                                    let frames = output.len() / channels;
+                                        let mut pos = position.lock().unwrap();
+                                        let frames = output.len() / channels;
 
-                                    let mut pos = position.lock().unwrap();
-                                    let frames = output.len() / channels;
-
-                                    for frame in 0..frames {
+                                        for frame in 0..frames {
                                         let sample_f32 = if *pos < samples.len() {
                                             let s = samples[*pos];
-                                            *pos += 1;
+                                            *pos = *pos + 1;
                                             s
                                         } else {
                                             is_playing_clone.store(false, Ordering::SeqCst);

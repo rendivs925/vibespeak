@@ -51,6 +51,7 @@ impl VoiceCommandProcessor {
         }
     }
 
+    /// Process a voice command from audio input
     pub async fn process_voice_command(&self, audio: AudioSample) -> Result<VoiceCommandResult> {
         // Step 1: Speech recognition
         let recognition_result = self.speech_recognition.recognize(audio).await?;
@@ -58,7 +59,14 @@ impl VoiceCommandProcessor {
 
         tracing::info!("Recognized text: '{}' (confidence: {:.2})", recognized_text, recognition_result.confidence);
 
-        // Step 2: Command interpretation
+        self.process_text_command(recognized_text, recognition_result.confidence).await
+    }
+
+    /// Process a voice command from pre-recognized text
+    pub async fn process_text_command(&self, text: String, confidence: f64) -> Result<VoiceCommandResult> {
+        let recognized_text = text.trim();
+
+        // Step 1: Command interpretation
         let context = crate::domain::services::CommandContext {
             user_id: None,
             session_id: None,
@@ -66,9 +74,9 @@ impl VoiceCommandProcessor {
             environment: HashMap::new(),
         };
 
-        let interpreted = self.command_interpreter.interpret(&recognized_text, &context).await?;
+        let interpreted = self.command_interpreter.interpret(recognized_text, &context).await?;
 
-        // Step 3: Execute based on interpretation
+        // Step 2: Execute based on interpretation
         let execution_result = match interpreted.action {
             crate::domain::services::CommandAction::Execute(ref command) => {
                 self.execute_shell_command(&command).await?
@@ -84,10 +92,10 @@ impl VoiceCommandProcessor {
             }
         };
 
-        // Step 4: Handle plugins
-        let plugin_result = self.process_with_plugins(&recognized_text, &interpreted).await?;
+        // Step 3: Handle plugins
+        let plugin_result = self.process_with_plugins(recognized_text, &interpreted).await?;
 
-        // Step 5: Combine results
+        // Step 4: Combine results
         let final_result = if plugin_result.success {
             plugin_result.data
         } else {
@@ -95,8 +103,8 @@ impl VoiceCommandProcessor {
         };
 
         Ok(VoiceCommandResult {
-            recognized_text,
-            confidence: recognition_result.confidence,
+            recognized_text: recognized_text.to_string(),
+            confidence,
             command_executed: interpreted.command_id,
             execution_result: final_result,
             success: plugin_result.success,
@@ -302,5 +310,9 @@ impl VoiceCommandProcessor {
 
     pub fn get_available_plugins(&self) -> Vec<crate::domain::services::plugin::PluginMetadata> {
         self.plugin_registry.list_plugins()
+    }
+
+    pub async fn get_available_commands(&self) -> Result<Vec<String>> {
+        self.command_interpreter.get_available_commands().await
     }
 }

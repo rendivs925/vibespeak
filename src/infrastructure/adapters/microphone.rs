@@ -68,10 +68,10 @@ impl MicrophoneConfig {
             sample_rate: 16000,
             channels: 1,
             buffer_size: 1024,
-            silence_threshold: 0.01,
-            min_speech_ms: 500,
+            silence_threshold: 0.025, // Increased from 0.01 to be more sensitive to normal speech
+            min_speech_ms: 300, // Reduced from 500ms to catch shorter commands
             max_speech_ms: 45000,
-            silence_end_ms: 1500,
+            silence_end_ms: 1200, // Reduced from 1500ms for faster response
         }
     }
 
@@ -178,6 +178,74 @@ impl MicrophoneCapture {
         Ok(devices)
     }
 
+    fn get_input_device(&self) -> Result<cpal::Device> {
+        let host = cpal::default_host();
+        if let Some(name) = &self.device_name {
+            let devices = host
+                .input_devices()
+                .map_err(|e| Error::Audio(format!("Failed to enumerate input devices: {}", e)))?;
+            for device in devices {
+                if let Ok(dev_name) = device.name() {
+                    if dev_name.contains(name) {
+                        return Ok(device);
+                    }
+                }
+            }
+            Err(Error::Audio(format!("Input device '{}' not found", name)))
+        } else {
+            host.default_input_device()
+                .ok_or_else(|| Error::Audio("No input device available".to_string()))
+        }
+    }
+
+    fn build_input_stream_i16<F>(
+        &self,
+        device: &cpal::Device,
+        config: &cpal::SupportedStreamConfig,
+        mut on_samples: F,
+    ) -> Result<cpal::Stream>
+    where
+        F: FnMut(&[i16]) + Send + 'static,
+    {
+        let err_fn = |err| tracing::error!("Audio stream error: {}", err);
+        match config.sample_format() {
+            cpal::SampleFormat::F32 => device.build_input_stream(
+                &config.clone().into(),
+                move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                    let samples: Vec<i16> = data
+                        .iter()
+                        .map(|&sample| (sample * i16::MAX as f32) as i16)
+                        .collect();
+                    on_samples(&samples);
+                },
+                err_fn,
+                None,
+            ),
+            cpal::SampleFormat::I16 => device.build_input_stream(
+                &config.clone().into(),
+                move |data: &[i16], _: &cpal::InputCallbackInfo| {
+                    on_samples(data);
+                },
+                err_fn,
+                None,
+            ),
+            cpal::SampleFormat::U16 => device.build_input_stream(
+                &config.clone().into(),
+                move |data: &[u16], _: &cpal::InputCallbackInfo| {
+                    let samples: Vec<i16> = data
+                        .iter()
+                        .map(|&sample| (sample as i32 - 32768) as i16)
+                        .collect();
+                    on_samples(&samples);
+                },
+                err_fn,
+                None,
+            ),
+            _ => Err(cpal::BuildStreamError::StreamConfigNotSupported),
+        }
+        .map_err(|e| Error::Audio(format!("Failed to build input stream: {}", e)))
+    }
+
     /// Check if currently recording
     pub fn is_recording(&self) -> bool {
         self.is_recording.load(Ordering::SeqCst)
@@ -231,9 +299,7 @@ impl MicrophoneCapture {
     /// Record audio until silence is detected or max duration is reached
     /// Returns the recorded audio samples
     pub async fn record_until_silence(&self) -> Result<AudioSample> {
-        let host = cpal::default_host();
-        let device = host.default_input_device()
-            .ok_or_else(|| Error::Audio("No input device available".to_string()))?;
+        let device = self.get_input_device()?;
 
         // Get supported config
         let supported_config = self.get_supported_config(&device)?;
@@ -259,39 +325,33 @@ impl MicrophoneCapture {
         let is_recording = self.is_recording.clone();
 
         // Create the input stream
-        let err_fn = |err| tracing::error!("Audio stream error: {}", err);
-
-        let stream = device.build_input_stream(
-            &supported_config.into(),
-            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+        let stream = self.build_input_stream_i16(
+            &device,
+            &supported_config,
+            move |data: &[i16]| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
-                // Convert f32 to i16 and calculate RMS for voice activity detection
                 let mut rms_sum = 0.0f32;
-                let samples: Vec<i16> = data.iter().map(|&sample| {
-                    rms_sum += sample * sample;
-                    (sample * i16::MAX as f32) as i16
-                }).collect();
+                for &sample in data {
+                    let normalized = sample as f32 / i16::MAX as f32;
+                    rms_sum += normalized * normalized;
+                }
 
                 let rms = (rms_sum / data.len() as f32).sqrt();
-
-                // Voice activity detection
                 let is_speech = rms > silence_threshold;
 
                 if is_speech {
                     speech_detected_clone.store(true, Ordering::SeqCst);
                     *silence_samples_clone.lock().unwrap() = 0;
                 } else if speech_detected_clone.load(Ordering::SeqCst) {
-                    *silence_samples_clone.lock().unwrap() += samples.len();
+                    *silence_samples_clone.lock().unwrap() += data.len();
                 }
 
-                // Add samples to buffer
                 let mut buffer = audio_buffer_clone.lock().unwrap();
-                buffer.extend(samples);
+                buffer.extend_from_slice(data);
 
-                // Check if we should stop (silence after speech or max duration)
                 let silence_count = *silence_samples_clone.lock().unwrap();
                 if speech_detected_clone.load(Ordering::SeqCst) && silence_count >= silence_end_samples {
                     is_recording.store(false, Ordering::SeqCst);
@@ -300,9 +360,7 @@ impl MicrophoneCapture {
                     is_recording.store(false, Ordering::SeqCst);
                 }
             },
-            err_fn,
-            None,
-        ).map_err(|e| Error::Audio(format!("Failed to build input stream: {}", e)))?;
+        )?;
 
         // Start recording
         stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
@@ -334,9 +392,7 @@ impl MicrophoneCapture {
 
     /// Record for a fixed duration
     pub async fn record_duration(&self, duration_ms: u32) -> Result<AudioSample> {
-        let host = cpal::default_host();
-        let device = host.default_input_device()
-            .ok_or_else(|| Error::Audio("No input device available".to_string()))?;
+        let device = self.get_input_device()?;
 
         let supported_config = self.get_supported_config(&device)?;
         let sample_rate = supported_config.sample_rate().0;
@@ -349,29 +405,22 @@ impl MicrophoneCapture {
         self.is_recording.store(true, Ordering::SeqCst);
         let is_recording = self.is_recording.clone();
 
-        let err_fn = |err| tracing::error!("Audio stream error: {}", err);
-
-        let stream = device.build_input_stream(
-            &supported_config.into(),
-            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+        let stream = self.build_input_stream_i16(
+            &device,
+            &supported_config,
+            move |data: &[i16]| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
-                let samples: Vec<i16> = data.iter()
-                    .map(|&sample| (sample * i16::MAX as f32) as i16)
-                    .collect();
-
                 let mut buffer = audio_buffer_clone.lock().unwrap();
-                buffer.extend(samples);
+                buffer.extend_from_slice(data);
 
                 if buffer.len() >= target_samples {
                     is_recording.store(false, Ordering::SeqCst);
                 }
             },
-            err_fn,
-            None,
-        ).map_err(|e| Error::Audio(format!("Failed to build input stream: {}", e)))?;
+        )?;
 
         stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 
@@ -393,33 +442,24 @@ impl MicrophoneCapture {
     where
         F: FnMut(Vec<i16>) + Send + 'static,
     {
-        let host = cpal::default_host();
-        let device = host.default_input_device()
-            .ok_or_else(|| Error::Audio("No input device available".to_string()))?;
+        let device = self.get_input_device()?;
 
         let supported_config = self.get_supported_config(&device)?;
 
         self.is_recording.store(true, Ordering::SeqCst);
         let is_recording = self.is_recording.clone();
 
-        let err_fn = |err| tracing::error!("Audio stream error: {}", err);
-
-        let stream = device.build_input_stream(
-            &supported_config.into(),
-            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+        let stream = self.build_input_stream_i16(
+            &device,
+            &supported_config,
+            move |data: &[i16]| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
-                let samples: Vec<i16> = data.iter()
-                    .map(|&sample| (sample * i16::MAX as f32) as i16)
-                    .collect();
-
-                callback(samples);
+                callback(data.to_vec());
             },
-            err_fn,
-            None,
-        ).map_err(|e| Error::Audio(format!("Failed to build input stream: {}", e)))?;
+        )?;
 
         stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 

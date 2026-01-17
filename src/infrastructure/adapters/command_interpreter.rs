@@ -25,8 +25,8 @@ impl FuzzyCommandInterpreter {
         for command_text in self.commands.keys() {
             let similarity = jaro_winkler(input, command_text);
 
-            if similarity > 0.85 {
-                // High confidence threshold
+            if similarity > 0.7 {
+                // Lower threshold for speech recognition (more forgiving)
                 match best_match {
                     Some((_, best_sim)) if similarity > best_sim => {
                         best_match = Some((command_text.clone(), similarity));
