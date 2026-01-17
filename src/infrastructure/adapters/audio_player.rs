@@ -114,34 +114,38 @@ impl AudioPlayer {
                     let stream = device
                         .build_output_stream(
                             &stream_cfg,
-                            move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                                if stop_flag.load(Ordering::SeqCst) {
-                                    // Fill silence and end
-                                    for v in output.iter_mut() {
-                                        *v = 0.0;
+                            {
+                                let is_playing_clone = is_playing.clone();
+                                let stop_flag_clone = stop_flag.clone();
+                                move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag_clone.load(Ordering::SeqCst) {
+                                        // Fill silence and end
+                                        for v in output.iter_mut() {
+                                            *v = 0.0;
+                                        }
+                                        is_playing_clone.store(false, Ordering::SeqCst);
+                                        return;
                                     }
-                                    is_playing.store(false, Ordering::SeqCst);
-                                    return;
-                                }
 
-                                let mut pos = position.lock().unwrap();
+                                    let mut pos = position.lock().unwrap();
 
-                                // output is interleaved: frames * channels
-                                let frames = output.len() / channels;
+                                    // output is interleaved: frames * channels
+                                    let frames = output.len() / channels;
 
-                                for frame in 0..frames {
-                                    let sample = if *pos < samples.len() {
-                                        let s = samples[*pos];
-                                        *pos += 1;
-                                        s
-                                    } else {
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        0.0
-                                    };
+                                    for frame in 0..frames {
+                                        let sample = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
 
-                                    let base = frame * channels;
-                                    for ch in 0..channels {
-                                        output[base + ch] = sample;
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = sample;
+                                        }
                                     }
                                 }
                             },
@@ -174,34 +178,38 @@ impl AudioPlayer {
                     let stream = device
                         .build_output_stream(
                             &stream_cfg,
-                            move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
-                                if stop_flag.load(Ordering::SeqCst) {
-                                    for v in output.iter_mut() {
-                                        *v = 0;
+                            {
+                                let is_playing_clone = is_playing.clone();
+                                let stop_flag_clone = stop_flag.clone();
+                                move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag_clone.load(Ordering::SeqCst) {
+                                        for v in output.iter_mut() {
+                                            *v = 0;
+                                        }
+                                        is_playing_clone.store(false, Ordering::SeqCst);
+                                        return;
                                     }
-                                    is_playing.store(false, Ordering::SeqCst);
-                                    return;
-                                }
 
-                                let mut pos = position.lock().unwrap();
-                                let frames = output.len() / channels;
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
 
-                                for frame in 0..frames {
-                                    let sample_f32 = if *pos < samples.len() {
-                                        let s = samples[*pos];
-                                        *pos += 1;
-                                        s
-                                    } else {
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        0.0
-                                    };
+                                    for frame in 0..frames {
+                                        let sample_f32 = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
 
-                                    let sample_i16 =
-                                        (sample_f32.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+                                        let sample_i16 =
+                                            (sample_f32.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
 
-                                    let base = frame * channels;
-                                    for ch in 0..channels {
-                                        output[base + ch] = sample_i16;
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = sample_i16;
+                                        }
                                     }
                                 }
                             },
@@ -233,37 +241,41 @@ impl AudioPlayer {
                     let stream = device
                         .build_output_stream(
                             &stream_cfg,
-                            move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
-                                if stop_flag.load(Ordering::SeqCst) {
-                                    for v in output.iter_mut() {
-                                        *v = u16::MAX / 2;
+                            {
+                                let is_playing_clone = is_playing.clone();
+                                let stop_flag_clone = stop_flag.clone();
+                                move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
+                                    if stop_flag_clone.load(Ordering::SeqCst) {
+                                        for v in output.iter_mut() {
+                                            *v = u16::MAX / 2;
+                                        }
+                                        is_playing_clone.store(false, Ordering::SeqCst);
+                                        return;
                                     }
-                                    is_playing.store(false, Ordering::SeqCst);
-                                    return;
-                                }
 
-                                let mut pos = position.lock().unwrap();
-                                let frames = output.len() / channels;
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
 
-                                for frame in 0..frames {
-                                    let sample_f32 = if *pos < samples.len() {
-                                        let s = samples[*pos];
-                                        *pos += 1;
-                                        s
-                                    } else {
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        0.0
-                                    };
+                                    for frame in 0..frames {
+                                        let sample_f32 = if *pos < samples.len() {
+                                            let s = samples[*pos];
+                                            *pos += 1;
+                                            s
+                                        } else {
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            0.0
+                                        };
 
-                                    // map [-1,1] -> [0, u16::MAX]
-                                    let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
-                                        * 0.5
-                                        * u16::MAX as f32)
-                                        as u16;
+                                        // map [-1,1] -> [0, u16::MAX]
+                                        let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
+                                            * 0.5
+                                            * u16::MAX as f32)
+                                            as u16;
 
-                                    let base = frame * channels;
-                                    for ch in 0..channels {
-                                        output[base + ch] = u;
+                                        let base = frame * channels;
+                                        for ch in 0..channels {
+                                            output[base + ch] = u;
+                                        }
                                     }
                                 }
                             },
@@ -340,14 +352,17 @@ impl AudioPlayer {
                         let stream = device
                             .build_output_stream(
                                 &stream_cfg,
-                                move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                                    if stop_flag.load(Ordering::SeqCst) {
-                                        for v in output.iter_mut() {
-                                            *v = 0.0;
+                                {
+                                    let is_playing_clone = is_playing.clone();
+                                    let stop_flag_clone = stop_flag.clone();
+                                    move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                                        if stop_flag_clone.load(Ordering::SeqCst) {
+                                            for v in output.iter_mut() {
+                                                *v = 0.0;
+                                            }
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            return;
                                         }
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        return;
-                                    }
 
                                     let mut pos = position.lock().unwrap();
                                     let frames = output.len() / channels;
@@ -358,7 +373,7 @@ impl AudioPlayer {
                                             *pos += 1;
                                             s
                                         } else {
-                                            is_playing.store(false, Ordering::SeqCst);
+                                            is_playing_clone.store(false, Ordering::SeqCst);
                                             0.0
                                         };
 
@@ -367,9 +382,10 @@ impl AudioPlayer {
                                             output[base + ch] = sample;
                                         }
                                     }
-                                },
-                                err_fn,
-                                None,
+                                }
+                            },
+                            err_fn,
+                            None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))
@@ -397,14 +413,20 @@ impl AudioPlayer {
                         let stream = device
                             .build_output_stream(
                                 &stream_cfg,
-                                move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
-                                    if stop_flag.load(Ordering::SeqCst) {
-                                        for v in output.iter_mut() {
-                                            *v = 0;
+                                {
+                                    let is_playing_clone = is_playing.clone();
+                                    let stop_flag_clone = stop_flag.clone();
+                                    move |output: &mut [i16], _: &cpal::OutputCallbackInfo| {
+                                        if stop_flag_clone.load(Ordering::SeqCst) {
+                                            for v in output.iter_mut() {
+                                                *v = 0;
+                                            }
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            return;
                                         }
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        return;
-                                    }
+
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
 
                                     let mut pos = position.lock().unwrap();
                                     let frames = output.len() / channels;
@@ -415,7 +437,7 @@ impl AudioPlayer {
                                             *pos += 1;
                                             s
                                         } else {
-                                            is_playing.store(false, Ordering::SeqCst);
+                                            is_playing_clone.store(false, Ordering::SeqCst);
                                             0.0
                                         };
 
@@ -427,9 +449,10 @@ impl AudioPlayer {
                                             output[base + ch] = sample_i16;
                                         }
                                     }
-                                },
-                                err_fn,
-                                None,
+                                }
+                            },
+                            err_fn,
+                            None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))
@@ -457,14 +480,20 @@ impl AudioPlayer {
                         let stream = device
                             .build_output_stream(
                                 &stream_cfg,
-                                move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
-                                    if stop_flag.load(Ordering::SeqCst) {
-                                        for v in output.iter_mut() {
-                                            *v = u16::MAX / 2;
+                                {
+                                    let is_playing_clone = is_playing.clone();
+                                    let stop_flag_clone = stop_flag.clone();
+                                    move |output: &mut [u16], _: &cpal::OutputCallbackInfo| {
+                                        if stop_flag_clone.load(Ordering::SeqCst) {
+                                            for v in output.iter_mut() {
+                                                *v = u16::MAX / 2;
+                                            }
+                                            is_playing_clone.store(false, Ordering::SeqCst);
+                                            return;
                                         }
-                                        is_playing.store(false, Ordering::SeqCst);
-                                        return;
-                                    }
+
+                                    let mut pos = position.lock().unwrap();
+                                    let frames = output.len() / channels;
 
                                     let mut pos = position.lock().unwrap();
                                     let frames = output.len() / channels;
@@ -475,7 +504,7 @@ impl AudioPlayer {
                                             *pos += 1;
                                             s
                                         } else {
-                                            is_playing.store(false, Ordering::SeqCst);
+                                            is_playing_clone.store(false, Ordering::SeqCst);
                                             0.0
                                         };
 
@@ -489,9 +518,10 @@ impl AudioPlayer {
                                             output[base + ch] = u;
                                         }
                                     }
-                                },
-                                err_fn,
-                                None,
+                                }
+                            },
+                            err_fn,
+                            None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))

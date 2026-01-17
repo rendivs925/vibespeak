@@ -182,9 +182,6 @@ impl Port {
         if port < 1024 {
             return Err(Error::Domain("Port numbers below 1024 are reserved".to_string()));
         }
-        if port > 65535 {
-            return Err(Error::Domain("Invalid port number".to_string()));
-        }
         Ok(Self(port))
     }
 
