@@ -1,6 +1,15 @@
 // Microphone capture adapter using CPAL for cross-platform audio input
 
 use crate::shared::{AudioSample, Error, Result};
+
+/// Information about an audio device
+#[derive(Debug, Clone)]
+pub struct AudioDeviceInfo {
+    pub name: String,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub sample_format: String,
+}
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -39,6 +48,60 @@ impl Default for MicrophoneConfig {
     }
 }
 
+impl MicrophoneConfig {
+    /// Configuration optimized for voice commands (fast response, shorter silence timeout)
+    pub fn for_voice_commands() -> Self {
+        Self {
+            sample_rate: 16000,
+            channels: 1,
+            buffer_size: 512,
+            silence_threshold: 0.015,
+            min_speech_ms: 300,
+            max_speech_ms: 10000,
+            silence_end_ms: 800,
+        }
+    }
+
+    /// Configuration optimized for speech recognition (higher quality, longer timeouts)
+    pub fn for_speech_recognition() -> Self {
+        Self {
+            sample_rate: 16000,
+            channels: 1,
+            buffer_size: 1024,
+            silence_threshold: 0.01,
+            min_speech_ms: 500,
+            max_speech_ms: 45000,
+            silence_end_ms: 1500,
+        }
+    }
+
+    /// Configuration optimized for recording music or high-quality audio
+    pub fn for_high_quality_recording() -> Self {
+        Self {
+            sample_rate: 44100,
+            channels: 2,
+            buffer_size: 2048,
+            silence_threshold: 0.005,
+            min_speech_ms: 1000,
+            max_speech_ms: 300000, // 5 minutes
+            silence_end_ms: 2000,
+        }
+    }
+
+    /// Configuration optimized for low-latency applications
+    pub fn for_low_latency() -> Self {
+        Self {
+            sample_rate: 22050,
+            channels: 1,
+            buffer_size: 256,
+            silence_threshold: 0.02,
+            min_speech_ms: 200,
+            max_speech_ms: 15000,
+            silence_end_ms: 500,
+        }
+    }
+}
+
 /// Microphone capture adapter for recording audio from the system's default input device
 pub struct MicrophoneCapture {
     config: MicrophoneConfig,
@@ -47,17 +110,40 @@ pub struct MicrophoneCapture {
 }
 
 impl MicrophoneCapture {
-    /// Create a new microphone capture instance with default configuration
+    /// Create a new microphone capture instance with default configuration and device
     pub fn new() -> Result<Self> {
-        Self::with_config(MicrophoneConfig::default())
+        Self::with_config_and_device(MicrophoneConfig::default(), None)
     }
 
     /// Create a new microphone capture instance with custom configuration
     pub fn with_config(config: MicrophoneConfig) -> Result<Self> {
+        Self::with_config_and_device(config, None)
+    }
+
+    /// Create a new microphone capture instance with custom configuration and specific device
+    pub fn with_config_and_device(config: MicrophoneConfig, device_name: Option<&str>) -> Result<Self> {
         // Verify audio host is available
         let host = cpal::default_host();
-        let device = host.default_input_device()
-            .ok_or_else(|| Error::Audio("No input device available".to_string()))?;
+        let device = match device_name {
+            Some(name) => {
+                let devices = host.input_devices()
+                    .map_err(|e| Error::Audio(format!("Failed to enumerate input devices: {}", e)))?;
+
+                let mut selected_device = None;
+                for device in devices {
+                    if let Ok(dev_name) = device.name() {
+                        if dev_name.contains(name) {
+                            selected_device = Some(device);
+                            break;
+                        }
+                    }
+                }
+
+                selected_device.ok_or_else(|| Error::Audio(format!("Input device '{}' not found", name)))?
+            }
+            None => host.default_input_device()
+                .ok_or_else(|| Error::Audio("No input device available".to_string()))?,
+        };
 
         let device_name = device.name().ok();
 
@@ -100,6 +186,46 @@ impl MicrophoneCapture {
     /// Stop the current recording
     pub fn stop_recording(&self) {
         self.is_recording.store(false, Ordering::SeqCst);
+    }
+
+    /// Get information about the current microphone device
+    pub fn device_info(&self) -> Result<AudioDeviceInfo> {
+        let name = self.device_name.clone()
+            .unwrap_or_else(|| "Unknown device".to_string());
+
+        // We can't easily get the actual config without creating a device,
+        // so we'll provide estimated info based on our configuration
+        Ok(AudioDeviceInfo {
+            name,
+            sample_rate: self.config.sample_rate,
+            channels: self.config.channels,
+            sample_format: "i16".to_string(), // We convert to i16
+        })
+    }
+
+    /// Attempt to reinitialize with a different device if the current one fails
+    pub fn try_reinitialize_with_fallback(&mut self) -> Result<()> {
+        tracing::warn!("Attempting to reinitialize microphone with fallback device");
+
+        // Try to find another available input device
+        if let Ok(devices) = Self::list_devices() {
+            for device_name in devices {
+                if let Ok(new_mic) = Self::with_config_and_device(self.config.clone(), Some(&device_name)) {
+                    *self = new_mic;
+                    tracing::info!("Successfully reinitialized microphone with device: {}", device_name);
+                    return Ok(());
+                }
+            }
+        }
+
+        // If no other devices work, try default
+        if let Ok(new_mic) = Self::with_config(self.config.clone()) {
+            *self = new_mic;
+            tracing::info!("Reinitialized microphone with default device");
+            Ok(())
+        } else {
+            Err(Error::Audio("Failed to reinitialize microphone with any device".to_string()))
+        }
     }
 
     /// Record audio until silence is detected or max duration is reached

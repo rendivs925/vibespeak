@@ -6,6 +6,15 @@ use std::sync::{
 };
 use std::time::Duration;
 
+/// Information about an audio device
+#[derive(Debug, Clone)]
+pub struct AudioDeviceInfo {
+    pub name: String,
+    pub sample_rate: u32,
+    pub channels: u16,
+    pub sample_format: String,
+}
+
 /// Audio player using cpal for cross-platform audio playback
 pub struct AudioPlayer {
     device: cpal::Device,
@@ -19,11 +28,35 @@ unsafe impl Send for AudioPlayer {}
 unsafe impl Sync for AudioPlayer {}
 
 impl AudioPlayer {
+    /// Create a new audio player with the default output device
     pub fn new() -> Result<Self> {
+        Self::with_device(None)
+    }
+
+    /// Create a new audio player with a specific output device
+    pub fn with_device(device_name: Option<&str>) -> Result<Self> {
         let host = cpal::default_host();
-        let device = host
-            .default_output_device()
-            .ok_or_else(|| Error::Audio("No output device available".to_string()))?;
+        let device = match device_name {
+            Some(name) => {
+                let devices = host.output_devices()
+                    .map_err(|e| Error::Audio(format!("Failed to enumerate output devices: {}", e)))?;
+
+                let mut selected_device = None;
+                for device in devices {
+                    if let Ok(dev_name) = device.name() {
+                        if dev_name.contains(name) {
+                            selected_device = Some(device);
+                            break;
+                        }
+                    }
+                }
+
+                selected_device.ok_or_else(|| Error::Audio(format!("Output device '{}' not found", name)))?
+            }
+            None => host
+                .default_output_device()
+                .ok_or_else(|| Error::Audio("No output device available".to_string()))?,
+        };
 
         let config = device
             .default_output_config()
@@ -34,7 +67,7 @@ impl AudioPlayer {
             .unwrap_or_else(|_| "Unknown device".to_string());
 
         tracing::info!(
-            "Audio player initialized with default output device: {} (sample_rate: {}, channels: {})",
+            "Audio player initialized with output device: {} (sample_rate: {}, channels: {})",
             device_name,
             config.sample_rate().0,
             config.channels()
@@ -46,6 +79,20 @@ impl AudioPlayer {
             is_playing: Arc::new(AtomicBool::new(false)),
             stop_flag: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    /// List all available output devices
+    pub fn list_output_devices() -> Result<Vec<String>> {
+        let host = cpal::default_host();
+        let devices = host
+            .output_devices()
+            .map_err(|e| Error::Audio(format!("Failed to enumerate output devices: {}", e)))?;
+
+        let device_names: Vec<String> = devices
+            .filter_map(|d| d.name().ok())
+            .collect();
+
+        Ok(device_names)
     }
 
     /// Pick a SupportedStreamConfig matching requested sample rate if possible, else fallback to default.
@@ -570,5 +617,44 @@ impl AudioPlayer {
     /// Check if currently playing
     pub fn is_playing(&self) -> bool {
         self.is_playing.load(Ordering::SeqCst)
+    }
+
+    /// Get information about the current audio device
+    pub fn device_info(&self) -> Result<AudioDeviceInfo> {
+        let name = self.device
+            .name()
+            .unwrap_or_else(|_| "Unknown device".to_string());
+
+        Ok(AudioDeviceInfo {
+            name,
+            sample_rate: self.config.sample_rate().0,
+            channels: self.config.channels(),
+            sample_format: format!("{:?}", self.config.sample_format()),
+        })
+    }
+
+    /// Attempt to reinitialize with a different device if the current one fails
+    pub fn try_reinitialize_with_fallback(&mut self) -> Result<()> {
+        tracing::warn!("Attempting to reinitialize audio player with fallback device");
+
+        // Try to find another available output device
+        if let Ok(devices) = Self::list_output_devices() {
+            for device_name in devices {
+                if let Ok(new_player) = Self::with_device(Some(&device_name)) {
+                    *self = new_player;
+                    tracing::info!("Successfully reinitialized with device: {}", device_name);
+                    return Ok(());
+                }
+            }
+        }
+
+        // If no other devices work, try default
+        if let Ok(new_player) = Self::new() {
+            *self = new_player;
+            tracing::info!("Reinitialized with default device");
+            Ok(())
+        } else {
+            Err(Error::Audio("Failed to reinitialize audio player with any device".to_string()))
+        }
     }
 }
