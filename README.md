@@ -352,17 +352,19 @@ Control web browsers programmatically:
 # Initial setup
 make setup
 
-# Start development with auto-reload
-make dev
+# Development modes
+make dev          # Interactive mode selection (web/listen)
+make dev-listen   # Start voice listening mode directly
+make dev-web      # Start web interface mode directly
 
-# Run tests
-make test
+# Alternative: Use environment variables
+VIBESPEAK_MODE=listen make dev  # Auto-start voice listening
+VIBESPEAK_MODE=web make dev     # Auto-start web interface
 
-# Code quality checks
-make check
-
-# Format code
-make format
+# Testing & quality
+make test         # Run all tests
+make check        # Format, lint, and test
+make format       # Format code only
 ```
 
 ### Project Structure
