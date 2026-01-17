@@ -7,7 +7,7 @@ use vosk::{Model, Recognizer};
 
 pub struct VoskAdapter {
     model: Arc<Model>,
-    sample_rate: f32,
+    default_sample_rate: f32,
 }
 
 impl VoskAdapter {
@@ -21,7 +21,7 @@ impl VoskAdapter {
 
         Ok(Self {
             model: Arc::new(model),
-            sample_rate,
+            default_sample_rate: sample_rate,
         })
     }
 }
@@ -29,8 +29,14 @@ impl VoskAdapter {
 #[async_trait]
 impl SpeechRecognitionService for VoskAdapter {
     async fn recognize(&self, audio: AudioSample) -> Result<RecognitionResult> {
+        let sample_rate = if audio.sample_rate > 0 {
+            audio.sample_rate as f32
+        } else {
+            self.default_sample_rate
+        };
+
         // Create recognizer for this audio session
-        let mut recognizer = Recognizer::new(&self.model, self.sample_rate)
+        let mut recognizer = Recognizer::new(&self.model, sample_rate)
             .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer".to_string()))?;
 
         // Process the audio - Vosk expects &[i16]

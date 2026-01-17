@@ -11,6 +11,7 @@ pub struct AudioDeviceInfo {
     pub sample_format: String,
 }
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use std::borrow::Cow;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
@@ -198,6 +199,71 @@ impl MicrophoneCapture {
         }
     }
 
+    fn downmix_to_mono<'a>(data: &'a [i16], channels: u16) -> Cow<'a, [i16]> {
+        if channels <= 1 {
+            return Cow::Borrowed(data);
+        }
+
+        let mut mono = Vec::with_capacity(data.len() / channels as usize);
+        for frame in data.chunks(channels as usize) {
+            let sum: i32 = frame.iter().map(|&s| s as i32).sum();
+            mono.push((sum / frame.len() as i32) as i16);
+        }
+
+        Cow::Owned(mono)
+    }
+
+    fn get_candidate_configs(&self, device: &cpal::Device) -> Result<Vec<cpal::SupportedStreamConfig>> {
+        let desired_rate = cpal::SampleRate(self.config.sample_rate);
+        let desired_channels = self.config.channels;
+        let mut candidates = Vec::new();
+
+        let ranges: Vec<_> = device
+            .supported_input_configs()
+            .map_err(|e| Error::Audio(format!("Failed to get supported configs: {}", e)))?
+            .collect();
+
+        for range in &ranges {
+            if range.channels() >= desired_channels
+                && range.min_sample_rate() <= desired_rate
+                && range.max_sample_rate() >= desired_rate
+            {
+                candidates.push(range.clone().with_sample_rate(desired_rate));
+                break;
+            }
+        }
+
+        if let Ok(default_config) = device.default_input_config() {
+            if !candidates.iter().any(|c| {
+                c.channels() == default_config.channels()
+                    && c.sample_rate() == default_config.sample_rate()
+                    && c.sample_format() == default_config.sample_format()
+            }) {
+                candidates.push(default_config);
+            }
+        }
+
+        for range in ranges {
+            if range.channels() < desired_channels {
+                continue;
+            }
+            let candidate = range.with_sample_rate(range.max_sample_rate());
+            if !candidates.iter().any(|c| {
+                c.channels() == candidate.channels()
+                    && c.sample_rate() == candidate.sample_rate()
+                    && c.sample_format() == candidate.sample_format()
+            }) {
+                candidates.push(candidate);
+            }
+        }
+
+        if candidates.is_empty() {
+            return Err(Error::Audio("No supported input configurations found".to_string()));
+        }
+
+        Ok(candidates)
+    }
+
     fn build_input_stream_i16<F>(
         &self,
         device: &cpal::Device,
@@ -244,6 +310,42 @@ impl MicrophoneCapture {
             _ => Err(cpal::BuildStreamError::StreamConfigNotSupported),
         }
         .map_err(|e| Error::Audio(format!("Failed to build input stream: {}", e)))
+    }
+
+    fn build_input_stream_i16_with_fallback<F>(
+        &self,
+        device: &cpal::Device,
+        on_samples: F,
+    ) -> Result<(cpal::Stream, cpal::SupportedStreamConfig)>
+    where
+        F: FnMut(&[i16], u16) + Send + 'static,
+    {
+        let on_samples = Arc::new(Mutex::new(on_samples));
+        let candidates = self.get_candidate_configs(device)?;
+        for config in candidates {
+            let channels = config.channels();
+            let handler = on_samples.clone();
+            match self.build_input_stream_i16(device, &config, move |data| {
+                if let Ok(mut on_samples) = handler.lock() {
+                    on_samples(data, channels);
+                }
+            }) {
+                Ok(stream) => return Ok((stream, config)),
+                Err(err) => {
+                    tracing::warn!(
+                        "Input config rejected (channels: {}, rate: {}, format: {:?}): {}",
+                        config.channels(),
+                        config.sample_rate().0,
+                        config.sample_format(),
+                        err
+                    );
+                }
+            }
+        }
+
+        Err(Error::Audio(
+            "Failed to build input stream with any supported config".to_string(),
+        ))
     }
 
     /// Check if currently recording
@@ -301,12 +403,6 @@ impl MicrophoneCapture {
     pub async fn record_until_silence(&self) -> Result<AudioSample> {
         let device = self.get_input_device()?;
 
-        // Get supported config
-        let supported_config = self.get_supported_config(&device)?;
-        let sample_rate = supported_config.sample_rate().0;
-
-        tracing::info!("Recording with sample rate: {} Hz", sample_rate);
-
         // Shared buffer for audio data
         let audio_buffer: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
         let audio_buffer_clone = audio_buffer.clone();
@@ -318,49 +414,66 @@ impl MicrophoneCapture {
         let speech_detected_clone = speech_detected.clone();
 
         let silence_threshold = self.config.silence_threshold;
-        let silence_end_samples = (self.config.silence_end_ms as f32 / 1000.0 * sample_rate as f32) as usize;
-        let max_samples = (self.config.max_speech_ms as f32 / 1000.0 * sample_rate as f32) as usize;
+        let silence_end_samples = Arc::new(Mutex::new(0usize));
+        let max_samples = Arc::new(Mutex::new(0usize));
 
         self.is_recording.store(true, Ordering::SeqCst);
         let is_recording = self.is_recording.clone();
 
         // Create the input stream
-        let stream = self.build_input_stream_i16(
+        let silence_end_samples_clone = silence_end_samples.clone();
+        let max_samples_clone = max_samples.clone();
+        let (stream, used_config) = self.build_input_stream_i16_with_fallback(
             &device,
-            &supported_config,
-            move |data: &[i16]| {
+            move |data: &[i16], channels: u16| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
+                let mono = Self::downmix_to_mono(data, channels);
+                let samples = mono.as_ref();
+
                 let mut rms_sum = 0.0f32;
-                for &sample in data {
+                for &sample in samples {
                     let normalized = sample as f32 / i16::MAX as f32;
                     rms_sum += normalized * normalized;
                 }
 
-                let rms = (rms_sum / data.len() as f32).sqrt();
+                let rms = (rms_sum / samples.len() as f32).sqrt();
                 let is_speech = rms > silence_threshold;
 
                 if is_speech {
                     speech_detected_clone.store(true, Ordering::SeqCst);
                     *silence_samples_clone.lock().unwrap() = 0;
                 } else if speech_detected_clone.load(Ordering::SeqCst) {
-                    *silence_samples_clone.lock().unwrap() += data.len();
+                    *silence_samples_clone.lock().unwrap() += samples.len();
                 }
 
                 let mut buffer = audio_buffer_clone.lock().unwrap();
-                buffer.extend_from_slice(data);
+                buffer.extend_from_slice(samples);
 
                 let silence_count = *silence_samples_clone.lock().unwrap();
-                if speech_detected_clone.load(Ordering::SeqCst) && silence_count >= silence_end_samples {
+                if speech_detected_clone.load(Ordering::SeqCst) && silence_count >= *silence_end_samples_clone.lock().unwrap() {
                     is_recording.store(false, Ordering::SeqCst);
                 }
-                if buffer.len() >= max_samples {
+                if buffer.len() >= *max_samples_clone.lock().unwrap() {
                     is_recording.store(false, Ordering::SeqCst);
                 }
             },
         )?;
+
+        let sample_rate = used_config.sample_rate().0;
+        *silence_end_samples.lock().unwrap() =
+            (self.config.silence_end_ms as f32 / 1000.0 * sample_rate as f32) as usize;
+        *max_samples.lock().unwrap() =
+            (self.config.max_speech_ms as f32 / 1000.0 * sample_rate as f32) as usize;
+
+        tracing::info!(
+            "Recording with config: {} Hz, {} ch, {:?}",
+            sample_rate,
+            used_config.channels(),
+            used_config.sample_format()
+        );
 
         // Start recording
         stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
@@ -387,40 +500,43 @@ impl MicrophoneCapture {
             samples.len() as f32 / sample_rate as f32
         );
 
-        Ok(AudioSample::new(samples, sample_rate, self.config.channels as u8))
+        Ok(AudioSample::new(samples, sample_rate, 1))
     }
 
     /// Record for a fixed duration
     pub async fn record_duration(&self, duration_ms: u32) -> Result<AudioSample> {
         let device = self.get_input_device()?;
 
-        let supported_config = self.get_supported_config(&device)?;
-        let sample_rate = supported_config.sample_rate().0;
-
         let audio_buffer: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
         let audio_buffer_clone = audio_buffer.clone();
 
-        let target_samples = (duration_ms as f32 / 1000.0 * sample_rate as f32) as usize;
+        let target_samples = Arc::new(Mutex::new(0usize));
 
         self.is_recording.store(true, Ordering::SeqCst);
         let is_recording = self.is_recording.clone();
 
-        let stream = self.build_input_stream_i16(
+        let target_samples_clone = target_samples.clone();
+        let (stream, used_config) = self.build_input_stream_i16_with_fallback(
             &device,
-            &supported_config,
-            move |data: &[i16]| {
+            move |data: &[i16], channels: u16| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
                 let mut buffer = audio_buffer_clone.lock().unwrap();
-                buffer.extend_from_slice(data);
+                let mono = Self::downmix_to_mono(data, channels);
+                let samples = mono.as_ref();
+                buffer.extend_from_slice(samples);
 
-                if buffer.len() >= target_samples {
+                if buffer.len() >= *target_samples_clone.lock().unwrap() {
                     is_recording.store(false, Ordering::SeqCst);
                 }
             },
         )?;
+
+        let sample_rate = used_config.sample_rate().0;
+        *target_samples.lock().unwrap() =
+            (duration_ms as f32 / 1000.0 * sample_rate as f32) as usize;
 
         stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 
@@ -434,7 +550,7 @@ impl MicrophoneCapture {
 
         let samples = audio_buffer.lock().unwrap().clone();
 
-        Ok(AudioSample::new(samples, sample_rate, self.config.channels as u8))
+        Ok(AudioSample::new(samples, sample_rate, 1))
     }
 
     /// Start continuous recording with a callback for each audio chunk
@@ -444,20 +560,18 @@ impl MicrophoneCapture {
     {
         let device = self.get_input_device()?;
 
-        let supported_config = self.get_supported_config(&device)?;
-
         self.is_recording.store(true, Ordering::SeqCst);
         let is_recording = self.is_recording.clone();
 
-        let stream = self.build_input_stream_i16(
+        let (stream, used_config) = self.build_input_stream_i16_with_fallback(
             &device,
-            &supported_config,
-            move |data: &[i16]| {
+            move |data: &[i16], channels: u16| {
                 if !is_recording.load(Ordering::SeqCst) {
                     return;
                 }
 
-                callback(data.to_vec());
+                let mono = Self::downmix_to_mono(data, channels);
+                callback(mono.to_vec());
             },
         )?;
 
@@ -469,25 +583,6 @@ impl MicrophoneCapture {
         })
     }
 
-    fn get_supported_config(&self, device: &cpal::Device) -> Result<cpal::SupportedStreamConfig> {
-        // Try to get config with our preferred sample rate
-        let supported_configs = device.supported_input_configs()
-            .map_err(|e| Error::Audio(format!("Failed to get supported configs: {}", e)))?;
-
-        // Find a config that matches our requirements
-        for config in supported_configs {
-            if config.channels() >= self.config.channels {
-                let sample_rate = cpal::SampleRate(self.config.sample_rate);
-                if config.min_sample_rate() <= sample_rate && config.max_sample_rate() >= sample_rate {
-                    return Ok(config.with_sample_rate(sample_rate));
-                }
-            }
-        }
-
-        // Fall back to default config
-        device.default_input_config()
-            .map_err(|e| Error::Audio(format!("Failed to get default input config: {}", e)))
-    }
 }
 
 /// Handle for continuous recording that stops when dropped
