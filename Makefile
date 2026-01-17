@@ -10,7 +10,7 @@
 #   make dev      # Run in development mode with auto-restart
 #
 
-.PHONY: help setup build run dev test clean install docs format lint check-deps web-deps
+.PHONY: help setup build run dev dev-web dev-listen test clean install docs format lint check-deps web-deps
 
 # Default target
 help:
@@ -21,7 +21,9 @@ help:
 	@echo "  setup     - Initial project setup and dependency installation"
 	@echo "  build     - Build the application in release mode"
 	@echo "  run       - Build and run the application"
-	@echo "  dev       - Run in development mode (debug build)"
+	@echo "  dev       - Run in development mode (interactive mode selection)"
+	@echo "  dev-web   - Run development mode with web interface"
+	@echo "  dev-listen - Run development mode with voice listening"
 	@echo "  test      - Run all tests"
 	@echo "  clean     - Clean build artifacts"
 	@echo "  install   - Install the application locally"
@@ -36,6 +38,8 @@ help:
 	@echo ""
 	@echo "Development workflow:"
 	@echo "  make setup && make dev"
+	@echo "  VIBESPEAK_MODE=listen make dev  # Auto-start voice listening"
+	@echo "  VIBESPEAK_MODE=web make dev     # Auto-start web interface"
 
 # Initial setup and dependency installation
 setup: check-deps web-deps config
@@ -76,11 +80,40 @@ run: build
 	@echo "Starting Vibespeak..."
 	./target/release/vibespeak
 
-# Run in development mode (debug build, auto-restart available)
+# Run in development mode (debug build)
 dev:
 	@echo "Starting Vibespeak in development mode..."
+	@if [ "$$VIBESPEAK_MODE" = "listen" ]; then \
+		echo "🎤 Voice listening mode (set by VIBESPEAK_MODE=listen)"; \
+		cargo run -- --mode listen; \
+	elif [ "$$VIBESPEAK_MODE" = "web" ]; then \
+		echo "🌐 Web interface mode (set by VIBESPEAK_MODE=web)"; \
+		cargo run -- --mode web; \
+	else \
+		echo "Choose mode:"; \
+		echo "  1) Web interface (default)"; \
+		echo "  2) Voice listening"; \
+		echo -n "Enter choice [1-2]: "; \
+		read -r choice; \
+		case $$choice in \
+			2) echo "Starting voice listening mode..."; cargo run -- --mode listen ;; \
+			*) echo "Starting web interface mode..."; cargo run -- --mode web ;; \
+		esac; \
+	fi
+
+# Run in development mode with web interface
+dev-web:
+	@echo "Starting Vibespeak web interface (development mode)..."
+	@echo "Web UI: http://localhost:8080"
 	@echo "Press Ctrl+C to stop"
-	cargo run
+	cargo run -- --mode web
+
+# Run in development mode with voice listening
+dev-listen:
+	@echo "Starting Vibespeak voice listening (development mode)..."
+	@echo "🎤 Voice listening active - speak commands!"
+	@echo "Press Ctrl+C to stop"
+	cargo run -- --mode listen
 
 # Run all tests
 test:
