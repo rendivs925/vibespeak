@@ -58,7 +58,7 @@ pub struct ScriptConfig {
 impl Default for SystemSettings {
     fn default() -> Self {
         Self {
-            vosk_model_path: "model/vosk-model-small-en-us-0.15".to_string(),
+            vosk_model_path: "model/vosk-model-en-us-0.22-lgraph".to_string(),
             sample_rate: 16000.0,
             audio_device: None,
             web_server_port: 8080,

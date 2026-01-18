@@ -8,7 +8,7 @@ use vibespeak::shared::{Error, Result};
 use std::sync::Arc;
 use std::collections::HashMap;
 
-const MODEL_PATH: &str = "model/vosk-model-small-en-us-0.15";
+const MODEL_PATH: &str = "model/vosk-model-en-us-0.22-lgraph";
 const CONFIG_PATH: &str = "config/system.json";
 // Web port is now read from configuration
 

@@ -232,7 +232,7 @@ mod voice_processing_tests {
         use std::collections::HashMap;
 
         // Try to create the Vosk adapter (may fail if model not present)
-        let vosk_result = VoskAdapter::new("model/vosk-model-small-en-us-0.15", 16000.0);
+        let vosk_result = VoskAdapter::new("model/vosk-model-en-us-0.22-lgraph", 16000.0);
 
         if let Ok(vosk) = vosk_result {
             let tts = TtsAdapter::new().expect("TTS creation failed");
