@@ -599,11 +599,60 @@ impl AudioPlayer {
         });
     }
 
-    /// Play audio from a file
-    pub async fn play_file(&self, _path: &str) -> Result<()> {
-        Err(Error::Audio(
-            "File playback not yet implemented with CPAL. Use play_pcm_data instead.".to_string(),
-        ))
+    /// Play audio from a WAV file
+    pub async fn play_file(&self, path: &str) -> Result<()> {
+        use std::fs::File;
+        use std::io::{BufReader, Read, Seek, SeekFrom};
+
+        let file = File::open(path)
+            .map_err(|e| Error::Audio(format!("Failed to open WAV file: {}", e)))?;
+        let mut reader = BufReader::new(file);
+
+        // Read WAV header (simplified parser for standard WAV)
+        let mut header = [0u8; 44];
+        reader.read_exact(&mut header)
+            .map_err(|e| Error::Audio(format!("Failed to read WAV header: {}", e)))?;
+
+        // Verify RIFF header
+        if &header[0..4] != b"RIFF" || &header[8..12] != b"WAVE" {
+            return Err(Error::Audio("Invalid WAV file format".to_string()));
+        }
+
+        // Find data chunk (may not be at offset 44 for all WAV files)
+        let mut data_start = 12;
+        loop {
+            reader.seek(SeekFrom::Start(data_start as u64))
+                .map_err(|e| Error::Audio(format!("Failed to seek in WAV: {}", e)))?;
+
+            let mut chunk_header = [0u8; 8];
+            if reader.read_exact(&mut chunk_header).is_err() {
+                break;
+            }
+
+            let chunk_id = &chunk_header[0..4];
+            let chunk_size = u32::from_le_bytes([chunk_header[4], chunk_header[5], chunk_header[6], chunk_header[7]]);
+
+            if chunk_id == b"data" {
+                // Read PCM data
+                let mut data = vec![0u8; chunk_size as usize];
+                reader.read_exact(&mut data)
+                    .map_err(|e| Error::Infrastructure(format!("Failed to read PCM data: {}", e)))?;
+
+                // Convert bytes to i16 samples (assuming 16-bit little-endian)
+                let samples: Vec<i16> = data
+                    .chunks_exact(2)
+                    .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
+                    .collect();
+
+                // Assume 16-bit, 22050 Hz mono for Piper WAV files (common defaults)
+                let sample_rate = 22050;
+                return self.play_pcm_data(&samples, sample_rate).await;
+            }
+
+            data_start += 8 + chunk_size as usize;
+        }
+
+        Err(Error::Audio("No data chunk found in WAV file".to_string()))
     }
 
     /// Stop current playback

@@ -62,7 +62,7 @@ impl TtsAdapter {
     }
 
     /// Generate speech using Piper TTS with optimized long text handling
-    async fn synthesize_piper(&self, text: &str, voice: &VoiceConfig) -> Result<Vec<i16>> {
+    async fn synthesize_piper(&self, text: &str, _voice: &VoiceConfig) -> Result<Vec<i16>> {
         // Preprocess text for better synthesis of long paragraphs
         let processed_text = self.preprocess_text_for_tts(text);
         tracing::debug!("Processing text for TTS: {} chars -> {} chars", text.len(), processed_text.len());
@@ -129,24 +129,13 @@ impl TtsAdapter {
             piper_path.to_string_lossy().to_string()
         };
 
-        // Calculate Piper parameters for high-quality audio
-        // length_scale: controls speech speed (higher = slower, lower = faster)
-        let length_scale = (1.0 / voice.rate).max(0.5).min(2.0);
-
-        // High-quality audio parameters (optimized for neural TTS)
-        let noise_scale = 0.667;     // Optimal noise for natural speech
-        let noise_w = 0.8;           // Phoneme width noise for clarity
-        let sentence_silence = 0.1;  // Shorter pauses between sentences
-
-        // Run Piper TTS with optimized parameters for high-quality female voice
+        // Use Piper with default settings for en_US-amy-medium model
+        // This matches the direct command: piper --model en_US-amy-medium.onnx --output_file file.wav
         let mut child = Command::new(piper_cmd)
             .args([
+                "--espeak_data", "./piper/espeak-ng-data",
                 "--model", &actual_model_path,
                 "--output_file", &temp_path,
-                "--length_scale", &length_scale.to_string(),
-                "--noise_scale", &noise_scale.to_string(),
-                "--noise_w", &noise_w.to_string(),
-                "--sentence_silence", &sentence_silence.to_string(),
             ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::null())
@@ -275,46 +264,16 @@ impl TtsAdapter {
 
 #[async_trait]
 impl TextToSpeechService for TtsAdapter {
-    async fn synthesize(&self, text: &str, voice: Option<&str>) -> Result<Vec<i16>> {
-        tracing::info!("Synthesizing text: '{}' with voice: {:?}", text, voice);
+    async fn synthesize(&self, text: &str, _voice: Option<&str>) -> Result<Vec<i16>> {
+        tracing::info!("Synthesizing text: '{}' using en_US-amy-medium model", text);
 
-        let voice_config = match voice {
-            Some("male") => VoiceConfig {
-                name: "male".to_string(),
-                pitch: 0.85,  // Slightly lower pitch for more natural male voice
-                rate: 0.8,    // Slower for clear male speech
-                volume: 0.85, // Balanced volume
-            },
-            Some("female") => VoiceConfig {
-                name: "female".to_string(),
-                pitch: 1.15,  // Optimal female pitch for natural sound
-                rate: 0.75,   // Much slower for clear comprehension
-                volume: 0.85, // Balanced volume for female voice clarity
-            },
-            Some("fast") => VoiceConfig {
-                name: "fast".to_string(),
-                pitch: 1.1,
-                rate: 1.4,    // Faster but not too fast
-                volume: 0.9,  // Higher volume for fast speech
-            },
-            Some("slow") => VoiceConfig {
-                name: "slow".to_string(),
-                pitch: 0.95,
-                rate: 0.75,   // Slower for clear articulation
-                volume: 0.75, // Lower volume for calm effect
-            },
-            Some("natural") => VoiceConfig {
-                name: "natural".to_string(),
-                pitch: 1.0,
-                rate: 0.9,    // Natural conversational pace
-                volume: 0.8,
-            },
-            _ => VoiceConfig {
-                name: "female".to_string(),  // Use female voice as default for highest quality
-                pitch: 1.1,   // Slightly adjusted pitch for optimal female voice quality
-                rate: 0.7,    // Much slower speed for clear comprehension
-                volume: 0.82, // Balanced volume for clear audio
-            },
+        // Always use the same voice config for en_US-amy-medium model
+        // Voice parameter is ignored - only Amy model is used
+        let voice_config = VoiceConfig {
+            name: "amy".to_string(),
+            pitch: 1.0,
+            rate: 1.0,
+            volume: 0.8,
         };
 
         // Use Piper TTS (required)
@@ -333,19 +292,11 @@ impl TextToSpeechService for TtsAdapter {
     }
 
     async fn get_available_voices(&self) -> Result<Vec<String>> {
-        let mut voices = vec![
+        // Only Amy voice model is available
+        let voices = vec![
             "default".to_string(),
-            "natural".to_string(),
-            "male".to_string(),
-            "female".to_string(),
-            "fast".to_string(),
-            "slow".to_string(),
+            "amy".to_string(),
         ];
-
-        // Piper provides high-quality neural voices
-        if self.use_piper {
-            voices.push("piper-neural".to_string());
-        }
 
         Ok(voices)
     }
