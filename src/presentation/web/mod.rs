@@ -5,6 +5,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::Filter;
 
+// TTS error handling is done with standard warp rejections
+
 pub struct WebServer {
     voice_service: Arc<VoiceProcessingService>,
     config: Arc<RwLock<SystemConfig>>,
@@ -78,7 +80,16 @@ impl WebServer {
             .and(with_voice_service(self.voice_service.clone()))
             .and_then(test_voice);
 
-        config_get.or(config_post).or(voice_test)
+        // TTS audio endpoint - returns raw PCM data for browser playback
+        let tts_audio = warp::path("api")
+            .and(warp::path("tts"))
+            .and(warp::path("speak"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_voice_service(self.voice_service.clone()))
+            .and_then(tts_audio_handler);
+
+        config_get.or(config_post).or(voice_test).or(tts_audio)
     }
 }
 
@@ -153,6 +164,78 @@ struct VoiceTestRequest {
     text: String,
 }
 
+async fn tts_audio_handler(
+    request: VoiceTestRequest,
+    voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    // Synthesize TTS audio
+    tracing::info!("Web TTS request: synthesizing '{}' using Piper", request.text);
+    match voice_service.text_to_speech.synthesize(&request.text, None).await {
+        Ok(samples) => {
+            tracing::info!("Web TTS: successfully generated {} audio samples from Piper", samples.len());
+
+            // Validate that we have actual audio data (not empty or dummy data)
+            if samples.is_empty() {
+                tracing::error!("Web TTS: Piper returned empty audio samples!");
+                return Err(warp::reject::reject());
+            }
+
+            // Log some sample values to verify they're real audio data
+            if samples.len() > 10 {
+                tracing::debug!("Web TTS: Sample audio values: [{}, {}, {}, {}, ...]",
+                    samples[0], samples[1], samples[2], samples[3]);
+            }
+
+            // Create WAV file with proper header
+            let sample_rate = 22050; // Piper default sample rate
+            let channels = 1; // Mono
+            let bits_per_sample = 16;
+            let data_size = samples.len() * 2; // 2 bytes per i16 sample
+            let file_size = 44 + data_size - 8; // WAV header size
+
+            let mut wav_data = Vec::with_capacity(44 + data_size);
+
+            // WAV header
+            wav_data.extend_from_slice(b"RIFF");
+            wav_data.extend_from_slice(&(file_size as u32).to_le_bytes());
+            wav_data.extend_from_slice(b"WAVE");
+            wav_data.extend_from_slice(b"fmt ");
+            wav_data.extend_from_slice(&16u32.to_le_bytes()); // fmt chunk size
+            wav_data.extend_from_slice(&1u16.to_le_bytes()); // PCM format
+            wav_data.extend_from_slice(&(channels as u16).to_le_bytes());
+            wav_data.extend_from_slice(&(sample_rate as u32).to_le_bytes());
+            wav_data.extend_from_slice(&((sample_rate * channels * bits_per_sample / 8) as u32).to_le_bytes()); // byte rate
+            wav_data.extend_from_slice(&((channels * bits_per_sample / 8) as u16).to_le_bytes()); // block align
+            wav_data.extend_from_slice(&(bits_per_sample as u16).to_le_bytes());
+            wav_data.extend_from_slice(b"data");
+            wav_data.extend_from_slice(&(data_size as u32).to_le_bytes());
+
+            // Audio data (convert i16 samples to bytes)
+            for &sample in &samples {
+                wav_data.extend_from_slice(&sample.to_le_bytes());
+            }
+
+            // Return WAV file with appropriate headers
+            let response = warp::http::Response::builder()
+                .status(200)
+                .header("Content-Type", "audio/wav")
+                .header("Content-Length", wav_data.len().to_string())
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Headers", "Content-Type")
+                .header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+                .header("Cache-Control", "no-cache")
+                .body(wav_data)
+                .unwrap(); // This should be safe since we're building a valid response
+
+            Ok(response)
+        }
+        Err(e) => {
+            tracing::error!("TTS synthesis failed: {}", e);
+            Err(warp::reject::reject())
+        }
+    }
+}
+
 async fn test_voice(
     request: VoiceTestRequest,
     voice_service: Arc<VoiceProcessingService>,
@@ -177,21 +260,16 @@ async fn test_voice(
         .cloned()
         .collect();
 
-    // Synthesize TTS response if text was provided and play it
-    let tts_status = match voice_service.text_to_speech.synthesize(&request.text, None).await {
+    // Synthesize TTS response if text was provided
+    let tts_samples = match voice_service.text_to_speech.synthesize(&request.text, None).await {
         Ok(samples) => {
-            // Try to play the audio
-            match crate::infrastructure::adapters::AudioPlayer::new() {
-                Ok(player) => {
-                    match player.play_pcm_data(&samples, 44100).await {
-                        Ok(_) => format!("TTS generated {} samples and played successfully", samples.len()),
-                        Err(e) => format!("TTS generated {} samples but playback failed: {}", samples.len(), e),
-                    }
-                }
-                Err(e) => format!("TTS generated {} samples but audio player failed: {}", samples.len(), e),
-            }
+            tracing::info!("TTS synthesized {} samples for web playback", samples.len());
+            Some(samples)
         }
-        Err(e) => format!("TTS error: {}", e),
+        Err(e) => {
+            tracing::warn!("TTS synthesis failed for web: {}", e);
+            None
+        }
     };
 
     let result = serde_json::json!({
@@ -201,7 +279,8 @@ async fn test_voice(
         "message": "Voice test completed",
         "commands_matched": matched_commands,
         "available_commands": available_commands.len(),
-        "tts_status": tts_status
+        "tts_samples": tts_samples.as_ref().map(|s| s.len()).unwrap_or(0),
+        "tts_available": tts_samples.is_some()
     });
 
     Ok(warp::reply::json(&result))

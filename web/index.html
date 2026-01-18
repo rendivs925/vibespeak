@@ -355,15 +355,36 @@
 
       async function testVoice(text) {
         try {
-          const response = await fetch("/api/voice/test", {
+          updateStatus("Generating voice...");
+
+          // Get TTS audio data
+          const response = await fetch("/api/tts/speak", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text }),
           });
-          const result = await response.json();
-          updateStatus(`Voice test successful: "${result.text}"`);
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "TTS failed");
+          }
+
+          // Get audio data as ArrayBuffer
+          const audioData = await response.arrayBuffer();
+
+          // Play audio using Web Audio API
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const audioBuffer = await audioContext.decodeAudioData(audioData);
+
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+
+          updateStatus(`Playing voice: "${text}"`);
         } catch (error) {
-          updateStatus("Voice test failed", "error");
+          console.error("Voice test failed:", error);
+          updateStatus(`Voice test failed: ${error.message}`, "error");
         }
       }
 

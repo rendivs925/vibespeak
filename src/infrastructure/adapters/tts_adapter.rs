@@ -4,117 +4,72 @@ use async_trait::async_trait;
 use std::process::Command;
 use uuid::Uuid;
 
-/// Voice configuration for TTS
-#[derive(Debug, Clone)]
-pub struct VoiceConfig {
-    pub name: String,
-    pub pitch: f32,      // 0.5 - 2.0
-    pub rate: f32,       // 0.5 - 2.0 (words per minute multiplier)
-    pub volume: f32,     // 0.0 - 1.0
-}
-
-impl Default for VoiceConfig {
-    fn default() -> Self {
-        Self {
-            name: "default".to_string(),
-            pitch: 1.0,
-            rate: 1.0,
-            volume: 0.8,
-        }
-    }
-}
+// Voice configuration removed - only Piper Amy model is supported
 
 pub struct TtsAdapter {
     sample_rate: u32,
-    default_voice: VoiceConfig,
-    use_piper: bool,
 }
 
 impl TtsAdapter {
     pub fn new() -> Result<Self> {
-        // Check for Piper TTS engine (required)
-        let system_piper = Command::new("which")
-            .arg("piper")
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
+        // Verify Piper TTS engine is available (required - no fallback)
+        let piper_available = Self::check_piper_availability();
 
-        let local_piper_exists = std::path::Path::new("./piper/piper").exists()
-            || std::path::Path::new("piper/piper").exists();
-
-        let use_piper = system_piper || local_piper_exists;
-
-        tracing::info!("TTS detection: system piper={}, local piper exists={}, use_piper={}",
-            system_piper, local_piper_exists, use_piper);
-
-        if use_piper {
-            tracing::info!("TTS: Piper neural TTS detected - providing high-quality natural voices with Amy model");
-        } else {
-            tracing::warn!("TTS: Piper not found. Please install Piper TTS for voice synthesis.");
-            tracing::info!("Install Piper from: https://github.com/rhasspy/piper");
+        if !piper_available {
+            return Err(Error::Infrastructure(
+                "Piper TTS not found. Piper TTS is required for voice synthesis.\n\
+                 Please ensure Piper is installed and available in PATH or in ./piper/piper".to_string()
+            ));
         }
+
+        tracing::info!("TTS: Piper neural TTS with Amy voice model ready for high-quality natural voice synthesis");
 
         Ok(Self {
             sample_rate: 44100,
-            default_voice: VoiceConfig::default(),
-            use_piper,
         })
     }
 
-    /// Generate speech using Piper TTS with optimized long text handling
-    async fn synthesize_piper(&self, text: &str, _voice: &VoiceConfig) -> Result<Vec<i16>> {
-        // Preprocess text for better synthesis of long paragraphs
-        let processed_text = self.preprocess_text_for_tts(text);
-        tracing::debug!("Processing text for TTS: {} chars -> {} chars", text.len(), processed_text.len());
-
-        // Check if piper is available
-        let piper_available = Command::new("which")
+    /// Check if Piper TTS is available
+    fn check_piper_availability() -> bool {
+        // Check system piper
+        if Command::new("which")
             .arg("piper")
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
-            || Command::new("./piper/piper")
-                .arg("--help")
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false);
-
-        if !piper_available {
-            return Err(Error::Infrastructure("Piper TTS not found. Please install Piper TTS.".to_string()));
+        {
+            return true;
         }
+
+        // Check local piper
+        if std::path::Path::new("./piper/piper").exists()
+            || std::path::Path::new("piper/piper").exists()
+        {
+            return true;
+        }
+
+        false
+    }
+
+    /// Generate speech using Piper TTS (only TTS engine supported)
+    async fn synthesize_piper(&self, text: &str) -> Result<Vec<i16>> {
+        // Preprocess text for better synthesis
+        let processed_text = self.preprocess_text_for_tts(text);
 
         // Create temporary file for WAV output
         let temp_path = format!("/tmp/vibespeak_tts_{}.wav", Uuid::new_v4());
 
-        // Use only the en_US-amy-medium voice model for all voices
-        // This is the single, high-quality English female voice model from Piper samples
-        let voice_model = "en_US-amy-medium.onnx";
+        // Always use en_US-amy-medium model (only voice model supported)
+        let voice_model_path = "./models/en_US-amy-medium.onnx".to_string();
 
-        // Check if the voice model exists in common locations
-        let model_paths = vec![
-            format!("./models/{}", voice_model),
-            format!("/usr/local/share/piper/{}", voice_model),
-            format!("/usr/share/piper/{}", voice_model),
-            voice_model.to_string(), // Try as-is (assume it's in PATH or absolute path)
-        ];
-
-        let mut model_found = false;
-        let mut actual_model_path = voice_model.to_string();
-
-        for path in model_paths {
-            if std::path::Path::new(&path).exists() {
-                actual_model_path = path;
-                model_found = true;
-                break;
-            }
+        // Verify model exists
+        if !std::path::Path::new(&voice_model_path).exists() {
+            return Err(Error::Infrastructure(
+                format!("Piper voice model not found at: {}. Please ensure the Amy voice model is installed.", voice_model_path)
+            ));
         }
 
-        if !model_found {
-            tracing::warn!("Piper voice model '{}' not found in common locations. Make sure to download Piper voice models.", voice_model);
-            tracing::info!("Download voice models from: https://huggingface.co/rhasspy/piper-voices/tree/v1.0.0");
-        }
-
-        // Choose piper command (system or local with absolute path)
+        // Get piper command path
         let piper_cmd = if Command::new("which")
             .arg("piper")
             .output()
@@ -123,18 +78,17 @@ impl TtsAdapter {
         {
             "piper".to_string()
         } else {
-            // Use absolute path to piper binary
+            // Use local piper binary
             let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
             let piper_path = current_dir.join("piper").join("piper");
             piper_path.to_string_lossy().to_string()
         };
 
-        // Use Piper with default settings for en_US-amy-medium model
-        // This matches the direct command: piper --model en_US-amy-medium.onnx --output_file file.wav
-        let mut child = Command::new(piper_cmd)
+        // Run Piper TTS with exact same command structure as manual usage
+        let mut child = Command::new(&piper_cmd)
             .args([
                 "--espeak_data", "./piper/espeak-ng-data",
-                "--model", &actual_model_path,
+                "--model", &voice_model_path,
                 "--output_file", &temp_path,
             ])
             .stdin(std::process::Stdio::piped())
@@ -143,29 +97,29 @@ impl TtsAdapter {
             .spawn()
             .map_err(|e| Error::Infrastructure(format!("Failed to start Piper: {}", e)))?;
 
-        // Write processed text to stdin
+        // Write text to Piper's stdin
         if let Some(ref mut stdin) = child.stdin {
             use std::io::Write;
             stdin.write_all(processed_text.as_bytes())
                 .map_err(|e| Error::Infrastructure(format!("Failed to write text to Piper: {}", e)))?;
         }
 
-        // Wait for completion
+        // Wait for Piper to complete
         let result = child.wait_with_output()
             .map_err(|e| Error::Infrastructure(format!("Failed to wait for Piper: {}", e)))?;
 
         if !result.status.success() {
             let stderr = String::from_utf8_lossy(&result.stderr);
-            return Err(Error::Infrastructure(format!("Piper failed: {}", stderr)));
+            return Err(Error::Infrastructure(format!("Piper TTS failed: {}", stderr)));
         }
 
-        // Read the WAV file and extract high-quality PCM data
+        // Read WAV file and extract PCM samples
         let samples = self.read_wav_file(&temp_path)?;
-        tracing::debug!("Generated {} PCM samples for high-quality female voice synthesis", samples.len());
 
         // Clean up temp file
         let _ = std::fs::remove_file(&temp_path);
 
+        tracing::debug!("Generated {} PCM samples using Piper Amy voice model", samples.len());
         Ok(samples)
     }
 
@@ -265,30 +219,10 @@ impl TtsAdapter {
 #[async_trait]
 impl TextToSpeechService for TtsAdapter {
     async fn synthesize(&self, text: &str, _voice: Option<&str>) -> Result<Vec<i16>> {
-        tracing::info!("Synthesizing text: '{}' using en_US-amy-medium model", text);
+        tracing::info!("Synthesizing text: '{}' using Piper Amy voice model", text);
 
-        // Always use the same voice config for en_US-amy-medium model
-        // Voice parameter is ignored - only Amy model is used
-        let voice_config = VoiceConfig {
-            name: "amy".to_string(),
-            pitch: 1.0,
-            rate: 1.0,
-            volume: 0.8,
-        };
-
-        // Use Piper TTS (required)
-        if self.use_piper {
-            match self.synthesize_piper(text, &voice_config).await {
-                Ok(samples) => return Ok(samples),
-                Err(e) => {
-                    tracing::error!("Piper TTS synthesis failed: {}", e);
-                    return Err(e);
-                }
-            }
-        }
-
-        // Piper not available - return error
-        Err(Error::Infrastructure("Piper TTS not available. Please install Piper TTS.".to_string()))
+        // Piper TTS is the only TTS engine supported - no fallbacks
+        self.synthesize_piper(text).await
     }
 
     async fn get_available_voices(&self) -> Result<Vec<String>> {
@@ -303,8 +237,7 @@ impl TextToSpeechService for TtsAdapter {
 
     async fn initialize(&self) -> Result<()> {
         tracing::info!(
-            "TTS adapter initialized - piper: {}, sample_rate: {}",
-            self.use_piper,
+            "TTS adapter initialized - Piper Amy voice model ready, sample_rate: {}",
             self.sample_rate
         );
         Ok(())
