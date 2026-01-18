@@ -43,6 +43,8 @@ make dev
 
 Open http://localhost:8080 in your browser to configure and use Vibespeak.
 
+For detailed setup instructions, see [SETUP.md](SETUP.md).
+
 ## System Requirements
 
 ### Minimum Requirements
@@ -67,31 +69,30 @@ Open http://localhost:8080 in your browser to configure and use Vibespeak.
 **Arch Linux:**
 
 ```bash
-sudo pacman -S vosk-api alsa-utils
-# Piper TTS is included in the automated setup
+sudo pacman -S vosk-api alsa-utils cmake fmt spdlog onnxruntime-cpu espeak-ng
 ```
 
 **Ubuntu/Debian:**
 
 ```bash
-sudo apt install libvosk-dev alsa-utils
-# Piper TTS is included in the automated setup
+sudo apt install libvosk-dev alsa-utils cmake libfmt-dev libspdlog-dev onnxruntime libespeak-ng-dev
 ```
 
 **macOS (using Homebrew):**
 
 ```bash
-brew install vosk
-# Piper TTS is included in the automated setup
+brew install vosk cmake fmt spdlog espeak-ng
+# ONNX Runtime needs to be installed manually
 ```
 
 **Windows:**
 
+- Install MSVC build tools
 - Download Vosk from: https://alphacephei.com/vosk/models
-- Download Piper TTS from: https://github.com/rhasspy/piper/releases
-- Install both according to their respective instructions
+- ONNX Runtime: Download from https://github.com/microsoft/onnxruntime/releases
+- Piper will be built from source as part of the setup
 
-**Note:** Vibespeak now requires Piper TTS exclusively for natural voice synthesis. Espeak/espeak-ng are no longer supported.
+**Note:** Vibespeak requires Piper TTS exclusively for natural voice synthesis. The system builds Piper from source for optimal compatibility.
 
 #### Rust Toolchain
 
@@ -124,7 +125,7 @@ nvm use 18
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/vibespeak.git
+git clone https://github.com/rendivs925/vibespeak.git
 cd vibespeak
 
 # Run automated setup
@@ -133,10 +134,13 @@ make setup
 
 This will:
 
-- Check system dependencies
-- Install web development tools (if available)
+- Check and install system dependencies
+- Build Piper TTS from source
+- Download high-quality voice models (en_US-amy-medium)
 - Generate default configuration
-- Download required assets
+- Set up the web interface
+
+**Note**: For detailed setup instructions and troubleshooting, see [SETUP.md](SETUP.md).
 
 ### Option 2: Manual Setup
 
@@ -165,6 +169,27 @@ make docker
 make docker-run
 ```
 
+## File Management (.gitignore)
+
+Vibespeak excludes large binary files and temporary data from version control:
+
+### Excluded Files:
+- **Voice Models**: `models/` - TTS and speech recognition models (60MB+ each)
+- **Piper TTS**: `piper/` - Built TTS engine and dependencies
+- **Temporary Audio**: `*.wav`, `*.mp3`, etc. - Generated audio files
+- **Logs**: `*.log`, `logs/` - Application logs
+- **Build Artifacts**: `target/`, `Cargo.lock` - Rust build outputs
+- **Node Modules**: `node_modules/` - Web dependencies
+
+### Why This Matters:
+- **Repository Size**: Keeps the git repository small and fast
+- **Security**: Prevents accidental commit of sensitive data
+- **Performance**: Faster cloning and CI/CD operations
+- **Privacy**: Generated audio files stay local
+
+### Setup After Clone:
+After cloning the repository, run `make setup` to download and build all required components.
+
 ## Voice Model Setup
 
 Vibespeak requires both Vosk language models for speech recognition and Piper voice models for natural speech synthesis:
@@ -184,22 +209,28 @@ unzip vosk-model-en-us-0.22-lgraph.zip
 
 ### Text-to-Speech Models (Piper)
 
-The automated setup (`make setup`) will download Piper TTS and voice models automatically. For manual setup:
+The automated setup builds Piper TTS from source and downloads the recommended voice model. For manual setup:
 
 ```bash
-# Download Piper TTS binary
-wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
-tar -xzf piper_amd64.tar.gz
+# Build Piper TTS from source (requires cmake, fmt, spdlog, onnxruntime, espeak-ng)
+git clone https://github.com/rhasspy/piper.git
+cd piper
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
 
-# Download high-quality voice models
-# Recommended: Natural female voice
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+# Install Piper locally in the project
+cp piper ../../piper/
+cp -r pi/lib/* ../../piper/lib/
+cp -r pi/share/* ../../piper/share/
 
-# Optional: Male voice
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/ryan/medium/en_US-ryan-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json
+# Download the recommended voice model (en_US-amy-medium)
+cd ../../models
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json
 ```
+
+**Note**: Vibespeak currently uses only the `en_US-amy-medium` voice model for optimal natural speech quality. Additional voice models can be added manually if needed.
 
 ### Available Models
 
@@ -213,14 +244,13 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/ryan/me
 
 #### Text-to-Speech Voice Models
 
+Vibespeak uses only the highest-quality voice model:
+
 | Voice Model              | Quality | Size | Description                     |
 | ------------------------ | ------- | ---- | ------------------------------- |
-| `en_US-lessac-medium`    | ⭐⭐⭐⭐⭐ | 60MB | Natural female, highly recommended |
-| `en_US-ryan-medium`      | ⭐⭐⭐⭐⭐ | 60MB | Natural male voice              |
-| `en_GB-alan-medium`      | ⭐⭐⭐⭐⭐ | 60MB | British male voice              |
-| `en_US-amy-medium`       | ⭐⭐⭐⭐  | 60MB | Additional female voice         |
+| `en_US-amy-medium`       | ⭐⭐⭐⭐⭐ | 60MB | **Primary voice** - Natural female voice, optimized for clarity and expressiveness |
 
-**Note**: Piper voices are neural network-based and provide significantly more natural speech than traditional TTS engines.
+**Note**: Vibespeak builds Piper TTS from source and uses only the `en_US-amy-medium` model for consistent, high-quality natural speech synthesis. This neural network-based voice provides significantly more natural speech than traditional TTS engines.
 
 ## Configuration
 
@@ -583,27 +613,37 @@ unzip vosk-model-en-us-0.22-lgraph.zip
 #### 2. "Piper TTS not found"
 
 ```
-Error: Piper TTS not found
+Error: Piper TTS not found. Piper TTS is required for voice synthesis.
 ```
 
 **Solution:**
 
-Piper TTS is required for Vibespeak to function. The automated setup (`make setup`) should install it automatically, but for manual installation:
+Piper TTS must be built from source. The automated setup (`make setup`) handles this, but for manual installation:
 
 ```bash
-# Download and extract Piper TTS
-wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
-tar -xzf piper_amd64.tar.gz
+# Install required system dependencies
+sudo pacman -S cmake fmt spdlog onnxruntime-cpu espeak-ng  # Arch Linux
+# OR for Ubuntu: sudo apt install cmake libfmt-dev libspdlog-dev onnxruntime libespeak-ng-dev
 
-# Download high-quality voice models
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+# Build Piper TTS from source
+git clone https://github.com/rhasspy/piper.git
+cd piper
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
 
-# Make piper executable and available
-chmod +x piper/piper
+# Install locally in Vibespeak project
+cp piper ../../piper/
+cp -r pi/lib/* ../../piper/lib/
+cp -r pi/share/* ../../piper/share/
+
+# Download voice model
+cd ../../models
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json
 
 # Test Piper
-echo "Hello world" | ./piper/piper --model en_US-lessac-medium.onnx --output_file test.wav
+echo "Hello world" | ../../piper/piper --model en_US-amy-medium.onnx --output_file test.wav
 ```
 
 #### 2. "Audio device not found"
@@ -838,9 +878,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - **Vosk**: Open-source offline speech recognition
-- **Piper TTS**: High-quality neural text-to-speech synthesis
+- **Piper TTS**: High-quality neural text-to-speech synthesis (built from source)
+- **ONNX Runtime**: Cross-platform ML inference engine
+- **eSpeak-ng**: Phoneme data for speech synthesis
 - **Tokio**: Async runtime for Rust
-- **Warp**: Fast web framework
+- **Warp**: Fast web framework for the API
 - **Tailscale**: Secure remote access networking
 - **Chromium**: Browser automation engine
 
