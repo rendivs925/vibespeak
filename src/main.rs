@@ -59,10 +59,17 @@ async fn main() -> Result<()> {
         system_config.save_to_file(CONFIG_PATH)?;
     }
 
+    // Extract command texts for grammar-based recognition
+    let command_grammar: Vec<String> = system_config.commands.iter()
+        .map(|cmd| cmd.text.clone())
+        .collect();
+    tracing::info!("Loaded {} commands for grammar-based recognition", command_grammar.len());
+
     // Initialize infrastructure adapters
     let speech_recognition = Arc::new(VoskAdapter::new(
         &system_config.settings.vosk_model_path,
-        system_config.settings.sample_rate
+        system_config.settings.sample_rate,
+        command_grammar
     )?);
 
     let text_to_speech = Arc::new(TtsAdapter::new()?);

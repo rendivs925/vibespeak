@@ -8,10 +8,11 @@ use vosk::{Model, Recognizer};
 pub struct VoskAdapter {
     model: Arc<Model>,
     default_sample_rate: f32,
+    grammar: Vec<String>,
 }
 
 impl VoskAdapter {
-    pub fn new(model_path: &str, sample_rate: f32) -> Result<Self> {
+    pub fn new(model_path: &str, sample_rate: f32, grammar: Vec<String>) -> Result<Self> {
         let model = Model::new(model_path).ok_or_else(|| {
             Error::Infrastructure(format!(
                 "Failed to load Vosk model from path: {}",
@@ -22,6 +23,7 @@ impl VoskAdapter {
         Ok(Self {
             model: Arc::new(model),
             default_sample_rate: sample_rate,
+            grammar,
         })
     }
 }
@@ -42,9 +44,10 @@ impl SpeechRecognitionService for VoskAdapter {
             processed_audio.data.len()
         );
 
-        // Create recognizer for 16kHz mono audio
-        let mut recognizer = Recognizer::new(&self.model, processed_audio.sample_rate as f32)
-            .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer".to_string()))?;
+        // Create recognizer with grammar for command recognition
+        let grammar_refs: Vec<&str> = self.grammar.iter().map(|s| s.as_str()).collect();
+        let mut recognizer = Recognizer::new_with_grammar(&self.model, processed_audio.sample_rate as f32, &grammar_refs)
+            .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer with grammar".to_string()))?;
 
         // Process the audio - Vosk expects &[i16]
         let _state = recognizer
