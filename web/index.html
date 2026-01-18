@@ -373,7 +373,9 @@
           const audioData = await response.arrayBuffer();
 
           // Play audio using Web Audio API
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const audioContext = new (
+            window.AudioContext || window.webkitAudioContext
+          )();
           const audioBuffer = await audioContext.decodeAudioData(audioData);
 
           const source = audioContext.createBufferSource();
@@ -434,4 +436,3 @@
     </script>
   </body>
 </html>
-
