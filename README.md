@@ -4,14 +4,15 @@ A comprehensive voice-controlled automation platform that transforms your comput
 
 ## Features
 
-- **Advanced Voice Recognition** - Powered by Vosk for offline, privacy-focused speech recognition
-- **Text-to-Speech** - Natural voice synthesis with multiple voice options
-- **Browser Automation** - Control web browsers programmatically
+- **Grammar-Based Voice Recognition** - Advanced Vosk speech recognition with command-specific grammar for superior accuracy
+- **Neural Text-to-Speech** - Powered by Piper TTS for incredibly natural, human-like voice synthesis
+- **Browser Automation** - Control web browsers programmatically with Chromium
 - **Extensible Plugin System** - Add custom commands, workflows, and integrations
 - **Web-Based Configuration** - Intuitive browser interface for all settings
 - **Remote Access** - Tailscale integration for global access
 - **Real-time Processing** - Low-latency voice command execution
 - **Privacy-First** - All processing local, no cloud dependencies
+- **Script Execution** - Secure multi-language script execution engine
 
 ## Table of Contents
 
@@ -66,25 +67,31 @@ Open http://localhost:8080 in your browser to configure and use Vibespeak.
 **Arch Linux:**
 
 ```bash
-sudo pacman -S vosk-api speech-dispatcher alsa-utils
+sudo pacman -S vosk-api alsa-utils
+# Piper TTS is included in the automated setup
 ```
 
 **Ubuntu/Debian:**
 
 ```bash
-sudo apt install libvosk-dev speech-dispatcher alsa-utils
+sudo apt install libvosk-dev alsa-utils
+# Piper TTS is included in the automated setup
 ```
 
 **macOS (using Homebrew):**
 
 ```bash
-brew install vosk speech-dispatcher
+brew install vosk
+# Piper TTS is included in the automated setup
 ```
 
 **Windows:**
 
 - Download Vosk from: https://alphacephei.com/vosk/models
-- Install from releases page
+- Download Piper TTS from: https://github.com/rhasspy/piper/releases
+- Install both according to their respective instructions
+
+**Note:** Vibespeak now requires Piper TTS exclusively for natural voice synthesis. Espeak/espeak-ng are no longer supported.
 
 #### Rust Toolchain
 
@@ -160,33 +167,60 @@ make docker-run
 
 ## Voice Model Setup
 
-Vibespeak requires Vosk language models for speech recognition:
+Vibespeak requires both Vosk language models for speech recognition and Piper voice models for natural speech synthesis:
 
-### Download Models
+### Speech Recognition Models (Vosk)
 
 ```bash
 # Create models directory
 mkdir -p model
 
-# Download English model (small, recommended for development)
+# Download English model (balanced size and accuracy)
 cd model
-wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
-unzip vosk-model-small-en-us-0.15.zip
-mv vosk-model-small-en-us-0.15/* .
-rmdir vosk-model-small-en-us-0.15
+wget https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip
+unzip vosk-model-en-us-0.22-lgraph.zip
+# Files will be extracted to vosk-model-en-us-0.22-lgraph/
+```
 
-# Alternative: Download larger model for better accuracy
-wget https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip
-unzip vosk-model-en-us-0.22.zip
+### Text-to-Speech Models (Piper)
+
+The automated setup (`make setup`) will download Piper TTS and voice models automatically. For manual setup:
+
+```bash
+# Download Piper TTS binary
+wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
+tar -xzf piper_amd64.tar.gz
+
+# Download high-quality voice models
+# Recommended: Natural female voice
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+
+# Optional: Male voice
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/ryan/medium/en_US-ryan-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json
 ```
 
 ### Available Models
 
+#### Speech Recognition Models
+
 | Model                          | Size  | Accuracy  | Use Case                          |
 | ------------------------------ | ----- | --------- | --------------------------------- |
 | `vosk-model-small-en-us-0.15`  | 40MB  | Good      | Development, resource-constrained |
-| `vosk-model-en-us-0.22`        | 1.8GB | Excellent | Production, high accuracy         |
 | `vosk-model-en-us-0.22-lgraph` | 120MB | Very Good | Production, balanced              |
+| `vosk-model-en-us-0.22`        | 1.8GB | Excellent | Production, high accuracy         |
+
+#### Text-to-Speech Voice Models
+
+| Voice Model              | Quality | Size | Description                     |
+| ------------------------ | ------- | ---- | ------------------------------- |
+| `en_US-lessac-medium`    | ⭐⭐⭐⭐⭐ | 60MB | Natural female, highly recommended |
+| `en_US-ryan-medium`      | ⭐⭐⭐⭐⭐ | 60MB | Natural male voice              |
+| `en_GB-alan-medium`      | ⭐⭐⭐⭐⭐ | 60MB | British male voice              |
+| `en_US-amy-medium`       | ⭐⭐⭐⭐  | 60MB | Additional female voice         |
+
+**Note**: Piper voices are neural network-based and provide significantly more natural speech than traditional TTS engines.
 
 ## Configuration
 
@@ -200,16 +234,40 @@ The main configuration file is `config/system.json`:
   "workflows": [],
   "scripts": [],
   "settings": {
-    "vosk_model_path": "model/vosk-model-small-en-us-0.15",
+    "vosk_model_path": "model/vosk-model-en-us-0.22-lgraph",
     "sample_rate": 16000,
     "audio_device": null,
     "web_server_port": 8080,
     "enable_tts": true,
     "enable_webrtc": false,
-    "security_level": "trusted"
+    "security_level": "trusted",
+    "tailscale_enabled": false
   }
 }
 ```
+
+### Voice Configuration
+
+Vibespeak now uses Piper TTS with multiple high-quality voice options:
+
+```json
+{
+  "settings": {
+    "tts_engine": "piper",
+    "tts_voice": "natural",
+    "tts_pitch": 1.0,
+    "tts_rate": 0.95,
+    "tts_volume": 0.8
+  }
+}
+```
+
+**Available Voices:**
+- `natural` - High-quality female voice (recommended)
+- `male` - Natural male voice
+- `female` - Alternative female voice
+- `fast` - Faster speech rate
+- `slow` - Slower, clearer speech
 
 ### Web-Based Configuration
 
@@ -275,12 +333,43 @@ make build
 
 ### Basic Voice Commands
 
-Default commands are configured through the web interface:
+Vibespeak comes with an extensive set of pre-configured voice commands for common tasks:
 
+#### System Control
 - **"open browser"** - Opens default web browser
-- **"new terminal"** - Opens new terminal window
-- **"take screenshot"** - Captures screen image
-- **"increase volume"** - Audio volume up
+- **"open terminal"** - Opens new terminal window
+- **"show menu"** - Opens application menu
+- **"lock screen"** - Locks the screen
+
+#### Window Management (i3/Sway)
+- **"desk one/two/three/four"** - Switch workspaces
+- **"focus left/right/up/down"** - Move focus between windows
+- **"close window"** - Close active window
+- **"full screen"** - Toggle fullscreen mode
+
+#### Tmux Control
+- **"split pane"** - Create vertical split
+- **"split horizontal"** - Create horizontal split
+- **"pane one/two/three..."** - Switch between panes
+- **"new window"** - Create new tmux window
+
+#### Development
+- **"start dev"** - Start development server
+- **"check code"** - Run code linting/checking
+- **"save file"** - Save current file
+- **"open editor"** - Open text editor
+
+#### File Operations
+- **"list files"** - Show directory contents
+- **"open files"** - Open file manager
+- **"clear screen"** - Clear terminal
+
+#### Voice Features
+- **"type"** - Enter voice typing mode (dictation)
+- **Win+T** - Toggle typing mode
+- **Esc** - Exit typing mode
+
+All commands support fuzzy matching for natural speech recognition.
 
 ### Creating Custom Commands
 
@@ -484,10 +573,37 @@ Error: Failed to load Vosk model
 # Verify model exists
 ls -la model/
 
-# Download correct model
+# Download and extract the recommended model
 cd model
-wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
-unzip vosk-model-small-en-us-0.15.zip
+wget https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip
+unzip vosk-model-en-us-0.22-lgraph.zip
+# Update config to point to the extracted directory
+```
+
+#### 2. "Piper TTS not found"
+
+```
+Error: Piper TTS not found
+```
+
+**Solution:**
+
+Piper TTS is required for Vibespeak to function. The automated setup (`make setup`) should install it automatically, but for manual installation:
+
+```bash
+# Download and extract Piper TTS
+wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
+tar -xzf piper_amd64.tar.gz
+
+# Download high-quality voice models
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+
+# Make piper executable and available
+chmod +x piper/piper
+
+# Test Piper
+echo "Hello world" | ./piper/piper --model en_US-lessac-medium.onnx --output_file test.wav
 ```
 
 #### 2. "Audio device not found"
@@ -721,11 +837,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- **Vosk**: Open-source speech recognition
-- **TTS-RS**: Rust text-to-speech library
-- **Tokio**: Async runtime
-- **Warp**: Web framework
-- **Tailscale**: Secure remote access
+- **Vosk**: Open-source offline speech recognition
+- **Piper TTS**: High-quality neural text-to-speech synthesis
+- **Tokio**: Async runtime for Rust
+- **Warp**: Fast web framework
+- **Tailscale**: Secure remote access networking
+- **Chromium**: Browser automation engine
 
 ---
 

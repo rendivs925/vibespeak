@@ -2988,6 +2988,7 @@ dependencies = [
  "cpal",
  "crossterm",
  "libloading",
+ "rand",
  "rubato",
  "serde",
  "serde_json",

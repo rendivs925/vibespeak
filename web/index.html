@@ -1,307 +1,332 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibespeak - Voice Automation System</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .nav {
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            padding: 0;
-        }
-        .nav-tabs {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
-        .nav-tabs li {
-            margin: 0;
-        }
-        .nav-tabs a {
-            display: block;
-            padding: 15px 25px;
-            text-decoration: none;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        .nav-tabs a:hover {
-            background: #e9ecef;
-            color: #333;
-        }
-        .nav-tabs a.active {
-            background: white;
-            color: #007bff;
-            border-bottom-color: #007bff;
-        }
-        .content {
-            padding: 30px;
-        }
-        .section {
-            display: none;
-        }
-        .section.active {
-            display: block;
-        }
-        .card {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin: 5px;
-        }
-        .btn:hover {
-            background: #0056b3;
-        }
-        .btn-secondary {
-            background: #6c757d;
-        }
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-        }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .form-group textarea {
-            min-height: 60px;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+      .nav {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0;
+      }
+      .nav-tabs {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+      }
+      .nav-tabs li {
+        margin: 0;
+      }
+      .nav-tabs a {
+        display: block;
+        padding: 15px 25px;
+        text-decoration: none;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+      }
+      .nav-tabs a:hover {
+        background: #e9ecef;
+        color: #333;
+      }
+      .nav-tabs a.active {
+        background: white;
+        color: #007bff;
+        border-bottom-color: #007bff;
+      }
+      .content {
+        padding: 30px;
+      }
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+      .card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 5px;
+      }
+      .btn:hover {
+        background: #0056b3;
+      }
+      .btn-secondary {
+        background: #6c757d;
+      }
+      .btn-secondary:hover {
+        background: #545b62;
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+      }
+      th {
+        background: #f8f9fa;
+        font-weight: 600;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .form-group textarea {
+        min-height: 60px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>🎤 Vibespeak</h1>
-            <p>Voice Automation System - Control your computer with your voice</p>
-            <div id="system-status" class="status info">System Status: Initializing...</div>
+      <div class="header">
+        <h1>🎤 Vibespeak</h1>
+        <p>Voice Automation System - Control your computer with your voice</p>
+        <div id="system-status" class="status info">
+          System Status: Initializing...
         </div>
+      </div>
 
-        <nav class="nav">
-            <ul class="nav-tabs">
-                <li><a href="#dashboard" class="active">Dashboard</a></li>
-                <li><a href="#commands">Voice Commands</a></li>
-                <li><a href="#workflows">Workflows</a></li>
-                <li><a href="#scripts">Scripts</a></li>
-                <li><a href="#settings">Settings</a></li>
-            </ul>
-        </nav>
+      <nav class="nav">
+        <ul class="nav-tabs">
+          <li><a href="#dashboard" class="active">Dashboard</a></li>
+          <li><a href="#commands">Voice Commands</a></li>
+          <li><a href="#workflows">Workflows</a></li>
+          <li><a href="#scripts">Scripts</a></li>
+          <li><a href="#settings">Settings</a></li>
+        </ul>
+      </nav>
 
-        <div class="content">
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="section active">
-                <h2>Dashboard</h2>
-                <div class="card">
-                    <h3>System Overview</h3>
-                    <p>Welcome to Vibespeak! Your voice automation system is ready.</p>
-                    <div id="stats">
-                        <p>Loading system statistics...</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3>Quick Actions</h3>
-                    <button class="btn" onclick="testVoice('Hello world')">Test Voice</button>
-                    <button class="btn btn-secondary" onclick="refreshConfig()">Refresh Config</button>
-                </div>
-            </section>
+      <div class="content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+          <h2>Dashboard</h2>
+          <div class="card">
+            <h3>System Overview</h3>
+            <p>Welcome to Vibespeak! Your voice automation system is ready.</p>
+            <div id="stats">
+              <p>Loading system statistics...</p>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Quick Actions</h3>
+            <button
+              class="btn"
+              onclick="
+                testVoice(
+                  'Hello world. This is a voice test to demonstrate how the text-to-speech system sounds when reading a full paragraph. The voice should sound clear, natural, and easy to understand, with smooth pacing and proper intonation. This test helps ensure that longer sentences, pauses, and emphasis are spoken correctly, just like real human speech.',
+                )
+              "
+            >
+              Test Voice
+            </button>
+            <button class="btn btn-secondary" onclick="refreshConfig()">
+              Refresh Config
+            </button>
+          </div>
+        </section>
 
-            <!-- Voice Commands Section -->
-            <section id="commands" class="section">
-                <h2>Voice Commands</h2>
-                <div class="card">
-                    <h3>Manage Commands</h3>
-                    <button class="btn" onclick="showAddCommand()">Add Command</button>
-                    <table id="commands-table">
-                        <thead>
-                            <tr>
-                                <th>Voice Text</th>
-                                <th>Action</th>
-                                <th>Category</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4">Loading commands...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+        <!-- Voice Commands Section -->
+        <section id="commands" class="section">
+          <h2>Voice Commands</h2>
+          <div class="card">
+            <h3>Manage Commands</h3>
+            <button class="btn" onclick="showAddCommand()">Add Command</button>
+            <table id="commands-table">
+              <thead>
+                <tr>
+                  <th>Voice Text</th>
+                  <th>Action</th>
+                  <th>Category</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">Loading commands...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-            <!-- Workflows Section -->
-            <section id="workflows" class="section">
-                <h2>Workflows</h2>
-                <div class="card">
-                    <h3>Automation Workflows</h3>
-                    <p>Build complex automation sequences triggered by voice commands.</p>
-                    <button class="btn">Create Workflow</button>
-                    <div id="workflows-list">
-                        <p>No workflows configured yet.</p>
-                    </div>
-                </div>
-            </section>
+        <!-- Workflows Section -->
+        <section id="workflows" class="section">
+          <h2>Workflows</h2>
+          <div class="card">
+            <h3>Automation Workflows</h3>
+            <p>
+              Build complex automation sequences triggered by voice commands.
+            </p>
+            <button class="btn">Create Workflow</button>
+            <div id="workflows-list">
+              <p>No workflows configured yet.</p>
+            </div>
+          </div>
+        </section>
 
-            <!-- Scripts Section -->
-            <section id="scripts" class="section">
-                <h2>Scripts</h2>
-                <div class="card">
-                    <h3>Script Management</h3>
-                    <p>Execute bash, Python, and JavaScript scripts via voice commands.</p>
-                    <button class="btn">Add Script</button>
-                    <div id="scripts-list">
-                        <p>No scripts configured yet.</p>
-                    </div>
-                </div>
-            </section>
+        <!-- Scripts Section -->
+        <section id="scripts" class="section">
+          <h2>Scripts</h2>
+          <div class="card">
+            <h3>Script Management</h3>
+            <p>
+              Execute bash, Python, and JavaScript scripts via voice commands.
+            </p>
+            <button class="btn">Add Script</button>
+            <div id="scripts-list">
+              <p>No scripts configured yet.</p>
+            </div>
+          </div>
+        </section>
 
-            <!-- Settings Section -->
-            <section id="settings" class="section">
-                <h2>Settings</h2>
-                <div class="card">
-                    <h3>Voice Settings</h3>
-                    <div class="form-group">
-                        <label>Model Path:</label>
-                        <input type="text" id="model-path" value="model/vosk-model-en-us-0.22-lgraph">
-                    </div>
-                    <div class="form-group">
-                        <label>Sample Rate:</label>
-                        <input type="number" id="sample-rate" value="16000">
-                    </div>
-                    <div class="form-group">
-                        <label>Enable TTS:</label>
-                        <select id="enable-tts">
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                    </div>
-                    <button class="btn" onclick="saveSettings()">Save Settings</button>
-                </div>
-            </section>
-        </div>
+        <!-- Settings Section -->
+        <section id="settings" class="section">
+          <h2>Settings</h2>
+          <div class="card">
+            <h3>Voice Settings</h3>
+            <div class="form-group">
+              <label>Model Path:</label>
+              <input
+                type="text"
+                id="model-path"
+                value="model/vosk-model-en-us-0.22-lgraph"
+              />
+            </div>
+            <div class="form-group">
+              <label>Sample Rate:</label>
+              <input type="number" id="sample-rate" value="16000" />
+            </div>
+            <div class="form-group">
+              <label>Enable TTS:</label>
+              <select id="enable-tts">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <button class="btn" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script>
-        // Tab navigation
-        document.querySelectorAll('.nav-tabs a').forEach(tab => {
-            tab.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = this.getAttribute('href').substring(1);
+      // Tab navigation
+      document.querySelectorAll(".nav-tabs a").forEach((tab) => {
+        tab.addEventListener("click", function (e) {
+          e.preventDefault();
+          const target = this.getAttribute("href").substring(1);
 
-                // Hide all sections
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                });
+          // Hide all sections
+          document.querySelectorAll(".section").forEach((section) => {
+            section.classList.remove("active");
+          });
 
-                // Show target section
-                document.getElementById(target).classList.add('active');
+          // Show target section
+          document.getElementById(target).classList.add("active");
 
-                // Update active tab
-                document.querySelectorAll('.nav-tabs a').forEach(t => {
-                    t.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
+          // Update active tab
+          document.querySelectorAll(".nav-tabs a").forEach((t) => {
+            t.classList.remove("active");
+          });
+          this.classList.add("active");
         });
+      });
 
-        // Load initial data
-        window.addEventListener('load', function() {
-            loadConfig();
-            updateStatus('System ready');
-        });
+      // Load initial data
+      window.addEventListener("load", function () {
+        loadConfig();
+        updateStatus("System ready");
+      });
 
-        async function loadConfig() {
-            try {
-                const response = await fetch('/api/config');
-                const config = await response.json();
-                updateUI(config);
-            } catch (error) {
-                console.error('Failed to load config:', error);
-                updateStatus('Error loading configuration', 'error');
-            }
+      async function loadConfig() {
+        try {
+          const response = await fetch("/api/config");
+          const config = await response.json();
+          updateUI(config);
+        } catch (error) {
+          console.error("Failed to load config:", error);
+          updateStatus("Error loading configuration", "error");
         }
+      }
 
-        function updateUI(config) {
-            // Update commands table
-            const tbody = document.querySelector('#commands-table tbody');
-            tbody.innerHTML = '';
+      function updateUI(config) {
+        // Update commands table
+        const tbody = document.querySelector("#commands-table tbody");
+        tbody.innerHTML = "";
 
-            if (config.commands && config.commands.length > 0) {
-                config.commands.forEach(cmd => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
+        if (config.commands && config.commands.length > 0) {
+          config.commands.forEach((cmd) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
                         <td>${cmd.text}</td>
                         <td>${JSON.stringify(cmd.action)}</td>
                         <td>${cmd.category}</td>
@@ -310,75 +335,82 @@
                             <button class="btn btn-secondary" onclick="deleteCommand('${cmd.id}')">Delete</button>
                         </td>
                     `;
-                    tbody.appendChild(row);
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4">No commands configured</td></tr>';
-            }
-
-            // Update settings
-            document.getElementById('model-path').value = config.settings?.vosk_model_path || '';
-            document.getElementById('sample-rate').value = config.settings?.sample_rate || 16000;
-            document.getElementById('enable-tts').value = config.settings?.enable_tts ? 'true' : 'false';
+            tbody.appendChild(row);
+          });
+        } else {
+          tbody.innerHTML =
+            '<tr><td colspan="4">No commands configured</td></tr>';
         }
 
-        async function testVoice(text) {
-            try {
-                const response = await fetch('/api/voice/test', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                });
-                const result = await response.json();
-                updateStatus(`Voice test successful: "${result.text}"`);
-            } catch (error) {
-                updateStatus('Voice test failed', 'error');
-            }
-        }
+        // Update settings
+        document.getElementById("model-path").value =
+          config.settings?.vosk_model_path || "";
+        document.getElementById("sample-rate").value =
+          config.settings?.sample_rate || 16000;
+        document.getElementById("enable-tts").value = config.settings
+          ?.enable_tts
+          ? "true"
+          : "false";
+      }
 
-        async function saveSettings() {
-            const config = {
-                settings: {
-                    vosk_model_path: document.getElementById('model-path').value,
-                    sample_rate: parseInt(document.getElementById('sample-rate').value),
-                    enable_tts: document.getElementById('enable-tts').value === 'true'
-                }
-            };
-
-            try {
-                await fetch('/api/config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-                updateStatus('Settings saved successfully');
-            } catch (error) {
-                updateStatus('Failed to save settings', 'error');
-            }
+      async function testVoice(text) {
+        try {
+          const response = await fetch("/api/voice/test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          const result = await response.json();
+          updateStatus(`Voice test successful: "${result.text}"`);
+        } catch (error) {
+          updateStatus("Voice test failed", "error");
         }
+      }
 
-        async function refreshConfig() {
-            await loadConfig();
-            updateStatus('Configuration refreshed');
-        }
+      async function saveSettings() {
+        const config = {
+          settings: {
+            vosk_model_path: document.getElementById("model-path").value,
+            sample_rate: parseInt(document.getElementById("sample-rate").value),
+            enable_tts: document.getElementById("enable-tts").value === "true",
+          },
+        };
 
-        function updateStatus(message, type = 'success') {
-            const status = document.getElementById('system-status');
-            status.textContent = message;
-            status.className = `status ${type}`;
+        try {
+          await fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(config),
+          });
+          updateStatus("Settings saved successfully");
+        } catch (error) {
+          updateStatus("Failed to save settings", "error");
         }
+      }
 
-        function showAddCommand() {
-            alert('Add command functionality coming soon!');
-        }
+      async function refreshConfig() {
+        await loadConfig();
+        updateStatus("Configuration refreshed");
+      }
 
-        function editCommand(id) {
-            alert(`Edit command ${id} - coming soon!`);
-        }
+      function updateStatus(message, type = "success") {
+        const status = document.getElementById("system-status");
+        status.textContent = message;
+        status.className = `status ${type}`;
+      }
 
-        function deleteCommand(id) {
-            alert(`Delete command ${id} - coming soon!`);
-        }
+      function showAddCommand() {
+        alert("Add command functionality coming soon!");
+      }
+
+      function editCommand(id) {
+        alert(`Edit command ${id} - coming soon!`);
+      }
+
+      function deleteCommand(id) {
+        alert(`Delete command ${id} - coming soon!`);
+      }
     </script>
-</body>
+  </body>
 </html>
+

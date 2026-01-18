@@ -95,6 +95,8 @@ impl AudioPlayer {
         Ok(device_names)
     }
 
+
+
     /// Pick a SupportedStreamConfig matching requested sample rate if possible, else fallback to default.
     fn select_config(&self, sample_rate: u32) -> Result<cpal::SupportedStreamConfig> {
         if sample_rate == self.config.sample_rate().0 {
@@ -137,6 +139,8 @@ impl AudioPlayer {
 
         let device = self.device.clone();
         let cfg = self.select_config(sample_rate)?;
+        let stream_cfg: cpal::StreamConfig = cfg.clone().into();
+
         let stream_cfg: cpal::StreamConfig = cfg.clone().into();
 
         let channels = stream_cfg.channels as usize;

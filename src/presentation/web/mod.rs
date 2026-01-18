@@ -177,9 +177,20 @@ async fn test_voice(
         .cloned()
         .collect();
 
-    // Synthesize TTS response if text was provided
+    // Synthesize TTS response if text was provided and play it
     let tts_status = match voice_service.text_to_speech.synthesize(&request.text, None).await {
-        Ok(samples) => format!("TTS generated {} samples", samples.len()),
+        Ok(samples) => {
+            // Try to play the audio
+            match crate::infrastructure::adapters::AudioPlayer::new() {
+                Ok(player) => {
+                    match player.play_pcm_data(&samples, 44100).await {
+                        Ok(_) => format!("TTS generated {} samples and played successfully", samples.len()),
+                        Err(e) => format!("TTS generated {} samples but playback failed: {}", samples.len(), e),
+                    }
+                }
+                Err(e) => format!("TTS generated {} samples but audio player failed: {}", samples.len(), e),
+            }
+        }
         Err(e) => format!("TTS error: {}", e),
     };
 

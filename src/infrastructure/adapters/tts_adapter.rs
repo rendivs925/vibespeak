@@ -2,6 +2,7 @@ use crate::domain::services::TextToSpeechService;
 use crate::shared::{Error, Result};
 use async_trait::async_trait;
 use std::process::Command;
+use uuid::Uuid;
 
 /// Voice configuration for TTS
 #[derive(Debug, Clone)]
@@ -26,94 +27,192 @@ impl Default for VoiceConfig {
 pub struct TtsAdapter {
     sample_rate: u32,
     default_voice: VoiceConfig,
-    use_espeak: bool,
-    use_festival: bool,
+    use_piper: bool,
 }
 
 impl TtsAdapter {
     pub fn new() -> Result<Self> {
-        // Check for available TTS engines
-        let use_espeak = Command::new("which")
-            .arg("espeak-ng")
+        // Check for Piper TTS engine (required)
+        let use_piper = Command::new("which")
+            .arg("piper")
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
-            || Command::new("which")
-                .arg("espeak")
+            || Command::new("./piper/piper")
+                .arg("--help")
                 .output()
                 .map(|o| o.status.success())
                 .unwrap_or(false);
 
-        let use_festival = Command::new("which")
-            .arg("festival")
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
-
-        if use_espeak {
-            tracing::info!("TTS: espeak/espeak-ng detected");
-        }
-        if use_festival {
-            tracing::info!("TTS: festival detected");
-        }
-        if !use_espeak && !use_festival {
-            tracing::warn!("TTS: No TTS engine found, using tone generation fallback");
+        if use_piper {
+            tracing::info!("TTS: Piper neural TTS detected - providing high-quality natural voices");
+        } else {
+            tracing::warn!("TTS: Piper not found. Please install Piper TTS for voice synthesis.");
+            tracing::info!("Install Piper from: https://github.com/rhasspy/piper");
         }
 
         Ok(Self {
             sample_rate: 44100,
             default_voice: VoiceConfig::default(),
-            use_espeak,
-            use_festival,
+            use_piper,
         })
     }
 
-    /// Generate speech using espeak-ng
-    async fn synthesize_espeak(&self, text: &str, voice: &VoiceConfig) -> Result<Vec<i16>> {
-        use std::io::Read;
+    /// Generate speech using Piper TTS with optimized long text handling
+    async fn synthesize_piper(&self, text: &str, voice: &VoiceConfig) -> Result<Vec<i16>> {
+        // Preprocess text for better synthesis of long paragraphs
+        let processed_text = self.preprocess_text_for_tts(text);
+        tracing::debug!("Processing text for TTS: {} chars -> {} chars", text.len(), processed_text.len());
 
-        // espeak-ng can output raw audio to stdout
-        let espeak_cmd = if Command::new("which")
-            .arg("espeak-ng")
+        // Check if piper is available
+        let piper_available = Command::new("which")
+            .arg("piper")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+            || Command::new("./piper/piper")
+                .arg("--help")
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false);
+
+        if !piper_available {
+            return Err(Error::Infrastructure("Piper TTS not found. Please install Piper TTS.".to_string()));
+        }
+
+        // Create temporary file for WAV output
+        let temp_path = format!("/tmp/vibespeak_tts_{}.wav", Uuid::new_v4());
+
+        // Choose Piper voice model based on voice config
+        // Using high-quality neural voice models for best audio quality
+        let voice_model = match voice.name.as_str() {
+            "male" => "en_US-ryan-medium.onnx",      // High-quality male voice
+            "female" => "en_US-lessac-medium.onnx",  // High-quality female voice (recommended)
+            "natural" => "en_US-lessac-medium.onnx", // Natural female voice (best quality)
+            _ => "en_US-lessac-medium.onnx",         // Default to high-quality female voice
+        };
+
+        // Check if the voice model exists in common locations
+        let model_paths = vec![
+            format!("./models/{}", voice_model),
+            format!("/usr/local/share/piper/{}", voice_model),
+            format!("/usr/share/piper/{}", voice_model),
+            voice_model.to_string(), // Try as-is (assume it's in PATH or absolute path)
+        ];
+
+        let mut model_found = false;
+        let mut actual_model_path = voice_model.to_string();
+
+        for path in model_paths {
+            if std::path::Path::new(&path).exists() {
+                actual_model_path = path;
+                model_found = true;
+                break;
+            }
+        }
+
+        if !model_found {
+            tracing::warn!("Piper voice model '{}' not found in common locations. Make sure to download Piper voice models.", voice_model);
+            tracing::info!("Download voice models from: https://huggingface.co/rhasspy/piper-voices/tree/v1.0.0");
+        }
+
+        // Choose piper command (system or local)
+        let piper_cmd = if Command::new("which")
+            .arg("piper")
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
         {
-            "espeak-ng"
+            "piper"
         } else {
-            "espeak"
+            "./piper/piper"
         };
 
-        // Create temporary file for WAV output
-        let temp_path = format!("/tmp/vibespeak_tts_{}.wav", uuid::Uuid::new_v4());
+        // Calculate Piper parameters for high-quality audio
+        // length_scale: controls speech speed (higher = slower, lower = faster)
+        let length_scale = (1.0 / voice.rate).max(0.5).min(2.0);
 
-        let rate = (175.0 * voice.rate) as u32; // espeak default is 175 wpm
-        let pitch = (50.0 * voice.pitch) as u32; // espeak pitch: 0-99, default 50
-        let amplitude = (100.0 * voice.volume) as u32;
+        // High-quality audio parameters (optimized for neural TTS)
+        let noise_scale = 0.667;     // Optimal noise for natural speech
+        let noise_w = 0.8;           // Phoneme width noise for clarity
+        let sentence_silence = 0.1;  // Shorter pauses between sentences
 
-        let output = Command::new(espeak_cmd)
+        // Run Piper TTS with optimized parameters for high-quality female voice
+        let mut child = Command::new(piper_cmd)
             .args([
-                "-w", &temp_path,
-                "-s", &rate.to_string(),
-                "-p", &pitch.to_string(),
-                "-a", &amplitude.to_string(),
-                text,
+                "--model", &actual_model_path,
+                "--output_file", &temp_path,
+                "--length_scale", &length_scale.to_string(),
+                "--noise_scale", &noise_scale.to_string(),
+                "--noise_w", &noise_w.to_string(),
+                "--sentence_silence", &sentence_silence.to_string(),
             ])
-            .output()
-            .map_err(|e| Error::Infrastructure(format!("Failed to run espeak: {}", e)))?;
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| Error::Infrastructure(format!("Failed to start Piper: {}", e)))?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::Infrastructure(format!("espeak failed: {}", stderr)));
+        // Write processed text to stdin
+        if let Some(ref mut stdin) = child.stdin {
+            use std::io::Write;
+            stdin.write_all(processed_text.as_bytes())
+                .map_err(|e| Error::Infrastructure(format!("Failed to write text to Piper: {}", e)))?;
         }
 
-        // Read the WAV file and extract PCM data
+        // Wait for completion
+        let result = child.wait_with_output()
+            .map_err(|e| Error::Infrastructure(format!("Failed to wait for Piper: {}", e)))?;
+
+        if !result.status.success() {
+            let stderr = String::from_utf8_lossy(&result.stderr);
+            return Err(Error::Infrastructure(format!("Piper failed: {}", stderr)));
+        }
+
+        // Read the WAV file and extract high-quality PCM data
         let samples = self.read_wav_file(&temp_path)?;
+        tracing::debug!("Generated {} PCM samples for high-quality female voice synthesis", samples.len());
 
         // Clean up temp file
         let _ = std::fs::remove_file(&temp_path);
 
         Ok(samples)
+    }
+
+
+
+    /// Preprocess text for better TTS synthesis of long paragraphs
+    fn preprocess_text_for_tts(&self, text: &str) -> String {
+        let mut processed = text.to_string();
+
+        // Clean up excessive whitespace
+        processed = processed.split_whitespace().collect::<Vec<&str>>().join(" ");
+
+        // Add small pauses after sentences for better listening experience
+        // Piper handles sentence boundaries automatically, but we can ensure clean text
+        processed = processed
+            .replace("  ", " ")  // Remove double spaces
+            .replace(" ,", ",")  // Fix spacing around commas
+            .replace(" .", ".")  // Fix spacing around periods
+            .replace(" !", "!")  // Fix spacing around exclamation marks
+            .replace(" ?", "?")  // Fix spacing around question marks
+            .trim()
+            .to_string();
+
+        // Piper can handle very long text well, but for optimal performance and user experience,
+        // we'll limit to reasonable lengths while preserving sentence boundaries
+        if processed.len() > 15000 {
+            processed = processed.chars().take(15000).collect();
+            // Try to end at a sentence boundary for better listening experience
+            if let Some(last_sentence_end) = processed.rfind(|c: char| c == '.' || c == '!' || c == '?') {
+                if last_sentence_end > processed.len() / 2 {
+                    processed = processed.chars().take(last_sentence_end + 1).collect();
+                }
+            }
+            tracing::info!("Long text truncated to {} characters for optimal TTS performance", processed.len());
+        }
+
+        processed
     }
 
     /// Read WAV file and return PCM samples
@@ -170,45 +269,7 @@ impl TtsAdapter {
         Err(Error::Infrastructure("No data chunk found in WAV file".to_string()))
     }
 
-    /// Generate a tone-based speech simulation (fallback)
-    fn generate_tone_speech(&self, text: &str, voice: &VoiceConfig) -> Vec<i16> {
-        let chars = text.chars().count();
-        let duration_per_char = 0.08 * (1.0 / voice.rate); // seconds per character
-        let total_duration = (chars as f32 * duration_per_char).max(0.3);
-        let duration_samples = (self.sample_rate as f32 * total_duration) as usize;
 
-        let mut samples = Vec::with_capacity(duration_samples);
-        let base_freq = 200.0 * voice.pitch;
-
-        for i in 0..duration_samples {
-            let t = i as f32 / self.sample_rate as f32;
-
-            // Create varying frequency based on position (simulates speech melody)
-            let position = i as f32 / duration_samples as f32;
-            let freq_variation = (position * 3.0 * std::f32::consts::PI).sin() * 50.0;
-            let frequency = base_freq + freq_variation;
-
-            // Add some harmonics for richer sound
-            let fundamental = (t * frequency * 2.0 * std::f32::consts::PI).sin();
-            let harmonic2 = (t * frequency * 2.0 * 2.0 * std::f32::consts::PI).sin() * 0.3;
-            let harmonic3 = (t * frequency * 3.0 * 2.0 * std::f32::consts::PI).sin() * 0.15;
-
-            let sample = fundamental + harmonic2 + harmonic3;
-
-            // Apply envelope (attack, sustain, release)
-            let envelope = if position < 0.1 {
-                position * 10.0 // Attack
-            } else if position > 0.9 {
-                (1.0 - position) * 10.0 // Release
-            } else {
-                1.0 // Sustain
-            };
-
-            samples.push((sample * envelope * voice.volume * i16::MAX as f32 * 0.3) as i16);
-        }
-
-        samples
-    }
 }
 
 #[async_trait]
@@ -219,57 +280,70 @@ impl TextToSpeechService for TtsAdapter {
         let voice_config = match voice {
             Some("male") => VoiceConfig {
                 name: "male".to_string(),
-                pitch: 0.8,
-                rate: 1.0,
-                volume: 0.8,
+                pitch: 0.85,  // Slightly lower pitch for more natural male voice
+                rate: 0.8,    // Slower for clear male speech
+                volume: 0.85, // Balanced volume
             },
             Some("female") => VoiceConfig {
                 name: "female".to_string(),
-                pitch: 1.3,
-                rate: 1.0,
-                volume: 0.8,
+                pitch: 1.15,  // Optimal female pitch for natural sound
+                rate: 0.75,   // Much slower for clear comprehension
+                volume: 0.85, // Balanced volume for female voice clarity
             },
             Some("fast") => VoiceConfig {
                 name: "fast".to_string(),
-                pitch: 1.0,
-                rate: 1.5,
-                volume: 0.8,
+                pitch: 1.1,
+                rate: 1.4,    // Faster but not too fast
+                volume: 0.9,  // Higher volume for fast speech
             },
             Some("slow") => VoiceConfig {
                 name: "slow".to_string(),
+                pitch: 0.95,
+                rate: 0.75,   // Slower for clear articulation
+                volume: 0.75, // Lower volume for calm effect
+            },
+            Some("natural") => VoiceConfig {
+                name: "natural".to_string(),
                 pitch: 1.0,
-                rate: 0.7,
+                rate: 0.9,    // Natural conversational pace
                 volume: 0.8,
             },
-            _ => self.default_voice.clone(),
+            _ => VoiceConfig {
+                name: "female".to_string(),  // Use female voice as default for highest quality
+                pitch: 1.1,   // Slightly adjusted pitch for optimal female voice quality
+                rate: 0.7,    // Much slower speed for clear comprehension
+                volume: 0.82, // Balanced volume for clear audio
+            },
         };
 
-        // Try espeak first if available
-        if self.use_espeak {
-            match self.synthesize_espeak(text, &voice_config).await {
+        // Use Piper TTS (required)
+        if self.use_piper {
+            match self.synthesize_piper(text, &voice_config).await {
                 Ok(samples) => return Ok(samples),
                 Err(e) => {
-                    tracing::warn!("espeak synthesis failed, falling back to tone: {}", e);
+                    tracing::error!("Piper TTS synthesis failed: {}", e);
+                    return Err(e);
                 }
             }
         }
 
-        // Fallback to tone generation
-        Ok(self.generate_tone_speech(text, &voice_config))
+        // Piper not available - return error
+        Err(Error::Infrastructure("Piper TTS not available. Please install Piper TTS.".to_string()))
     }
 
     async fn get_available_voices(&self) -> Result<Vec<String>> {
         let mut voices = vec![
             "default".to_string(),
+            "natural".to_string(),
             "male".to_string(),
             "female".to_string(),
             "fast".to_string(),
             "slow".to_string(),
         ];
 
-        // If espeak is available, we could list its voices too
-        if self.use_espeak {
-            voices.push("espeak".to_string());
+        // Piper provides high-quality neural voices
+        if self.use_piper {
+            voices.push("piper-neural".to_string());
         }
 
         Ok(voices)
@@ -277,9 +351,8 @@ impl TextToSpeechService for TtsAdapter {
 
     async fn initialize(&self) -> Result<()> {
         tracing::info!(
-            "TTS adapter initialized - espeak: {}, festival: {}, sample_rate: {}",
-            self.use_espeak,
-            self.use_festival,
+            "TTS adapter initialized - piper: {}, sample_rate: {}",
+            self.use_piper,
             self.sample_rate
         );
         Ok(())
