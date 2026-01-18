@@ -97,8 +97,12 @@
 # --- General Shortcuts ---
 "lock screen"      = "i3lock"
 "open terminal"    = "alacritty"
-"open browser"     = "firefox"
+"open browser"     = "google-chrome-stable"
+"browser"          = "google-chrome-stable"
+"chrome"           = "google-chrome-stable"
+"web browser"      = "google-chrome-stable"
 "show menu"        = "dmenu_run"
 "open files"       = "ranger"
+"files"            = "ranger"
 "go to end"        = "xdotool key End"
 "go to home"       = "xdotool key Home"

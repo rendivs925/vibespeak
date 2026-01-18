@@ -88,6 +88,97 @@ impl AudioSample {
         self.data.len() / self.channels as usize
     }
 
+    /// Convert audio to mono by averaging channels
+    pub fn to_mono(&self) -> AudioSample {
+        if self.channels <= 1 {
+            return self.clone();
+        }
+
+        let samples_per_channel = self.samples_per_channel();
+        let mut mono_data = Vec::with_capacity(samples_per_channel);
+
+        for frame_idx in 0..samples_per_channel {
+            let mut sum: i32 = 0;
+            for ch in 0..self.channels as usize {
+                let sample_idx = frame_idx * self.channels as usize + ch;
+                sum += self.data[sample_idx] as i32;
+            }
+            mono_data.push((sum / self.channels as i32) as i16);
+        }
+
+        AudioSample::new(mono_data, self.sample_rate, 1)
+    }
+
+    /// Resample audio to target sample rate
+    pub fn resample(&self, target_sample_rate: u32) -> Result<AudioSample> {
+        if self.sample_rate == target_sample_rate {
+            return Ok(self.clone());
+        }
+
+        use rubato::{Resampler, SincFixedIn, SincInterpolationParameters, WindowFunction};
+
+        // Split audio into separate channels
+        let samples_per_channel = self.samples_per_channel();
+        let channel_data: Vec<Vec<f32>> = (0..self.channels as usize)
+            .map(|ch| {
+                (0..samples_per_channel)
+                    .map(|frame| {
+                        let sample_idx = frame * self.channels as usize + ch;
+                        self.data[sample_idx] as f32 / i16::MAX as f32
+                    })
+                    .collect()
+            })
+            .collect();
+
+        // Setup resampler
+        let params = SincInterpolationParameters {
+            sinc_len: 256,
+            f_cutoff: 0.95,
+            interpolation: rubato::SincInterpolationType::Linear,
+            oversampling_factor: 160,
+            window: WindowFunction::BlackmanHarris2,
+        };
+
+        let mut resampler = SincFixedIn::<f32>::new(
+            target_sample_rate as f64 / self.sample_rate as f64,
+            2.0,
+            params,
+            samples_per_channel,
+            self.channels as usize, // output channels = input channels
+        ).map_err(|e| Error::Audio(format!("Failed to create resampler: {}", e)))?;
+
+        // Pre-allocate output buffers
+        let mut output_channels: Vec<Vec<f32>> = (0..self.channels as usize)
+            .map(|_| vec![0.0f32; resampler.output_frames_max()])
+            .collect();
+
+        // Create slices for resampler
+        let input_slices: Vec<&[f32]> = channel_data.iter().map(|ch| ch.as_slice()).collect();
+        let mut output_slices: Vec<&mut [f32]> = output_channels.iter_mut().map(|ch| ch.as_mut_slice()).collect();
+
+        // Resample
+        let (_frames_consumed, frames_written) = resampler.process_into_buffer(&input_slices, &mut output_slices, None)
+            .map_err(|e| Error::Audio(format!("Failed to resample audio: {}", e)))?;
+
+        // Interleave channels back into single buffer
+        let mut resampled_data = Vec::with_capacity(frames_written * self.channels as usize);
+        for frame in 0..frames_written {
+            for ch in 0..self.channels as usize {
+                let sample = (output_channels[ch][frame] * i16::MAX as f32)
+                    .clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+                resampled_data.push(sample);
+            }
+        }
+
+        Ok(AudioSample::new(resampled_data, target_sample_rate, self.channels))
+    }
+
+    /// Convert to 16kHz mono (optimal for speech recognition)
+    pub fn to_16khz_mono(&self) -> Result<AudioSample> {
+        let mono = self.to_mono();
+        mono.resample(16000)
+    }
+
     /// Normalize the audio to prevent clipping (simple peak normalization)
     pub fn normalize(&mut self) {
         if self.data.is_empty() {

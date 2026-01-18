@@ -48,6 +48,8 @@ impl CommandInterpreter for FuzzyCommandInterpreter {
     async fn interpret(&self, text: &str, _context: &CommandContext) -> Result<InterpretedCommand> {
         let input = text.trim().to_lowercase();
 
+        tracing::debug!("Interpreting command: '{}'", input);
+
         // Special case for "type" command (existing functionality)
         if input == "type" {
             return Ok(InterpretedCommand {
@@ -60,6 +62,7 @@ impl CommandInterpreter for FuzzyCommandInterpreter {
 
         // Find best matching command
         if let Some((matched_command, confidence)) = self.find_best_match(&input) {
+            tracing::info!("Matched '{}' to '{}' with confidence {:.2}", input, matched_command, confidence);
             if let Some(command_action) = self.commands.get(&matched_command) {
                 return Ok(InterpretedCommand {
                     command_id: Some(matched_command),
@@ -69,6 +72,8 @@ impl CommandInterpreter for FuzzyCommandInterpreter {
                 });
             }
         }
+
+        tracing::debug!("No command match found for: '{}'", input);
 
         // No match found
         Ok(InterpretedCommand {

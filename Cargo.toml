@@ -25,6 +25,7 @@ tokio-tungstenite = "0.20"
  async-trait = "0.1"
  warp = "0.3"
  vosk = "0.3"
+ rubato = "0.15"  # Audio resampling
 
 # Legacy CLI (for backward compatibility)
 crossterm = "0.29.0"

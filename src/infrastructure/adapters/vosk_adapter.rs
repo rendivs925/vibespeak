@@ -29,19 +29,26 @@ impl VoskAdapter {
 #[async_trait]
 impl SpeechRecognitionService for VoskAdapter {
     async fn recognize(&self, audio: AudioSample) -> Result<RecognitionResult> {
-        let sample_rate = if audio.sample_rate > 0 {
-            audio.sample_rate as f32
-        } else {
-            self.default_sample_rate
-        };
+        // Preprocess audio to 16kHz mono for optimal Vosk performance
+        let processed_audio = audio.to_16khz_mono()
+            .map_err(|e| Error::Infrastructure(format!("Failed to preprocess audio: {}", e)))?;
 
-        // Create recognizer for this audio session
-        let mut recognizer = Recognizer::new(&self.model, sample_rate)
+        tracing::debug!(
+            "Audio preprocessed: {}Hz {}ch -> {}Hz {}ch, {} samples",
+            audio.sample_rate,
+            audio.channels,
+            processed_audio.sample_rate,
+            processed_audio.channels,
+            processed_audio.data.len()
+        );
+
+        // Create recognizer for 16kHz mono audio
+        let mut recognizer = Recognizer::new(&self.model, processed_audio.sample_rate as f32)
             .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer".to_string()))?;
 
         // Process the audio - Vosk expects &[i16]
         let _state = recognizer
-            .accept_waveform(&audio.data)
+            .accept_waveform(&processed_audio.data)
             .map_err(|e| Error::Audio(format!("Failed to process audio waveform: {:?}", e)))?;
 
         // Get the final result

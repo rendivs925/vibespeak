@@ -1,5 +1,6 @@
 use clap::{Arg, Command};
 use vibespeak::application::services::{VoiceProcessingService, VoiceCommandProcessor};
+use vibespeak::domain::entities::CommandAction;
 use vibespeak::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
 use vibespeak::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter, MicrophoneCapture, MicrophoneConfig};
 use vibespeak::infrastructure::config::{SystemConfig, CommandConfig};
@@ -69,7 +70,14 @@ async fn main() -> Result<()> {
     // Create command interpreter with system commands
     let command_interpreter = Arc::new(FuzzyCommandInterpreter::new(
         system_config.commands.iter()
-            .map(|cmd| (cmd.text.clone(), format!("{:?}", cmd.action)))
+            .filter_map(|cmd| {
+                match &cmd.action {
+                    CommandAction::ShellCommand(command) => {
+                        Some((cmd.text.clone(), command.clone()))
+                    }
+                    _ => None, // Skip other command types for now
+                }
+            })
             .collect()
     ));
 
