@@ -33,19 +33,22 @@ pub struct TtsAdapter {
 impl TtsAdapter {
     pub fn new() -> Result<Self> {
         // Check for Piper TTS engine (required)
-        let use_piper = Command::new("which")
+        let system_piper = Command::new("which")
             .arg("piper")
             .output()
             .map(|o| o.status.success())
-            .unwrap_or(false)
-            || Command::new("./piper/piper")
-                .arg("--help")
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false);
+            .unwrap_or(false);
+
+        let local_piper_exists = std::path::Path::new("./piper/piper").exists()
+            || std::path::Path::new("piper/piper").exists();
+
+        let use_piper = system_piper || local_piper_exists;
+
+        tracing::info!("TTS detection: system piper={}, local piper exists={}, use_piper={}",
+            system_piper, local_piper_exists, use_piper);
 
         if use_piper {
-            tracing::info!("TTS: Piper neural TTS detected - providing high-quality natural voices");
+            tracing::info!("TTS: Piper neural TTS detected - providing high-quality natural voices with Amy model");
         } else {
             tracing::warn!("TTS: Piper not found. Please install Piper TTS for voice synthesis.");
             tracing::info!("Install Piper from: https://github.com/rhasspy/piper");
@@ -83,14 +86,9 @@ impl TtsAdapter {
         // Create temporary file for WAV output
         let temp_path = format!("/tmp/vibespeak_tts_{}.wav", Uuid::new_v4());
 
-        // Choose Piper voice model based on voice config
-        // Using high-quality neural voice models for best audio quality
-        let voice_model = match voice.name.as_str() {
-            "male" => "en_US-ryan-medium.onnx",      // High-quality male voice
-            "female" => "en_US-lessac-medium.onnx",  // High-quality female voice (recommended)
-            "natural" => "en_US-lessac-medium.onnx", // Natural female voice (best quality)
-            _ => "en_US-lessac-medium.onnx",         // Default to high-quality female voice
-        };
+        // Use only the en_US-amy-medium voice model for all voices
+        // This is the single, high-quality English female voice model from Piper samples
+        let voice_model = "en_US-amy-medium.onnx";
 
         // Check if the voice model exists in common locations
         let model_paths = vec![
@@ -116,16 +114,19 @@ impl TtsAdapter {
             tracing::info!("Download voice models from: https://huggingface.co/rhasspy/piper-voices/tree/v1.0.0");
         }
 
-        // Choose piper command (system or local)
+        // Choose piper command (system or local with absolute path)
         let piper_cmd = if Command::new("which")
             .arg("piper")
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
         {
-            "piper"
+            "piper".to_string()
         } else {
-            "./piper/piper"
+            // Use absolute path to piper binary
+            let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+            let piper_path = current_dir.join("piper").join("piper");
+            piper_path.to_string_lossy().to_string()
         };
 
         // Calculate Piper parameters for high-quality audio
