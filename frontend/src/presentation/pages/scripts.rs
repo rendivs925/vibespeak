@@ -236,7 +236,7 @@ pub fn Scripts() -> impl IntoView {
 
                 // Create Script Modal
                 <Modal
-                    is_open=show_create_modal.into()
+                    is_open=show_create_modal
                     on_close=Callback::new(move |_: ()| set_show_create_modal.set(false))
                     title="Create New Script"
                     size="lg".to_string()
@@ -340,7 +340,7 @@ pub fn Scripts() -> impl IntoView {
 
                 // Edit Script Modal
                 <Modal
-                    is_open=show_edit_modal.into()
+                    is_open=show_edit_modal
                     on_close=Callback::new(move |_: ()| set_show_edit_modal.set(false))
                     title="Edit Script"
                     size="lg".to_string()

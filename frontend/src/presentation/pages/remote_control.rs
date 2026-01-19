@@ -100,7 +100,9 @@ pub fn RemoteControl() -> impl IntoView {
                     } else {
                         set_dictation_status.set(format!(
                             "Failed: {}",
-                            response.error.unwrap_or_else(|| "Unknown error".to_string())
+                            response
+                                .error
+                                .unwrap_or_else(|| "Unknown error".to_string())
                         ));
                     }
                 }
@@ -136,8 +138,9 @@ pub fn RemoteControl() -> impl IntoView {
             {
                 // Check if SpeechRecognition is available
                 let window = web_sys::window().expect("no global window");
-                let speech_recognition = js_sys::Reflect::get(&window, &"webkitSpeechRecognition".into())
-                    .or_else(|_| js_sys::Reflect::get(&window, &"SpeechRecognition".into()));
+                let speech_recognition =
+                    js_sys::Reflect::get(&window, &"webkitSpeechRecognition".into())
+                        .or_else(|_| js_sys::Reflect::get(&window, &"SpeechRecognition".into()));
 
                 match speech_recognition {
                     Ok(sr_constructor) if !sr_constructor.is_undefined() => {
@@ -155,20 +158,21 @@ pub fn RemoteControl() -> impl IntoView {
                         // Set up result handler
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
-                        let on_result = Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
-                            if let Some(results) = event.results() {
-                                let mut transcript = String::new();
-                                for i in 0..results.length() {
-                                    if let Some(result) = results.get(i) {
-                                        let alternative = result.item(0);
-                                        transcript.push_str(&alternative.transcript());
-                                        transcript.push(' ');
+                        let on_result =
+                            Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
+                                if let Some(results) = event.results() {
+                                    let mut transcript = String::new();
+                                    for i in 0..results.length() {
+                                        if let Some(result) = results.get(i) {
+                                            let alternative = result.item(0);
+                                            transcript.push_str(&alternative.transcript());
+                                            transcript.push(' ');
+                                        }
                                     }
+                                    set_text.set(transcript.trim().to_string());
+                                    set_status_inner.set("Listening... speak now".to_string());
                                 }
-                                set_text.set(transcript.trim().to_string());
-                                set_status_inner.set("Listening... speak now".to_string());
-                            }
-                        }) as Box<dyn FnMut(_)>);
+                            }) as Box<dyn FnMut(_)>);
 
                         recognition.set_onresult(Some(on_result.as_ref().unchecked_ref()));
                         on_result.forget();
@@ -179,7 +183,8 @@ pub fn RemoteControl() -> impl IntoView {
                         let on_error = Closure::wrap(Box::new(move |_event: web_sys::Event| {
                             set_status_err.set("Speech recognition error occurred".to_string());
                             set_is_dict.set(false);
-                        }) as Box<dyn FnMut(_)>);
+                        })
+                            as Box<dyn FnMut(_)>);
 
                         recognition.set_onerror(Some(on_error.as_ref().unchecked_ref()));
                         on_error.forget();
@@ -293,7 +298,9 @@ pub fn RemoteControl() -> impl IntoView {
                 for i in 0..video_tracks.length() {
                     let track = video_tracks.get(i);
                     let _ = js_sys::Reflect::apply(
-                        &js_sys::Reflect::get(&track, &"stop".into()).unwrap().unchecked_into(),
+                        &js_sys::Reflect::get(&track, &"stop".into())
+                            .unwrap()
+                            .unchecked_into(),
                         &track,
                         &js_sys::Array::new(),
                     );
@@ -426,29 +433,34 @@ pub fn RemoteControl() -> impl IntoView {
                                         <p class="text-sm text-slate-600">{move || screen_status.get()}</p>
                                     </div>
 
-                                    // Controls
-                                    <div class="flex flex-wrap gap-3">
-                                        {move || if !is_screen_sharing.get() {
-                                            view! {
-                                                <Button variant=ButtonVariant::Primary on:click=start_screen_share>
-                                                    <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
-                                                    "Start Sharing"
-                                                </Button>
-                                            }.into_view()
-                                        } else {
-                                            view! {
-                                                <>
-                                                    <Button variant=ButtonVariant::Danger on:click=stop_screen_share>
-                                                        <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                        "Stop"
-                                                    </Button>
-                                                    <Button variant=ButtonVariant::Secondary on:click=enter_fullscreen>
-                                                        <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
-                                                        "Fullscreen"
-                                                    </Button>
-                                                </>
-                                            }.into_view()
-                                        }}
+                                     // Controls
+                                     <div class="flex flex-wrap gap-3">
+                                         {
+                                             let start_screen_share = StoredValue::new(start_screen_share);
+                                             let stop_screen_share = StoredValue::new(stop_screen_share);
+                                             let enter_fullscreen = StoredValue::new(enter_fullscreen);
+                                             move || if !is_screen_sharing.get() {
+                                                 view! {
+                                                     <Button variant=ButtonVariant::Primary on:click=start_screen_share.get_value()>
+                                                         <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
+                                                         "Start Sharing"
+                                                     </Button>
+                                                 }.into_view()
+                                             } else {
+                                                 view! {
+                                                     <>
+                                                         <Button variant=ButtonVariant::Danger on:click=stop_screen_share.get_value()>
+                                                             <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                             "Stop"
+                                                         </Button>
+                                                         <Button variant=ButtonVariant::Secondary on:click=enter_fullscreen.get_value()>
+                                                             <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
+                                                             "Fullscreen"
+                                                         </Button>
+                                                     </>
+                                                 }.into_view()
+                                             }
+                                         }
                                     </div>
                                 </div>
                             </section>
@@ -503,32 +515,36 @@ pub fn RemoteControl() -> impl IntoView {
                                         ></textarea>
                                     </div>
 
-                                    // Controls
-                                    <div class="flex flex-wrap gap-3">
-                                        {move || if !is_dictating.get() {
-                                            view! {
-                                                <Button variant=ButtonVariant::Primary on:click=start_dictation>
-                                                    <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
-                                                    "Start Dictation"
-                                                </Button>
-                                            }.into_view()
-                                        } else {
-                                            view! {
-                                                <Button variant=ButtonVariant::Danger on:click=stop_dictation>
-                                                    <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                    "Stop"
-                                                </Button>
-                                            }.into_view()
-                                        }}
-                                        <Button variant=ButtonVariant::Secondary on:click=send_dictation>
-                                            <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
-                                            "Send to Desktop"
-                                        </Button>
-                                        <Button variant=ButtonVariant::Ghost on:click=clear_dictation>
-                                            <Icon icon_type=IconType::X class="w-4 h-4 mr-2" />
-                                            "Clear"
-                                        </Button>
-                                    </div>
+                                     // Controls
+                                     <div class="flex flex-wrap gap-3">
+                                         {
+                                             let start_dictation = StoredValue::new(start_dictation);
+                                             let stop_dictation = StoredValue::new(stop_dictation);
+                                             move || if !is_dictating.get() {
+                                                 view! {
+                                                     <Button variant=ButtonVariant::Primary on:click=start_dictation.get_value()>
+                                                         <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
+                                                         "Start Dictation"
+                                                     </Button>
+                                                 }.into_view()
+                                             } else {
+                                                 view! {
+                                                     <Button variant=ButtonVariant::Danger on:click=stop_dictation.get_value()>
+                                                         <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                         "Stop"
+                                                     </Button>
+                                                 }.into_view()
+                                             }
+                                         }
+                                         <Button variant=ButtonVariant::Secondary on:click=send_dictation>
+                                             <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
+                                             "Send to Desktop"
+                                         </Button>
+                                         <Button variant=ButtonVariant::Ghost on:click=clear_dictation>
+                                             <Icon icon_type=IconType::X class="w-4 h-4 mr-2" />
+                                             "Clear"
+                                         </Button>
+                                     </div>
 
                                     // Info Box
                                     <div class="mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">

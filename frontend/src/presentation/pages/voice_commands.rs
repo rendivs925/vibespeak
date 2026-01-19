@@ -3,8 +3,8 @@
 use crate::domain::entities::Command;
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{
-    Badge, BadgeVariant, Button, ButtonVariant, DataTable, Header,
-    Icon, IconType, Modal, ModalFooter, NavBar, StatusBadge, TableCell, TableRow,
+    Badge, BadgeVariant, Button, ButtonVariant, DataTable, Header, Icon, IconType, Modal,
+    ModalFooter, NavBar, StatusBadge, TableCell, TableRow,
 };
 use leptos::*;
 use wasm_bindgen_futures;
@@ -404,11 +404,11 @@ pub fn VoiceCommands() -> impl IntoView {
 
             // Create Command Modal
             <Modal
-                is_open=show_create_modal.into()
+                is_open=show_create_modal
                 on_close=close_create_modal
                 title="Create New Command"
-                subtitle=Some("Add a new voice command to your library")
-                icon=Some(IconType::Plus)
+                subtitle="Add a new voice command to your library"
+                icon=IconType::Plus
                 size="lg".to_string()
             >
                 <div class="space-y-5">
@@ -479,11 +479,11 @@ pub fn VoiceCommands() -> impl IntoView {
 
             // Edit Command Modal
             <Modal
-                is_open=show_edit_modal.into()
+                is_open=show_edit_modal
                 on_close=close_edit_modal
                 title="Edit Command"
-                subtitle=Some("Update your voice command configuration")
-                icon=Some(IconType::Edit)
+                subtitle="Update your voice command configuration"
+                icon=IconType::Edit
                 size="lg".to_string()
             >
                 <div class="space-y-5">
