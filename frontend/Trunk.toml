@@ -2,12 +2,5 @@
 dist = "dist"
 public_url = "/"
 
-[[hooks]]
-stage = "pre_build"
-command = "npx"
-command_arguments = ["tailwindcss", "-i", "input.css", "-o", "styles.css", "--watch"]
-
-[[hooks]]
-stage = "build"
-command = "npx"
-command_arguments = ["tailwindcss", "-i", "input.css", "-o", "styles.css", "--minify"]
+[tools]
+tailwindcss = "3.4.19"
