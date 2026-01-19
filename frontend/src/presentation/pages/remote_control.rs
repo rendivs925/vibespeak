@@ -342,10 +342,6 @@ pub fn RemoteControl() -> impl IntoView {
                                     };
                                     set_status.set(status_msg);
                                     set_text.set(String::new());
-
-                                    // Quick reset to listening
-                                    TimeoutFuture::new(800).await;
-                                    set_status.set("Listening...".into());
                                 });
                             }) as Box<dyn FnMut(_)>);
 
