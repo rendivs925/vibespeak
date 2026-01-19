@@ -4,8 +4,8 @@ use vibespeak::domain::entities::CommandAction;
 use vibespeak::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
 use vibespeak::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter, MicrophoneCapture, MicrophoneConfig};
 use vibespeak::infrastructure::config::{SystemConfig, CommandConfig};
-use vibespeak::presentation::web::WebServer;
-use vibespeak::shared::{Error, Result};
+use vibespeak::presentation::axum_server::AxumServer;
+use vibespeak::shared::Result;
 use std::sync::Arc;
 use std::collections::HashMap;
 
@@ -142,10 +142,10 @@ async fn main() -> Result<()> {
 
 async fn run_web_mode(voice_service: Arc<VoiceProcessingService>, system_config: SystemConfig) -> Result<()> {
     let web_port = system_config.settings.web_server_port;
-    let web_server = WebServer::new(voice_service.clone(), system_config);
+    let axum_server = AxumServer::new(voice_service.clone(), system_config);
     let server_handle = tokio::spawn(async move {
-        if let Err(e) = web_server.run(web_port).await {
-            tracing::error!("Web server error: {}", e);
+        if let Err(e) = axum_server.run(web_port).await {
+            tracing::error!("Axum server error: {}", e);
         }
     });
 

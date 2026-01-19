@@ -706,6 +706,29 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
         return Ok(());
     }
 
+    // Try uinput first (real kernel-level key events)
+    let text_owned = text.to_string();
+    let uinput_result = tokio::task::spawn_blocking(move || {
+        crate::infrastructure::adapters::keyboard_simulator::type_text_uinput(&text_owned)
+    })
+    .await;
+
+    match uinput_result {
+        Ok(Ok(())) => {
+            tracing::info!("Successfully typed {} characters via uinput", text.len());
+            return Ok(());
+        }
+        Ok(Err(e)) => {
+            tracing::warn!("uinput failed, falling back to xdotool: {}", e);
+        }
+        Err(e) => {
+            tracing::warn!("uinput task failed, falling back to xdotool: {}", e);
+        }
+    }
+
+    // Fallback to xdotool
+    tracing::info!("Using xdotool fallback for keyboard simulation");
+
     // Escape special characters that might cause issues with xdotool
     let escaped_text = text
         .replace("\\", "\\\\")  // Escape backslashes first
@@ -715,8 +738,6 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
         .replace("`", "\\`");   // Escape backticks
 
     // Use xdotool to type the text
-    // Note: xdotool type handles most characters, but we could also use xdotool key for special keys
-    // Make sure we use the correct display and add small delay
     let command = format!("DISPLAY=:0 xdotool type \"{}\" && sleep 0.05", escaped_text);
 
     tracing::info!("Executing xdotool command: {}", command);
@@ -729,7 +750,7 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
         .map_err(|e| Error::CommandExecution(format!("Failed to execute xdotool: {}", e)))?;
 
     if output.status.success() {
-        tracing::info!("Successfully typed {} characters on desktop", text.len());
+        tracing::info!("Successfully typed {} characters on desktop (xdotool)", text.len());
         Ok(())
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);

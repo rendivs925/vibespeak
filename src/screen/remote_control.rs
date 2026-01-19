@@ -3,6 +3,7 @@
 use crate::shared::{Result, Error};
 use std::process::Command;
 use tokio::time::{sleep, Duration};
+use tracing;
 
 /// Remote control manager
 pub struct RemoteControlManager;
@@ -231,8 +232,18 @@ impl KeyboardController {
         Self
     }
 
-    /// Type text
+    /// Type text using real kernel-level key events (uinput)
     pub async fn type_text(&self, text: &str) -> Result<()> {
+        // Try uinput first for real keyboard events
+        let text_owned = text.to_string();
+        match crate::infrastructure::adapters::keyboard_simulator::type_text_uinput(&text_owned) {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                tracing::warn!("uinput failed, falling back to xdotool: {}", e);
+            }
+        }
+
+        // Fallback to xdotool
         let args = vec!["type", text];
         self.run_xdotool(&args).await
     }
