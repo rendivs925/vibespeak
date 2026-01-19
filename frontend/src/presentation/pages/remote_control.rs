@@ -2,6 +2,7 @@
 
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Button, ButtonVariant, Header, Icon, IconType, NavBar};
+use gloo_timers::future::TimeoutFuture;
 use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -17,6 +18,7 @@ pub fn RemoteControl() -> impl IntoView {
     let (dictation_text, set_dictation_text) = create_signal(String::new());
     let (dictation_status, set_dictation_status) = create_signal("Dictation ready".to_string());
     let (last_sent_position, set_last_sent_position) = create_signal(0);
+    let (last_sent_content, set_last_sent_content) = create_signal(String::new());
     let (is_dictating, set_is_dictating) = create_signal(false);
 
     // Voice commands state
@@ -38,6 +40,14 @@ pub fn RemoteControl() -> impl IntoView {
     // Store reference to SpeechRecognition instance
     let recognition_ref: Rc<RefCell<Option<SpeechRecognition>>> = Rc::new(RefCell::new(None));
     let recognition_for_stop = recognition_ref.clone();
+
+    // Helper function to find common prefix length between two strings
+    let find_common_prefix = |s1: &str, s2: &str| -> usize {
+        s1.chars()
+            .zip(s2.chars())
+            .take_while(|(a, b)| a == b)
+            .count()
+    };
 
     let execute_command = move |command: String| {
         // Add to history
@@ -82,6 +92,7 @@ pub fn RemoteControl() -> impl IntoView {
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
         set_last_sent_position.set(0);
+        set_last_sent_content.set(String::new());
         set_dictation_status.set("Dictation cleared".to_string());
     };
 
@@ -131,8 +142,8 @@ pub fn RemoteControl() -> impl IntoView {
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
                         let set_last_sent = set_last_sent_position.clone();
-                        let on_result =
-                            Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
+                        let on_result = Closure::wrap(Box::new(
+                            move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
                                     let mut transcript = String::new();
                                     for i in 0..results.length() {
@@ -145,41 +156,107 @@ pub fn RemoteControl() -> impl IntoView {
                                     let full_transcript = transcript.trim().to_string();
                                     set_text.set(full_transcript.clone());
 
-                                    // Send new text in real-time
-                                    let last_sent = last_sent_position.get();
-                                    if full_transcript.len() > last_sent {
-                                        let new_text = &full_transcript[last_sent..];
-                                        if !new_text.trim().is_empty() {
-                                            let text_to_send = new_text.to_string();
-                                            let set_status = set_status_inner.clone();
-                                            wasm_bindgen_futures::spawn_local(async move {
-                                                match api::ApiClient::new_default()
-                                                    .type_dictation(&text_to_send)
-                                                    .await
-                                                {
-                                                    Ok(response) => {
-                                                        if response.success {
-                                                            set_status.set(format!(
-                                                                "Typed {} chars",
-                                                                response.characters_typed
-                                                            ));
-                                                        } else {
+                                    // Smart incremental dictation updates
+                                    let previous_content = last_sent_content.get();
+                                    if full_transcript != previous_content {
+                                        if full_transcript.starts_with(&previous_content) {
+                                            // Text was appended - just send the new portion
+                                            let new_text =
+                                                &full_transcript[previous_content.len()..];
+                                            if !new_text.is_empty() {
+                                                let text_to_send = new_text.to_string();
+                                                let set_status = set_status_inner.clone();
+                                                wasm_bindgen_futures::spawn_local(async move {
+                                                    match api::ApiClient::new_default()
+                                                        .type_dictation(&text_to_send)
+                                                        .await
+                                                    {
+                                                        Ok(response) => {
+                                                            if response.success {
+                                                                set_status.set(format!(
+                                                                    "Typed {} chars",
+                                                                    response.characters_typed
+                                                                ));
+                                                            } else {
+                                                                set_status.set(
+                                                                    "Typing failed".to_string(),
+                                                                );
+                                                            }
+                                                        }
+                                                        Err(_) => {
                                                             set_status
-                                                                .set("Typing failed".to_string());
+                                                                .set("Network error".to_string());
                                                         }
                                                     }
-                                                    Err(_) => {
-                                                        set_status.set("Network error".to_string());
+                                                });
+                                                set_last_sent_content.set(full_transcript.clone());
+                                            }
+                                        } else {
+                                            // Text was corrected - calculate diff and replace
+                                            let common_prefix_len = find_common_prefix(
+                                                &previous_content,
+                                                &full_transcript,
+                                            );
+                                            let backspace_count =
+                                                previous_content.len() - common_prefix_len;
+                                            let new_suffix = &full_transcript[common_prefix_len..];
+
+                                            if backspace_count > 0 || !new_suffix.is_empty() {
+                                                let backspace_count_clone = backspace_count;
+                                                let new_suffix_clone = new_suffix.to_string();
+                                                let set_status = set_status_inner.clone();
+                                                wasm_bindgen_futures::spawn_local(async move {
+                                                    let mut success = true;
+
+                                                    // Send backspaces first
+                                                    if backspace_count_clone > 0 {
+                                                        match api::ApiClient::new_default()
+                                                            .backspace_dictation(
+                                                                backspace_count_clone,
+                                                            )
+                                                            .await
+                                                        {
+                                                            Ok(_) => {}
+                                                            Err(_) => {
+                                                                success = false;
+                                                            }
+                                                        }
                                                     }
-                                                }
-                                            });
-                                            set_last_sent.set(full_transcript.len());
+
+                                                    // Then send new text
+                                                    if !new_suffix_clone.is_empty() && success {
+                                                        match api::ApiClient::new_default()
+                                                            .type_dictation(&new_suffix_clone)
+                                                            .await
+                                                        {
+                                                            Ok(_) => {}
+                                                            Err(_) => {
+                                                                success = false;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if success {
+                                                        set_status.set(format!(
+                                                             "Corrected text ({} backspace, {} type)",
+                                                             backspace_count_clone,
+                                                             new_suffix_clone.len()
+                                                         ));
+                                                    } else {
+                                                        set_status
+                                                            .set("Correction failed".to_string());
+                                                    }
+                                                });
+                                                set_last_sent_content.set(full_transcript.clone());
+                                            }
                                         }
                                     }
 
                                     set_status_inner.set("Listening... speak now".to_string());
                                 }
-                            }) as Box<dyn FnMut(_)>);
+                            },
+                        )
+                            as Box<dyn FnMut(_)>);
 
                         recognition.set_onresult(Some(on_result.as_ref().unchecked_ref()));
                         on_result.forget();
@@ -283,7 +360,11 @@ pub fn RemoteControl() -> impl IntoView {
                                             set_text.set(command_text.clone());
 
                                             // Process the voice command
+                                            let set_text = set_text.clone();
                                             let set_status = set_status.clone();
+                                            let set_is_voice_listening =
+                                                set_is_voice_listening.clone();
+                                            let start_voice_commands = start_voice_commands.clone();
                                             wasm_bindgen_futures::spawn_local(async move {
                                                 set_status.set(format!(
                                                     "Processing: \"{}\"",
@@ -337,6 +418,19 @@ pub fn RemoteControl() -> impl IntoView {
                                                     Err(e) => {
                                                         set_status.set(format!("Error: {}", e));
                                                     }
+                                                }
+
+                                                // Auto-restart voice recognition after 1 second delay
+                                                set_text.set(String::new());
+                                                set_status.set(
+                                                    "Command processed, listening again..."
+                                                        .to_string(),
+                                                );
+                                                TimeoutFuture::new(1_000).await;
+
+                                                // Only restart if not already listening
+                                                if !set_is_voice_listening.get() {
+                                                    start_voice_commands(());
                                                 }
                                             });
                                         }

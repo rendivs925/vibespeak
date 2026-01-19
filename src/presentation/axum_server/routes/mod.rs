@@ -56,6 +56,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/dictation/stop", post(handlers::stop_dictation))
         .route("/dictation/insert", post(handlers::insert_dictation))
         .route("/dictation/type", post(handlers::type_dictation))
+        .route("/dictation/backspace", post(handlers::backspace_dictation))
         .route("/dictation/test-keyboard", get(handlers::test_keyboard));
 
     // For SPA: serve static files, but fallback to index.html for client-side routing

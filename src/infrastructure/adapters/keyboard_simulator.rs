@@ -318,3 +318,13 @@ pub fn press_key_combo_uinput(keys: &[Key]) -> Result<(), String> {
     let mut simulator = KeyboardSimulator::new()?;
     simulator.press_key_combo(keys)
 }
+
+pub fn send_backspaces_uinput(count: usize) -> Result<(), String> {
+    let mut simulator = KeyboardSimulator::new()?;
+    for _ in 0..count {
+        simulator.tap_key(Key::KEY_BACKSPACE)?;
+        // Small delay between backspaces
+        thread::sleep(Duration::from_millis(5));
+    }
+    Ok(())
+}

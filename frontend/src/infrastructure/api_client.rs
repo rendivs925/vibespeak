@@ -218,6 +218,18 @@ impl ApiClient {
         .await
     }
 
+    /// Send backspace keystrokes
+    pub async fn backspace_dictation(&self, count: usize) -> Result<serde_json::Value, String> {
+        self.post(
+            "/dictation/backspace",
+            &serde_json::json!({
+                "count": count,
+                "simulateKeyboard": true
+            }),
+        )
+        .await
+    }
+
     /// Test keyboard simulation
     pub async fn test_keyboard(&self) -> Result<serde_json::Value, String> {
         self.get("/dictation/test-keyboard").await

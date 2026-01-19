@@ -64,6 +64,13 @@ pub struct DictationTypeRequest {
     pub simulate_keyboard: Option<bool>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct DictationBackspaceRequest {
+    pub count: usize,
+    #[serde(rename = "simulateKeyboard")]
+    pub simulate_keyboard: Option<bool>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct DictationTypeResponse {
     pub success: bool,
@@ -154,6 +161,51 @@ pub async fn type_dictation(
     }
 }
 
+pub async fn backspace_dictation(
+    Json(request): Json<DictationBackspaceRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    tracing::info!("Sending {} backspace keystrokes", request.count);
+
+    // Validate input
+    if !request.simulate_keyboard.unwrap_or(true) {
+        tracing::warn!("Keyboard simulation disabled in backspace request");
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "message": "Keyboard simulation disabled".to_string(),
+            "error": "simulate_keyboard was set to false".to_string()
+        })));
+    }
+
+    if request.count == 0 {
+        tracing::warn!("Received backspace request with count 0");
+        return Ok(Json(serde_json::json!({
+            "success": false,
+            "message": "Cannot backspace 0 characters".to_string(),
+            "error": "count was 0".to_string()
+        })));
+    }
+
+    match simulate_backspace_input(request.count).await {
+        Ok(()) => {
+            tracing::info!("Successfully sent {} backspace keystrokes", request.count);
+            Ok(Json(serde_json::json!({
+                "success": true,
+                "characters_backspaced": request.count,
+                "message": format!("Backspaced {} characters successfully", request.count)
+            })))
+        }
+        Err(e) => {
+            tracing::error!("Failed to simulate backspace input: {}", e);
+            Ok(Json(serde_json::json!({
+                "success": false,
+                "characters_backspaced": 0,
+                "message": "Failed to backspace characters".to_string(),
+                "error": e.to_string()
+            })))
+        }
+    }
+}
+
 async fn simulate_keyboard_input(text: &str) -> Result<(), Error> {
     tracing::info!(
         "Starting keyboard simulation for text: '{}' (length: {})",
@@ -225,4 +277,73 @@ async fn simulate_keyboard_input(text: &str) -> Result<(), Error> {
             stderr, stdout
         )))
     }
+}
+
+async fn simulate_backspace_input(count: usize) -> Result<(), Error> {
+    tracing::info!("Starting backspace simulation for {} characters", count);
+
+    // Try uinput first (real kernel-level key events)
+    let count_owned = count;
+    let uinput_result = tokio::task::spawn_blocking(move || {
+        crate::infrastructure::adapters::keyboard_simulator::send_backspaces_uinput(count_owned)
+    })
+    .await;
+
+    match uinput_result {
+        Ok(Ok(())) => {
+            tracing::info!(
+                "Successfully sent {} backspace keystrokes via uinput",
+                count
+            );
+            return Ok(());
+        }
+        Ok(Err(e)) => {
+            tracing::warn!("uinput backspace failed, falling back to xdotool: {}", e);
+        }
+        Err(e) => {
+            tracing::warn!(
+                "uinput backspace task failed, falling back to xdotool: {}",
+                e
+            );
+        }
+    }
+
+    // Fallback to xdotool
+    tracing::info!("Using xdotool fallback for backspace simulation");
+
+    let command = format!("DISPLAY=:0 xdotool key BackSpace");
+    for _ in 0..count {
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&command)
+            .output()
+            .await
+            .map_err(|e| {
+                Error::CommandExecution(format!("Failed to execute xdotool backspace: {}", e))
+            })?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            tracing::error!(
+                "xdotool backspace failed - status: {}, stdout: '{}', stderr: '{}'",
+                output.status,
+                stdout.trim(),
+                stderr.trim()
+            );
+            return Err(Error::CommandExecution(format!(
+                "xdotool backspace failed: {} (stdout: {})",
+                stderr, stdout
+            )));
+        }
+
+        // Small delay between backspaces
+        tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
+    }
+
+    tracing::info!(
+        "Successfully sent {} backspace keystrokes on desktop (xdotool)",
+        count
+    );
+    Ok(())
 }
