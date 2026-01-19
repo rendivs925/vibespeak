@@ -1,19 +1,19 @@
 //! Voice Commands page component
 
-use crate::api;
-use crate::components::{Card, Header, NavBar, StatusBadge};
-use crate::state::CommandInfo;
+use crate::domain::entities::Command;
+use crate::infrastructure::api_client as api;
+use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
 
 #[component]
 pub fn VoiceCommands() -> impl IntoView {
     let (status, set_status) = create_signal("Loading...".to_string());
     let (status_type, set_status_type) = create_signal("info".to_string());
-    let (commands, set_commands) = create_signal::<Vec<CommandInfo>>(vec![]);
+    let (commands, set_commands) = create_signal::<Vec<Command>>(vec![]);
 
     create_effect(move |_| {
         spawn_local(async move {
-            match api::get_config().await {
+            match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
                     set_commands.set(config.commands);
                     set_status.set("Commands loaded".to_string());

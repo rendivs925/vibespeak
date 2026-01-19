@@ -1,21 +1,44 @@
 //! Vibespeak Leptos CSR Application
 //!
 //! A modern, reactive web interface for the Vibespeak voice automation system.
+//! Built with clean architecture principles.
 
-pub mod api;
-pub mod components;
-pub mod pages;
-pub mod state;
+pub mod application;
+pub mod domain;
+pub mod infrastructure;
+pub mod presentation;
+pub mod shared;
+
+// Re-export commonly used types from domain layer
+pub use domain::*;
+
+// Re-export application services
+pub use application::*;
+
+// Re-export infrastructure adapters
+pub use infrastructure::*;
+
+// Re-export presentation components
+pub use presentation::*;
 
 use axum::Router;
 use leptos::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
 use leptos_router::*;
-
-use pages::*;
+use presentation::pages::*;
 
 #[component]
 pub fn App() -> impl IntoView {
+    // Initialize presentation state with API client
+    let api_client = infrastructure::api_client::ApiClient::new_default();
+    presentation::state::PresentationState::init(api_client.clone());
+
+    // Load initial data
+    let state = presentation::state::PresentationState::get();
+    leptos::spawn_local(async move {
+        state.load_initial_data().await;
+    });
+
     view! {
         <Router>
             <main class="app">

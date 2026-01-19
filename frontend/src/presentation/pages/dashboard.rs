@@ -1,7 +1,8 @@
 //! Dashboard page component
 
-use crate::api;
-use crate::components::{Card, Header, NavBar, StatusBadge};
+use crate::infrastructure::api_client;
+use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
+use crate::presentation::state::*;
 use leptos::*;
 
 #[component]
@@ -13,8 +14,16 @@ pub fn Dashboard() -> impl IntoView {
     // Load config on mount
     create_effect(move |_| {
         spawn_local(async move {
-            match api::get_config().await {
-                Ok(config) => {
+            // Use presentation state hooks
+            let config_signal = use_app_config();
+            let loading_signal = use_loading();
+            let error_signal = use_error();
+            let status_signal = use_status_message();
+
+            // Initial data is loaded by the presentation state on app init
+            // Just react to the signals
+            create_effect(move |_| {
+                if let Some(config) = config_signal.get() {
                     set_status.set(format!(
                         "System ready - {} commands loaded",
                         config.commands.len()
@@ -22,12 +31,18 @@ pub fn Dashboard() -> impl IntoView {
                     set_status_type.set("success".to_string());
                     set_loading.set(false);
                 }
-                Err(e) => {
-                    set_status.set(format!("Failed to load config: {}", e));
+
+                if let Some(error) = error_signal.get() {
+                    set_status.set(format!("Error: {}", error));
                     set_status_type.set("error".to_string());
                     set_loading.set(false);
                 }
-            }
+
+                if !loading_signal.get() {
+                    set_status.set(status_signal.get());
+                    set_status_type.set("info".to_string());
+                }
+            });
         });
     });
 
@@ -35,7 +50,8 @@ pub fn Dashboard() -> impl IntoView {
         let text = "Hello world. This is a voice test.".to_string();
         spawn_local(async move {
             set_status.set("Generating voice...".to_string());
-            match api::speak(&text).await {
+            let remote_control_service = use_remote_control();
+            match remote_control_service.speak_text(text.clone()).await {
                 Ok(_) => {
                     set_status.set(format!("Playing voice: \"{}\"", text));
                     set_status_type.set("success".to_string());
@@ -51,19 +67,11 @@ pub fn Dashboard() -> impl IntoView {
     let refresh_config = move |_| {
         spawn_local(async move {
             set_loading.set(true);
-            match api::get_config().await {
-                Ok(config) => {
-                    set_status.set(format!(
-                        "Configuration refreshed - {} commands",
-                        config.commands.len()
-                    ));
-                    set_status_type.set("success".to_string());
-                }
-                Err(e) => {
-                    set_status.set(format!("Failed to refresh: {}", e));
-                    set_status_type.set("error".to_string());
-                }
-            }
+            // Trigger a reload of initial data
+            let state = crate::presentation::state::PresentationState::get();
+            state.load_initial_data().await;
+
+            // The presentation state will update the signals automatically
             set_loading.set(false);
         });
     };

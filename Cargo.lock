@@ -4281,6 +4281,7 @@ name = "vibespeak-frontend"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "chrono",
  "console_error_panic_hook",
  "console_log",
  "gloo-net 0.5.0",
@@ -4293,6 +4294,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

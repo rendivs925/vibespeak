@@ -1,7 +1,7 @@
 //! Remote Control page component
 
-use crate::api;
-use crate::components::{Card, Header, NavBar, StatusBadge};
+use crate::infrastructure::api_client as api;
+use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
 
 #[component]
@@ -18,7 +18,10 @@ pub fn RemoteControl() -> impl IntoView {
             set_status.set(format!("Processing: \"{}\"", command));
             set_status_type.set("info".to_string());
 
-            match api::execute_command(&command).await {
+            match api::ApiClient::new_default()
+                .execute_command(&command)
+                .await
+            {
                 Ok(response) => {
                     if response.status == "ok" {
                         set_status.set(format!("Executed: {}", command));
@@ -62,7 +65,7 @@ pub fn RemoteControl() -> impl IntoView {
         spawn_local(async move {
             set_dictation_status.set("Sending text to desktop...".to_string());
 
-            match api::type_dictation(&text).await {
+            match api::ApiClient::new_default().type_dictation(&text).await {
                 Ok(response) => {
                     if response.success {
                         set_dictation_status.set("Text typed into active application!".to_string());

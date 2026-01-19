@@ -15,9 +15,13 @@ leptos_router = { version = "0.6", features = ["csr"] }
 leptos_axum = { version = "0.6" }
 axum = "0.7"
 
-# Utilities
+# Additional dependencies
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+# Utilities
 gloo-net = "0.5"
 gloo-timers = "0.3"
 wasm-bindgen = "0.2"
@@ -43,6 +47,7 @@ web-sys = { version = "0.3", features = [
     "SpeechRecognitionResult",
     "SpeechRecognitionResultList",
     "SpeechRecognitionAlternative",
+    "Storage",
     "console",
 ] }
 js-sys = "0.3"

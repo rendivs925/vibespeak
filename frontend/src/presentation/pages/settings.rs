@@ -1,8 +1,8 @@
 //! Settings page component
 
-use crate::api;
-use crate::components::{Card, Header, NavBar, StatusBadge};
-use crate::state::TailscaleStatus;
+use crate::domain::entities::TailscaleStatus;
+use crate::infrastructure::api_client as api;
+use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
 
 #[component]
@@ -20,7 +20,7 @@ pub fn Settings() -> impl IntoView {
     // Load settings on mount
     create_effect(move |_| {
         spawn_local(async move {
-            match api::get_config().await {
+            match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
                     set_model_path.set(config.settings.vosk_model_path);
                     set_sample_rate.set(config.settings.sample_rate);
@@ -35,7 +35,7 @@ pub fn Settings() -> impl IntoView {
             }
 
             // Load Tailscale status
-            match api::get_tailscale_status().await {
+            match api::ApiClient::new_default().get_tailscale_status().await {
                 Ok(ts_status) => {
                     set_tailscale_status.set(Some(ts_status));
                 }
