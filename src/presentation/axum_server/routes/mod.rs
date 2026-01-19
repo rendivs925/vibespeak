@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
+use tower_http::{cors::CorsLayer, services::{ServeDir, ServeFile}, trace::TraceLayer};
 
 use super::{handlers, state::AppState};
 
@@ -35,9 +35,13 @@ pub fn create_router(state: AppState) -> Router {
         .route("/dictation/type", post(handlers::type_dictation))
         .route("/dictation/test-keyboard", get(handlers::test_keyboard));
 
+    // For SPA: serve static files, but fallback to index.html for client-side routing
+    let serve_dir = ServeDir::new("frontend/dist")
+        .not_found_service(ServeFile::new("frontend/dist/index.html"));
+
     Router::new()
         .nest("/api", api_routes) // API routes have priority
-        .fallback_service(ServeDir::new("frontend/dist")) // Serve static files including index.html
+        .fallback_service(serve_dir) // Serve static files, fallback to index.html for SPA routes
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

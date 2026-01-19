@@ -7,6 +7,10 @@ description = "Leptos CSR frontend for Vibespeak voice automation system"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = ["csr"]
+csr = []
+
 [dependencies]
 # Leptos CSR frontend
 leptos = { version = "0.6", features = ["csr"] }
