@@ -277,13 +277,12 @@ pub fn RemoteControl() -> impl IntoView {
                                 .expect("Failed to create SpeechRecognition")
                                 .unchecked_into();
 
-                        // Configure recognition for commands - continuous mode for always listening
+                        // Configure recognition - real-time with interim results
                         recognition.set_continuous(true);
-                        recognition.set_interim_results(false);
+                        recognition.set_interim_results(true);
                         recognition.set_lang("en-US");
-                        recognition.set_max_alternatives(3);
 
-                        // Optimized voice command handler - fast path, minimal allocations
+                        // Real-time voice command handler - show interim, execute final
                         let set_text = set_text.clone();
                         let set_status = set_status.clone();
                         let on_result =
@@ -297,28 +296,32 @@ pub fn RemoteControl() -> impl IntoView {
                                     None => return,
                                 };
 
-                                // Fast exit for non-final
-                                if !result.is_final() {
-                                    return;
-                                }
-
                                 let alternative = result.item(0);
-                                let confidence = alternative.confidence();
                                 let text = alternative.transcript();
                                 let trimmed = text.trim();
 
-                                // Quick validation
+                                // Real-time display for all results
+                                set_text.set(text.clone());
+
+                                // Fast path: interim results - just show hearing status
+                                if !result.is_final() {
+                                    set_status.set(format!("Hearing: \"{}\"", trimmed));
+                                    return;
+                                }
+
+                                // FINAL result - validate and execute
                                 if trimmed.len() < 2 {
                                     return;
                                 }
+
+                                let confidence = alternative.confidence();
                                 if confidence < 0.6 {
                                     set_status.set(format!("Low confidence ({:.0}%): \"{}\"", confidence * 100.0, trimmed));
                                     return;
                                 }
 
                                 let command = trimmed.to_string();
-                                set_text.set(command.clone());
-                                set_status.set(format!("Processing: \"{}\"", trimmed));
+                                set_status.set(format!("Executing: \"{}\"", trimmed));
 
                                 let set_text = set_text.clone();
                                 let set_status = set_status.clone();
@@ -331,7 +334,7 @@ pub fn RemoteControl() -> impl IntoView {
                                         Ok(ref r) => {
                                             let success = r.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
                                             let msg = r.get("message").and_then(|v| v.as_str()).unwrap_or(
-                                                if success { "Command executed" } else { "Command failed" }
+                                                if success { "Done" } else { "Failed" }
                                             );
                                             format!("{} {}", if success { "✓" } else { "✗" }, msg)
                                         }
@@ -340,8 +343,8 @@ pub fn RemoteControl() -> impl IntoView {
                                     set_status.set(status_msg);
                                     set_text.set(String::new());
 
-                                    // Brief pause before ready status
-                                    TimeoutFuture::new(1_000).await;
+                                    // Quick reset to listening
+                                    TimeoutFuture::new(800).await;
                                     set_status.set("Listening...".into());
                                 });
                             }) as Box<dyn FnMut(_)>);
