@@ -137,7 +137,9 @@ impl ApiClient {
 
     /// Test voice synthesis
     pub async fn test_voice(&self) -> Result<(), String> {
-        let _: serde_json::Value = self.post("/voice/test", &serde_json::json!({})).await?;
+        let _: serde_json::Value = self
+            .post("/voice/test", &serde_json::json!({"text": "test"}))
+            .await?;
         Ok(())
     }
 
