@@ -16,6 +16,7 @@ pub fn RemoteControl() -> impl IntoView {
     let (status_type, set_status_type) = create_signal("info".to_string());
     let (dictation_text, set_dictation_text) = create_signal(String::new());
     let (dictation_status, set_dictation_status) = create_signal("Dictation ready".to_string());
+    let (last_sent_position, set_last_sent_position) = create_signal(0);
     let (is_dictating, set_is_dictating) = create_signal(false);
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
 
@@ -74,41 +75,8 @@ pub fn RemoteControl() -> impl IntoView {
 
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
+        set_last_sent_position.set(0);
         set_dictation_status.set("Dictation cleared".to_string());
-    };
-
-    let send_dictation = move |_| {
-        let text = dictation_text.get();
-        if text.is_empty() {
-            set_dictation_status.set("Nothing to send - dictate some text first".to_string());
-            return;
-        }
-
-        #[cfg(target_arch = "wasm32")]
-        wasm_bindgen_futures::spawn_local(async move {
-            set_dictation_status.set("Sending text to desktop...".to_string());
-            match api::ApiClient::new_default().type_dictation(&text).await {
-                Ok(response) => {
-                    if response.success {
-                        set_dictation_status.set(format!(
-                            "Typed {} characters successfully!",
-                            response.characters_typed
-                        ));
-                        set_dictation_text.set(String::new());
-                    } else {
-                        set_dictation_status.set(format!(
-                            "Failed: {}",
-                            response
-                                .error
-                                .unwrap_or_else(|| "Unknown error".to_string())
-                        ));
-                    }
-                }
-                Err(e) => {
-                    set_dictation_status.set(format!("Error: {}", e));
-                }
-            }
-        });
     };
 
     let test_keyboard = move |_| {
@@ -156,6 +124,7 @@ pub fn RemoteControl() -> impl IntoView {
                         // Set up result handler
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
+                        let set_last_sent = set_last_sent_position.clone();
                         let on_result =
                             Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
@@ -167,7 +136,41 @@ pub fn RemoteControl() -> impl IntoView {
                                             transcript.push(' ');
                                         }
                                     }
-                                    set_text.set(transcript.trim().to_string());
+                                    let full_transcript = transcript.trim().to_string();
+                                    set_text.set(full_transcript.clone());
+
+                                    // Send new text in real-time
+                                    let last_sent = last_sent_position.get();
+                                    if full_transcript.len() > last_sent {
+                                        let new_text = &full_transcript[last_sent..];
+                                        if !new_text.trim().is_empty() {
+                                            let text_to_send = new_text.to_string();
+                                            let set_status = set_status_inner.clone();
+                                            wasm_bindgen_futures::spawn_local(async move {
+                                                match api::ApiClient::new_default()
+                                                    .type_dictation(&text_to_send)
+                                                    .await
+                                                {
+                                                    Ok(response) => {
+                                                        if response.success {
+                                                            set_status.set(format!(
+                                                                "Typed {} chars",
+                                                                response.characters_typed
+                                                            ));
+                                                        } else {
+                                                            set_status
+                                                                .set("Typing failed".to_string());
+                                                        }
+                                                    }
+                                                    Err(_) => {
+                                                        set_status.set("Network error".to_string());
+                                                    }
+                                                }
+                                            });
+                                            set_last_sent.set(full_transcript.len());
+                                        }
+                                    }
+
                                     set_status_inner.set("Listening... speak now".to_string());
                                 }
                             }) as Box<dyn FnMut(_)>);
@@ -217,14 +220,12 @@ pub fn RemoteControl() -> impl IntoView {
     };
 
     let stop_dictation = move |_| {
-        #[cfg(target_arch = "wasm32")]
-        {
-            if let Some(recognition) = recognition_for_stop.borrow_mut().take() {
-                let _ = recognition.stop();
-            }
+        if let Some(recognition) = &*recognition_ref.borrow() {
+            let _ = recognition.stop();
         }
-        set_is_dictating.set(false);
+        set_last_sent_position.set(dictation_text.get().len());
         set_dictation_status.set("Dictation stopped".to_string());
+        set_is_dictating.set(false);
     };
 
     // Screen sharing with getDisplayMedia
@@ -555,7 +556,7 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="mb-4">
                                         <textarea
                                             class="w-full px-4 py-3 text-sm text-gray-900 bg-white border border-slate-200/80 rounded-xl shadow-sm shadow-slate-100/30 placeholder:text-gray-400 hover:border-slate-300/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 resize-none min-h-[120px]"
-                                            placeholder="Dictated text will appear here... Click 'Start Dictation' and speak."
+                                            placeholder="Dictated text will appear here and be typed automatically... Click 'Start Dictation' and speak."
                                             prop:value=move || dictation_text.get()
                                             on:input=move |ev| {
                                                 set_dictation_text.set(event_target_value(&ev));
@@ -594,13 +595,6 @@ pub fn RemoteControl() -> impl IntoView {
                                                 }
                                             }
                                         }
-                                        <Button
-                                            variant=ButtonVariant::Secondary
-                                            on:click=send_dictation
-                                        >
-                                            <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
-                                            "Send to Desktop"
-                                        </Button>
                                         <Button
                                             variant=ButtonVariant::Ghost
                                             on:click=clear_dictation
