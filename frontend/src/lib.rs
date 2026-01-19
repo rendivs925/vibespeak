@@ -41,9 +41,13 @@ pub fn App() -> impl IntoView {
     });
     #[cfg(not(target_arch = "wasm32"))]
     {
-        // In non-WASM environments (like development), use leptos spawn_local
-        leptos::spawn_local(async move {
-            state.load_initial_data().await;
+        // In non-WASM environments (like development), use Effect to wrap spawn_local
+        let state_clone = state.clone();
+        leptos::create_effect(move |_| {
+            let state = state_clone.clone();
+            leptos::spawn_local(async move {
+                state.load_initial_data().await;
+            });
         });
     }
 

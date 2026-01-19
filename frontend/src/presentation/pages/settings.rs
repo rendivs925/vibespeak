@@ -38,12 +38,11 @@ pub fn Settings() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            // In non-WASM environment, simulate loading
-            set_error.set(Some(
-                "Configuration loading not available in non-WASM environment".to_string(),
-            ));
-            set_loading.set(false);
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_status.set("Settings save not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+            });
         });
     });
 
@@ -60,15 +59,14 @@ pub fn Settings() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            // In non-WASM environment, simulate loading
-            set_tailscale_status.set(Some(crate::domain::entities::TailscaleStatus {
-                enabled: false,
-                connected: false,
-                hostname: None,
-                port: 0,
-                error: Some("Not available in non-WASM environment".to_string()),
-            }));
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                // In non-WASM environment, simulate loading
+                set_error.set(Some(
+                    "Configuration loading not available in non-WASM environment".to_string(),
+                ));
+                set_loading.set(false);
+            });
         });
     };
 
@@ -81,9 +79,17 @@ pub fn Settings() -> impl IntoView {
             set_status_type.set("success".to_string());
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_status.set("Settings save not available in non-WASM environment".to_string());
-            set_status_type.set("warning".to_string());
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                // In non-WASM environment, simulate loading
+                set_tailscale_status.set(Some(crate::domain::entities::TailscaleStatus {
+                    enabled: false,
+                    connected: false,
+                    hostname: None,
+                    port: 0,
+                    error: Some("Not available in non-WASM environment".to_string()),
+                }));
+            });
         });
     };
 

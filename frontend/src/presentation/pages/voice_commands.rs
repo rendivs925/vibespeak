@@ -28,9 +28,11 @@ pub fn VoiceCommands() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_status.set("Command loading not available in non-WASM environment".to_string());
-            set_status_type.set("warning".to_string());
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_status.set("Command loading not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+            });
         });
     });
 

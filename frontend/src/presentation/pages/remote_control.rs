@@ -55,12 +55,12 @@ pub fn RemoteControl() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_status.set(format!(
-                "Command execution not available in non-WASM environment: {}",
-                command
-            ));
-            set_status_type.set("warning".to_string());
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_status
+                    .set("Command execution not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+            });
         });
     };
 
@@ -95,9 +95,12 @@ pub fn RemoteControl() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_dictation_status
-                .set("Text typing not available in non-WASM environment".to_string());
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_status
+                    .set("Command execution not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+            });
         });
     };
 

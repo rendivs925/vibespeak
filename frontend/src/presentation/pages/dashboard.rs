@@ -47,35 +47,37 @@ pub fn Dashboard() -> impl IntoView {
             });
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            // Use presentation state hooks
-            let config_signal = use_app_config();
-            let loading_signal = use_loading();
-            let error_signal = use_error();
-            let status_signal = use_status_message();
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                // Use presentation state hooks
+                let config_signal = use_app_config();
+                let loading_signal = use_loading();
+                let error_signal = use_error();
+                let status_signal = use_status_message();
 
-            // Initial data is loaded by the presentation state on app init
-            // Just react to the signals
-            create_effect(move |_| {
-                if let Some(config) = config_signal.get() {
-                    set_status.set(format!(
-                        "System ready - {} commands loaded",
-                        config.commands.len()
-                    ));
-                    set_status_type.set("success".to_string());
-                    set_loading.set(false);
-                }
+                // Initial data is loaded by the presentation state on app init
+                // Just react to the signals
+                create_effect(move |_| {
+                    if let Some(config) = config_signal.get() {
+                        set_status.set(format!(
+                            "System ready - {} commands loaded",
+                            config.commands.len()
+                        ));
+                        set_status_type.set("success".to_string());
+                        set_loading.set(false);
+                    }
 
-                if let Some(error) = error_signal.get() {
-                    set_status.set(format!("Error: {}", error));
-                    set_status_type.set("error".to_string());
-                    set_loading.set(false);
-                }
+                    if let Some(error) = error_signal.get() {
+                        set_status.set(format!("Error: {}", error));
+                        set_status_type.set("error".to_string());
+                        set_loading.set(false);
+                    }
 
-                if !loading_signal.get() {
-                    set_status.set(status_signal.get());
-                    set_status_type.set("info".to_string());
-                }
+                    if !loading_signal.get() {
+                        set_status.set(status_signal.get());
+                        set_status_type.set("info".to_string());
+                    }
+                });
             });
         });
     });
@@ -98,9 +100,11 @@ pub fn Dashboard() -> impl IntoView {
             }
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_status.set("Voice test not available in non-WASM environment".to_string());
-            set_status_type.set("warning".to_string());
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_status.set("Voice test not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+            });
         });
     };
 
@@ -116,13 +120,15 @@ pub fn Dashboard() -> impl IntoView {
             set_loading.set(false);
         });
         #[cfg(not(target_arch = "wasm32"))]
-        leptos::spawn_local(async move {
-            set_loading.set(true);
-            // In non-WASM, simulate config refresh
-            set_status
-                .set("Configuration refresh not available in non-WASM environment".to_string());
-            set_status_type.set("warning".to_string());
-            set_loading.set(false);
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_loading.set(true);
+                // In non-WASM, simulate config refresh
+                set_status
+                    .set("Configuration refresh not available in non-WASM environment".to_string());
+                set_status_type.set("warning".to_string());
+                set_loading.set(false);
+            });
         });
     };
 
