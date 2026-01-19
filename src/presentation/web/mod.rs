@@ -4,6 +4,10 @@ use crate::shared::{Result, Error};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::Filter;
+use warp::reject::Reject;
+
+// Implement Reject for our Error type
+impl Reject for Error {}
 
 // TTS error handling is done with standard warp rejections
 
@@ -89,7 +93,41 @@ impl WebServer {
             .and(with_voice_service(self.voice_service.clone()))
             .and_then(tts_audio_handler);
 
-        config_get.or(config_post).or(voice_test).or(tts_audio)
+        // Screen sharing routes
+        let screen_offer = warp::path("api")
+            .and(warp::path("screen"))
+            .and(warp::path("offer"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_voice_service(self.voice_service.clone()))
+            .and_then(handle_screen_offer);
+
+        let screen_answer = warp::path("api")
+            .and(warp::path("screen"))
+            .and(warp::path("answer"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_voice_service(self.voice_service.clone()))
+            .and_then(handle_screen_answer);
+
+        // Remote control routes
+        let remote_command = warp::path("api")
+            .and(warp::path("remote"))
+            .and(warp::path("command"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_voice_service(self.voice_service.clone()))
+            .and_then(handle_remote_command);
+
+        let remote_mouse = warp::path("api")
+            .and(warp::path("remote"))
+            .and(warp::path("mouse"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_voice_service(self.voice_service.clone()))
+            .and_then(handle_remote_mouse);
+
+        config_get.or(config_post).or(voice_test).or(tts_audio).or(screen_offer).or(screen_answer).or(remote_command).or(remote_mouse)
     }
 }
 
@@ -284,6 +322,137 @@ async fn test_voice(
     });
 
     Ok(warp::reply::json(&result))
+}
+
+// Screen sharing handlers
+#[derive(serde::Deserialize)]
+struct ScreenOfferRequest {
+    session_id: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct ScreenAnswerRequest {
+    session_id: String,
+    answer: serde_json::Value,
+}
+
+#[derive(serde::Deserialize)]
+struct RemoteCommandRequest {
+    command: String,
+    parameters: Option<serde_json::Value>,
+}
+
+async fn handle_screen_offer(
+    request: ScreenOfferRequest,
+    voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    let session_id = request.session_id.unwrap_or_else(|| {
+        format!("session_{}", chrono::Utc::now().timestamp())
+    });
+
+    tracing::info!("Creating screen sharing session: {}", session_id);
+
+    match voice_service.start_screen_sharing(session_id.clone()).await {
+        Ok(offer) => {
+            let response = serde_json::json!({
+                "status": "ok",
+                "session_id": session_id,
+                "offer": serde_json::from_str(&offer).unwrap_or(serde_json::Value::Null),
+                "message": "Screen sharing session created"
+            });
+            Ok(warp::reply::json(&response))
+        }
+        Err(e) => {
+            tracing::error!("Failed to create screen sharing session: {}", e);
+            let response = serde_json::json!({
+                "status": "error",
+                "error": e.to_string(),
+                "message": "Failed to create screen sharing session"
+            });
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
+
+// Remote mouse handler
+#[derive(serde::Deserialize)]
+struct RemoteMouseRequest {
+    #[serde(rename = "type")]
+    event_type: String,
+    x: i32,
+    y: i32,
+    timestamp: Option<u64>,
+}
+
+async fn handle_screen_answer(
+    _request: ScreenAnswerRequest,
+    _voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    // Placeholder for screen answer handling
+    let response = serde_json::json!({
+        "status": "ok",
+        "message": "Screen answer received - implementation pending"
+    });
+    Ok(warp::reply::json(&response))
+}
+
+async fn handle_remote_command(
+    request: RemoteCommandRequest,
+    voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    match voice_service.execute_remote_command(&request.command, request.parameters.as_ref()).await {
+        Ok(result) => {
+            let response = serde_json::json!({
+                "status": "ok",
+                "command": request.command,
+                "result": result,
+                "processed": true
+            });
+            Ok(warp::reply::json(&response))
+        }
+        Err(e) => {
+            let response = serde_json::json!({
+                "status": "error",
+                "command": request.command,
+                "error": e.to_string(),
+                "processed": false
+            });
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
+
+async fn handle_remote_mouse(
+    request: RemoteMouseRequest,
+    voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    tracing::info!("Received remote mouse event: {} at ({}, {})", request.event_type, request.x, request.y);
+
+    match voice_service.handle_remote_mouse(&request.event_type, request.x, request.y).await {
+        Ok(result) => {
+            let response = serde_json::json!({
+                "status": "ok",
+                "event_type": request.event_type,
+                "x": request.x,
+                "y": request.y,
+                "result": result,
+                "message": "Mouse event processed successfully"
+            });
+            Ok(warp::reply::json(&response))
+        }
+        Err(e) => {
+            tracing::error!("Failed to handle remote mouse event: {}", e);
+            let response = serde_json::json!({
+                "status": "error",
+                "event_type": request.event_type,
+                "x": request.x,
+                "y": request.y,
+                "error": e.to_string(),
+                "message": "Failed to process mouse event"
+            });
+            Ok(warp::reply::json(&response))
+        }
+    }
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {

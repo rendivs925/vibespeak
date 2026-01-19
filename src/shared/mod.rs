@@ -23,6 +23,21 @@ pub enum Error {
 
     #[error("Network error: {0}")]
     Network(String),
+
+    #[error("WebRTC error: {0}")]
+    WebRTC(String),
+
+    #[error("Command execution error: {0}")]
+    CommandExecution(String),
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
+    #[error("Invalid command: {0}")]
+    InvalidCommand(String),
+
+    #[error("Serialization error: {0}")]
+    Serialization(String),
 }
 
 impl From<anyhow::Error> for Error {

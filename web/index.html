@@ -143,6 +143,104 @@
       .form-group textarea {
         min-height: 60px;
       }
+
+      /* Mobile optimizations */
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          border-radius: 4px;
+        }
+
+        .header {
+          padding: 20px;
+          text-align: center;
+        }
+
+        .nav-tabs {
+          flex-direction: column;
+        }
+
+        .nav-tabs a {
+          padding: 12px 15px;
+          text-align: center;
+        }
+
+        .content {
+          padding: 15px;
+        }
+
+        #screen-container {
+          margin: 15px 0;
+        }
+
+        #screen-placeholder {
+          height: 250px;
+          font-size: 14px;
+        }
+
+        #touch-controls {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+
+        .touch-btn {
+          font-size: 12px;
+          padding: 12px 8px;
+          min-height: 50px;
+        }
+
+        .btn {
+          font-size: 14px;
+          padding: 12px 16px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        #touch-controls {
+          grid-template-columns: 1fr;
+        }
+
+        .touch-btn {
+          font-size: 14px;
+          padding: 15px 10px;
+        }
+
+        #screen-placeholder {
+          height: 200px;
+        }
+      }
+
+      /* Touch button styles */
+      .touch-btn {
+        transition: all 0.2s;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 60px;
+      }
+
+      .touch-btn:active {
+        transform: scale(0.95);
+        background: #0056b3 !important;
+      }
+
+      /* Screen sharing styles */
+      #screen-video {
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Voice control styles */
+      #voice-status {
+        font-weight: 500;
+      }
+
+      #commands-history {
+        font-family: monospace;
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
@@ -155,15 +253,16 @@
         </div>
       </div>
 
-      <nav class="nav">
-        <ul class="nav-tabs">
-          <li><a href="#dashboard" class="active">Dashboard</a></li>
-          <li><a href="#commands">Voice Commands</a></li>
-          <li><a href="#workflows">Workflows</a></li>
-          <li><a href="#scripts">Scripts</a></li>
-          <li><a href="#settings">Settings</a></li>
-        </ul>
-      </nav>
+       <nav class="nav">
+         <ul class="nav-tabs">
+           <li><a href="#dashboard" class="active">Dashboard</a></li>
+           <li><a href="#remote">Remote Control</a></li>
+           <li><a href="#commands">Voice Commands</a></li>
+           <li><a href="#workflows">Workflows</a></li>
+           <li><a href="#scripts">Scripts</a></li>
+           <li><a href="#settings">Settings</a></li>
+         </ul>
+       </nav>
 
       <div class="content">
         <!-- Dashboard Section -->
@@ -191,6 +290,76 @@
             <button class="btn btn-secondary" onclick="refreshConfig()">
               Refresh Config
             </button>
+          </div>
+         </section>
+
+        <!-- Remote Control Section -->
+        <section id="remote" class="section">
+          <h2>Remote Control</h2>
+          <div class="card">
+            <h3>Screen Sharing</h3>
+            <p>View and control your desktop from anywhere</p>
+            <div id="screen-container" style="margin: 20px 0;">
+              <video id="screen-video" controls style="width: 100%; max-width: 100%; border: 1px solid #ddd; display: none;"></video>
+              <div id="screen-placeholder" style="width: 100%; height: 400px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                <div style="text-align: center;">
+                  <div style="font-size: 48px; margin-bottom: 10px;">📺</div>
+                  <div>Screen sharing not started</div>
+                  <div style="font-size: 14px; margin-top: 5px;">Click "Start Screen Share" to begin</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button id="start-screen-share" class="btn">Start Screen Share</button>
+              <button id="stop-screen-share" class="btn btn-secondary" style="display: none;">Stop Screen Share</button>
+              <button id="fullscreen-btn" class="btn btn-secondary" style="display: none;">Fullscreen</button>
+            </div>
+            <div id="screen-status" class="status info" style="margin-top: 10px; display: none;"></div>
+          </div>
+
+          <div class="card">
+            <h3>Voice Control</h3>
+            <p>Control your desktop with voice commands from mobile</p>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+              <button id="start-voice-control" class="btn">🎤 Start Voice Control</button>
+              <button id="stop-voice-control" class="btn btn-secondary" style="display: none;">⏹️ Stop Voice Control</button>
+              <div id="voice-status" class="status info" style="flex: 1;">Voice control ready</div>
+            </div>
+            <div id="voice-commands-list" style="margin-top: 15px;">
+              <h4>Recent Commands</h4>
+              <div id="commands-history" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                <div style="color: #6c757d; font-style: italic;">No commands yet</div>
+              </div>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px;">
+              <strong>Voice Commands:</strong>
+              <ul style="margin: 5px 0; padding-left: 20px; font-size: 14px;">
+                <li>"open terminal" - Open terminal window</li>
+                <li>"open browser" - Launch web browser</li>
+                <li>"take screenshot" - Capture screen</li>
+                <li>"volume up/down" - Adjust audio</li>
+                <li>"workspace next/previous" - Switch workspaces</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Touch Controls</h3>
+            <p>Touch and gesture controls for mobile devices</p>
+            <div id="touch-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 15px;">
+              <button class="btn touch-btn" data-command="open terminal">📟 Terminal</button>
+              <button class="btn touch-btn" data-command="open browser">🌐 Browser</button>
+              <button class="btn touch-btn" data-command="volume up">🔊 Vol Up</button>
+              <button class="btn touch-btn" data-command="volume down">🔉 Vol Down</button>
+              <button class="btn touch-btn" data-command="workspace next">➡️ Next WS</button>
+              <button class="btn touch-btn" data-command="workspace previous">⬅️ Prev WS</button>
+              <button class="btn touch-btn" data-command="window close">❌ Close Win</button>
+              <button class="btn touch-btn" data-command="take screenshot">📸 Screenshot</button>
+            </div>
+            <div style="margin-top: 15px;">
+              <input type="text" id="custom-command" placeholder="Type custom command..." style="flex: 1; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; margin-right: 10px;">
+              <button id="send-custom-command" class="btn">Send Command</button>
+            </div>
           </div>
         </section>
 
@@ -433,6 +602,402 @@
       function deleteCommand(id) {
         alert(`Delete command ${id} - coming soon!`);
       }
+
+      // Remote Control Functions
+      let screenStream = null;
+      let voiceRecognition = null;
+      let isVoiceControlActive = false;
+      let voicePeerConnection = null;
+      let voiceStream = null;
+
+      // Screen Sharing
+      async function startScreenShare() {
+        try {
+          updateScreenStatus("Requesting screen access...", "info");
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { mediaSource: 'screen' },
+            audio: false
+          });
+
+          const videoElement = document.getElementById('screen-video');
+          videoElement.srcObject = screenStream;
+          videoElement.style.display = 'block';
+          document.getElementById('screen-placeholder').style.display = 'none';
+
+          document.getElementById('start-screen-share').style.display = 'none';
+          document.getElementById('stop-screen-share').style.display = 'inline-block';
+          document.getElementById('fullscreen-btn').style.display = 'inline-block';
+
+          updateScreenStatus("Screen sharing active", "success");
+
+          // Handle stream end
+          screenStream.getVideoTracks()[0].addEventListener('ended', stopScreenShare);
+        } catch (error) {
+          console.error('Screen sharing failed:', error);
+          updateScreenStatus(`Screen sharing failed: ${error.message}`, "error");
+        }
+      }
+
+      function stopScreenShare() {
+        if (screenStream) {
+          screenStream.getTracks().forEach(track => track.stop());
+          screenStream = null;
+        }
+
+        document.getElementById('screen-video').style.display = 'none';
+        document.getElementById('screen-placeholder').style.display = 'flex';
+
+        document.getElementById('start-screen-share').style.display = 'inline-block';
+        document.getElementById('stop-screen-share').style.display = 'none';
+        document.getElementById('fullscreen-btn').style.display = 'none';
+
+        updateScreenStatus("Screen sharing stopped", "info");
+      }
+
+      function toggleFullscreen() {
+        const video = document.getElementById('screen-video');
+        if (video.requestFullscreen) {
+          video.requestFullscreen();
+        } else if (video.webkitRequestFullscreen) {
+          video.webkitRequestFullscreen();
+        } else if (video.msRequestFullscreen) {
+          video.msRequestFullscreen();
+        }
+      }
+
+      function updateScreenStatus(message, type = "info") {
+        const status = document.getElementById('screen-status');
+        status.textContent = message;
+        status.className = `status ${type}`;
+        status.style.display = 'block';
+      }
+
+      // Voice Control
+      async function startVoiceControl() {
+        try {
+          updateVoiceStatus("🎤 Initializing voice control...", "info");
+
+          // Get microphone access
+          voiceStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              sampleRate: 16000,
+              channelCount: 1,
+              echoCancellation: true,
+              noiseSuppression: true
+            }
+          });
+
+          // Create WebRTC peer connection for audio streaming
+          voicePeerConnection = new RTCPeerConnection();
+
+          // Add audio track to peer connection
+          voiceStream.getAudioTracks().forEach(track => {
+            voicePeerConnection.addTrack(track, voiceStream);
+          });
+
+          // Set up ICE candidate handling
+          voicePeerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+              console.log('ICE candidate:', event.candidate);
+            }
+          };
+
+          // Create offer and send to server
+          const offer = await voicePeerConnection.createOffer();
+          await voicePeerConnection.setLocalDescription(offer);
+
+          // Send offer to server (placeholder - would need server endpoint)
+          console.log('Voice control WebRTC offer created');
+
+          updateVoiceStatus("🎤 Voice control active - speak commands", "success");
+          isVoiceControlActive = true;
+          document.getElementById('start-voice-control').style.display = 'none';
+          document.getElementById('stop-voice-control').style.display = 'inline-block';
+
+          // For demo purposes, also enable local speech recognition as fallback
+          await startLocalSpeechRecognition();
+
+        } catch (error) {
+          console.error('Voice control failed:', error);
+          updateVoiceStatus(`Voice control failed: ${error.message}`, "error");
+
+          // Fallback to local speech recognition
+          await startLocalSpeechRecognition();
+        }
+      }
+
+      async function startLocalSpeechRecognition() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          updateVoiceStatus("Voice recognition not supported", "error");
+          return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        voiceRecognition = new SpeechRecognition();
+
+        voiceRecognition.continuous = true;
+        voiceRecognition.interimResults = false;
+        voiceRecognition.lang = 'en-US';
+
+        voiceRecognition.onstart = () => {
+          if (!isVoiceControlActive) {
+            updateVoiceStatus("🎤 Local voice recognition active", "success");
+            isVoiceControlActive = true;
+            document.getElementById('start-voice-control').style.display = 'none';
+            document.getElementById('stop-voice-control').style.display = 'inline-block';
+          }
+        };
+
+        voiceRecognition.onresult = (event) => {
+          const last = event.results.length - 1;
+          const command = event.results[last][0].transcript.trim();
+          addCommandToHistory(command);
+          processVoiceCommand(command);
+        };
+
+        voiceRecognition.onerror = (event) => {
+          console.error('Voice recognition error:', event.error);
+          updateVoiceStatus(`Voice error: ${event.error}`, "error");
+        };
+
+        voiceRecognition.onend = () => {
+          if (isVoiceControlActive) {
+            updateVoiceStatus("Voice control stopped", "info");
+            document.getElementById('start-voice-control').style.display = 'inline-block';
+            document.getElementById('stop-voice-control').style.display = 'none';
+            isVoiceControlActive = false;
+          }
+        };
+
+        voiceRecognition.start();
+      }
+
+      function stopVoiceControl() {
+        // Stop WebRTC audio streaming
+        if (voicePeerConnection) {
+          voicePeerConnection.close();
+          voicePeerConnection = null;
+        }
+
+        if (voiceStream) {
+          voiceStream.getTracks().forEach(track => track.stop());
+          voiceStream = null;
+        }
+
+        // Stop local speech recognition
+        if (voiceRecognition) {
+          voiceRecognition.stop();
+        }
+
+        isVoiceControlActive = false;
+        document.getElementById('start-voice-control').style.display = 'inline-block';
+        document.getElementById('stop-voice-control').style.display = 'none';
+        updateVoiceStatus("Voice control stopped", "info");
+      }
+
+      async function processVoiceCommand(command) {
+        try {
+          updateVoiceStatus(`Processing: "${command}"`, "info");
+
+          const response = await fetch('/api/remote/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              command: command,
+              parameters: null
+            })
+          });
+
+          const result = await response.json();
+          if (result.status === 'ok') {
+            updateVoiceStatus(`Executed: ${command}`, "success");
+          } else {
+            updateVoiceStatus(`Failed: ${result.error}`, "error");
+          }
+        } catch (error) {
+          console.error('Command processing failed:', error);
+          updateVoiceStatus(`Command failed: ${error.message}`, "error");
+        }
+      }
+
+      function updateVoiceStatus(message, type = "info") {
+        const status = document.getElementById('voice-status');
+        status.textContent = message;
+        status.className = `status ${type}`;
+      }
+
+      function addCommandToHistory(command) {
+        const history = document.getElementById('commands-history');
+        const time = new Date().toLocaleTimeString();
+
+        // Clear empty state
+        if (history.innerHTML.includes('No commands yet')) {
+          history.innerHTML = '';
+        }
+
+        const commandDiv = document.createElement('div');
+        commandDiv.style.cssText = 'padding: 5px 0; border-bottom: 1px solid #dee2e6; font-size: 14px;';
+        commandDiv.innerHTML = `<strong>${time}:</strong> "${command}"`;
+        history.appendChild(commandDiv);
+
+        // Scroll to bottom
+        history.scrollTop = history.scrollHeight;
+      }
+
+      // Touch Controls
+      function initTouchControls() {
+        // Touch button handlers
+        document.querySelectorAll('.touch-btn').forEach(btn => {
+          btn.addEventListener('touchstart', () => {
+            btn.classList.add('touch-active');
+          });
+
+          btn.addEventListener('touchend', async () => {
+            btn.classList.remove('touch-active');
+            const command = btn.getAttribute('data-command');
+            addCommandToHistory(`Touch: ${command}`);
+            await processVoiceCommand(command);
+          });
+
+          // Fallback for non-touch devices
+          btn.addEventListener('click', async () => {
+            const command = btn.getAttribute('data-command');
+            addCommandToHistory(`Click: ${command}`);
+            await processVoiceCommand(command);
+          });
+        });
+
+        // Custom command handler
+        document.getElementById('send-custom-command').addEventListener('click', async () => {
+          const input = document.getElementById('custom-command');
+          const command = input.value.trim();
+          if (command) {
+            addCommandToHistory(`Custom: ${command}`);
+            await processVoiceCommand(command);
+            input.value = '';
+          }
+        });
+
+        // Enter key for custom command
+        document.getElementById('custom-command').addEventListener('keypress', async (e) => {
+          if (e.key === 'Enter') {
+            document.getElementById('send-custom-command').click();
+          }
+        });
+
+        // Screen touch controls for remote mouse
+        initScreenTouchControls();
+      }
+
+      // Screen touch controls for mouse simulation
+      function initScreenTouchControls() {
+        const video = document.getElementById('screen-video');
+        let isDragging = false;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+
+        // Touch event handlers for screen control
+        video.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const rect = video.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Convert to screen coordinates (assuming 1920x1080 desktop)
+            const screenX = Math.round((x / rect.width) * 1920);
+            const screenY = Math.round((y / rect.height) * 1080);
+
+            lastTouchX = screenX;
+            lastTouchY = screenY;
+
+            // Single touch = mouse click
+            sendMouseEvent('click', screenX, screenY);
+            addCommandToHistory(`Touch click at ${screenX}, ${screenY}`);
+          }
+        });
+
+        video.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const rect = video.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Convert to screen coordinates
+            const screenX = Math.round((x / rect.width) * 1920);
+            const screenY = Math.round((y / rect.height) * 1080);
+
+            if (Math.abs(screenX - lastTouchX) > 10 || Math.abs(screenY - lastTouchY) > 10) {
+              // Drag detected
+              sendMouseEvent('move', screenX, screenY);
+              lastTouchX = screenX;
+              lastTouchY = screenY;
+              isDragging = true;
+            }
+          }
+        });
+
+        video.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          if (isDragging) {
+            addCommandToHistory(`Touch drag ended at ${lastTouchX}, ${lastTouchY}`);
+            isDragging = false;
+          }
+        });
+
+        // Double tap for right click
+        let lastTapTime = 0;
+        video.addEventListener('touchend', (e) => {
+          const currentTime = Date.now();
+          if (currentTime - lastTapTime < 300) {
+            // Double tap detected
+            sendMouseEvent('right_click', lastTouchX, lastTouchY);
+            addCommandToHistory(`Double tap (right click) at ${lastTouchX}, ${lastTouchY}`);
+            e.preventDefault();
+          }
+          lastTapTime = currentTime;
+        });
+      }
+
+      // Send mouse events to remote desktop
+      async function sendMouseEvent(type, x, y) {
+        try {
+          const response = await fetch('/api/remote/mouse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: type,
+              x: x,
+              y: y,
+              timestamp: Date.now()
+            })
+          });
+
+          if (!response.ok) {
+            console.warn('Mouse event failed:', response.status);
+          }
+        } catch (error) {
+          console.warn('Mouse event error:', error);
+        }
+      }
+
+      // Initialize remote control when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        // Screen sharing buttons
+        document.getElementById('start-screen-share').addEventListener('click', startScreenShare);
+        document.getElementById('stop-screen-share').addEventListener('click', stopScreenShare);
+        document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+
+        // Voice control buttons
+        document.getElementById('start-voice-control').addEventListener('click', startVoiceControl);
+        document.getElementById('stop-voice-control').addEventListener('click', stopVoiceControl);
+
+        // Initialize touch controls
+        initTouchControls();
+      });
     </script>
   </body>
 </html>
