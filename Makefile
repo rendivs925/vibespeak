@@ -10,7 +10,7 @@
 #   make dev      # Run in development mode with auto-restart
 #
 
-.PHONY: help setup build run dev dev-web dev-listen test clean install docs format lint check-deps web-deps
+.PHONY: help setup build run dev dev-web dev-listen dev-frontend frontend-build frontend-deploy test clean install docs format lint check-deps web-deps frontend-deps
 
 # Default target
 help:
@@ -31,9 +31,13 @@ help:
 	@echo "  format    - Format code with rustfmt"
 	@echo "  lint      - Run clippy linter"
 	@echo "  check     - Run all checks (format, lint, test)"
-	@echo "  web-deps  - Install web development dependencies"
-	@echo "  web-build - Build web assets for production"
-	@echo "  config    - Generate default configuration"
+	@echo "  web-deps     - Install web development dependencies"
+	@echo "  web-build    - Build web assets for production"
+	@echo "  frontend-deps - Install Leptos frontend dependencies (trunk)"
+	@echo "  dev-frontend - Run Leptos frontend in development mode"
+	@echo "  frontend-build - Build Leptos frontend for production"
+	@echo "  frontend-deploy - Build and deploy frontend to web server"
+	@echo "  config       - Generate default configuration"
 	@echo "  docker    - Build Docker image"
 	@echo ""
 	@echo "Development workflow:"
@@ -42,7 +46,7 @@ help:
 	@echo "  VIBESPEAK_MODE=web make dev     # Auto-start web interface"
 
 # Initial setup and dependency installation
-setup: check-deps web-deps config
+setup: check-deps web-deps frontend-deps config
 	@echo "Project setup complete!"
 	@echo ""
 	@echo "Next steps:"
@@ -159,7 +163,7 @@ lint:
 check: format lint test
 	@echo "All checks passed!"
 
-# Build web assets for production
+ # Build web assets for production
 web-build:
 	@echo "Building web assets..."
 	@if [ -d "web" ] && [ -f "web/package.json" ]; then \
@@ -169,7 +173,34 @@ web-build:
 		echo "Web directory not found or not set up"; \
 	fi
 
-# Generate default configuration
+ # Install Leptos frontend dependencies (trunk)
+ frontend-deps:
+	@echo "Installing Leptos frontend dependencies..."
+	@command -v trunk >/dev/null 2>&1 || { echo "Installing trunk (WASM bundler)..."; cargo install trunk; }
+	@echo "Trunk installed and ready"
+
+ # Run Leptos frontend in development mode
+ dev-frontend:
+	@echo "Starting Leptos frontend in development mode..."
+	@echo "Frontend will be available at http://localhost:3000"
+	@echo "Press Ctrl+C to stop"
+	@cd frontend && trunk serve --port 3000
+
+ # Build Leptos frontend for production
+ frontend-build:
+	@echo "Building Leptos frontend for production..."
+	@cd frontend && trunk build --release
+	@echo "Frontend built successfully in frontend/dist/"
+
+ # Build and deploy frontend to web server
+ frontend-deploy: frontend-build
+	@echo "Deploying frontend to web server..."
+	@mkdir -p web/dist
+	@cp -r frontend/dist/* web/dist/
+	@echo "Frontend deployed to web/dist/"
+	@echo "Run 'make dev-web' to serve the application"
+
+ # Generate default configuration
 config:
 	@echo "Generating default configuration..."
 	@if [ ! -f "config/system.json" ]; then \
