@@ -8,9 +8,7 @@ const DYNAMIC_CACHE = 'vibespeak-dynamic-v1.0.0';
 // Files to cache for offline use
 const STATIC_FILES = [
     '/',
-    '/manifest.json',
-    '/static/app.js',
-    '/static/styles.css',
+    '/manifest.json'
     // Add icon files when available
     // '/icon-192.png',
     // '/icon-512.png'
