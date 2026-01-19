@@ -638,31 +638,53 @@
       }
 
       // Initialize everything when DOM is ready
-      document.addEventListener("DOMContentLoaded", async function () {
+      document.addEventListener("DOMContentLoaded", function () {
         console.log("DOM loaded, initializing...");
         initNavigation();
         console.log("Navigation initialized");
 
         // Update status to show we're starting
-        updateStatus("Loading configuration...");
+        updateStatus("Initializing system...");
 
-        try {
-          await loadConfig();
-          await checkTailscaleStatus();
-          // Only set "ready" status if loadConfig succeeded
-          if (document.getElementById("system-status").textContent.includes("Loading")) {
+        // Load configuration (fire-and-forget to avoid hanging)
+        loadConfig().then(() => {
+          console.log("Config loaded successfully");
+          // Only update status if it's still showing initialization
+          if (document.getElementById("system-status").textContent.includes("Initializing")) {
             updateStatus("System ready");
           }
-        } catch (error) {
-          console.error("Initialization error:", error);
-          updateStatus("System initialization failed", "error");
-        }
+        }).catch(error => {
+          console.error("Config load failed:", error);
+          updateStatus("System ready (config load failed)", "warning");
+        });
+
+        // Check Tailscale status (fire-and-forget)
+        checkTailscaleStatus().catch(error => {
+          console.error("Tailscale status check failed:", error);
+        });
+
+        // Set a fallback timeout in case everything hangs
+        setTimeout(() => {
+          if (document.getElementById("system-status").textContent.includes("Initializing")) {
+            console.warn("Initialization timeout - setting fallback status");
+            updateStatus("System ready (with timeouts)", "warning");
+          }
+        }, 5000); // 5 second timeout
       });
 
       async function loadConfig() {
         try {
           console.log("Loading config from /api/config...");
-          const response = await fetch("/api/config");
+
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+          const response = await fetch("/api/config", {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
           console.log("Config response status:", response.status);
 
           if (!response.ok) {
@@ -674,8 +696,14 @@
           updateUI(config);
           updateStatus("System ready - configuration loaded", "success");
         } catch (error) {
-          console.error("Failed to load config:", error);
-          updateStatus(`Error loading configuration: ${error.message}`, "error");
+          if (error.name === 'AbortError') {
+            console.warn("Config load timed out");
+            updateStatus("System ready (config load timeout)", "warning");
+          } else {
+            console.error("Failed to load config:", error);
+            updateStatus(`Configuration load failed: ${error.message}`, "error");
+          }
+          throw error; // Re-throw to be caught by caller
         }
       }
 
@@ -786,7 +814,15 @@
       // Tailscale functionality
       async function checkTailscaleStatus() {
         try {
-          const response = await fetch('/api/tailscale/status');
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
+          const response = await fetch('/api/tailscale/status', {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
           if (response.ok) {
             const status = await response.json();
             updateTailscaleStatus(status);
@@ -794,7 +830,12 @@
             updateTailscaleStatus({ enabled: false, connected: false, error: 'API not available' });
           }
         } catch (error) {
-          updateTailscaleStatus({ enabled: false, connected: false, error: error.message });
+          if (error.name === 'AbortError') {
+            console.warn("Tailscale status check timed out");
+            updateTailscaleStatus({ enabled: false, connected: false, error: 'Request timeout' });
+          } else {
+            updateTailscaleStatus({ enabled: false, connected: false, error: error.message });
+          }
         }
       }
 
