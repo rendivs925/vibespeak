@@ -44,6 +44,7 @@ pub fn create_router(state: AppState) -> Router {
         // TTS endpoints
         .route("/tts/speak", post(handlers::speak))
         .route("/voice/test", post(handlers::test_voice))
+        .route("/voice/process", post(handlers::process_voice_command))
         // Remote control endpoints
         .route("/remote/command", post(handlers::execute_remote_command))
         .route("/remote/mouse", post(handlers::handle_mouse_event))

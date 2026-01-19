@@ -1,5 +1,4 @@
 [commands]
-"type" = ""
 
 # --- Tmux Control (pane/window) ---
 "split pane"       = "xdotool key ctrl+a bar"

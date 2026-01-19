@@ -140,6 +140,19 @@ impl ApiClient {
         let _: serde_json::Value = self.post("/voice/test", &serde_json::json!({})).await?;
         Ok(())
     }
+
+    /// Process a voice command
+    pub async fn process_voice_command(
+        &self,
+        text: &str,
+        confidence: Option<f32>,
+    ) -> Result<serde_json::Value, String> {
+        let request = serde_json::json!({
+            "text": text,
+            "confidence": confidence.unwrap_or(0.8)
+        });
+        self.post("/voice/process", &request).await
+    }
 }
 
 /// Remote control operations

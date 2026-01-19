@@ -107,6 +107,45 @@ pub async fn test_voice(
     }))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ProcessVoiceRequest {
+    pub text: String,
+    pub confidence: Option<f32>,
+}
+
+pub async fn process_voice_command(
+    State(state): State<AppState>,
+    Json(request): Json<ProcessVoiceRequest>,
+) -> Json<Value> {
+    let confidence = request.confidence.unwrap_or(0.8);
+
+    match state
+        .voice_processor
+        .process_text_command(request.text.clone(), confidence as f64)
+        .await
+    {
+        Ok(result) => Json(json!({
+            "status": "success",
+            "text": request.text,
+            "processed": true,
+            "success": result.success,
+            "recognized_text": result.recognized_text,
+            "command_executed": result.command_executed,
+            "execution_result": result.execution_result
+        })),
+        Err(e) => {
+            tracing::error!("Voice command processing failed: {}", e);
+            Json(json!({
+                "status": "error",
+                "text": request.text,
+                "processed": false,
+                "success": false,
+                "error": format!("Failed to process voice command: {}", e)
+            }))
+        }
+    }
+}
+
 fn create_wav_from_samples(samples: &[i16]) -> Vec<u8> {
     let sample_rate: u32 = 22050;
     let num_channels: u16 = 1;

@@ -149,7 +149,7 @@ async fn main() -> Result<()> {
     let voice_service = Arc::new(voice_service);
 
     match mode.as_str() {
-        "web" => run_web_mode(voice_service, system_config).await,
+        "web" => run_web_mode(voice_service, voice_processor, system_config).await,
         "listen" => run_listen_mode(voice_processor, voice_service, system_config).await,
         _ => unreachable!(),
     }
@@ -157,10 +157,15 @@ async fn main() -> Result<()> {
 
 async fn run_web_mode(
     voice_service: Arc<VoiceProcessingService>,
+    voice_processor: Arc<VoiceCommandProcessor>,
     system_config: SystemConfig,
 ) -> Result<()> {
     let web_port = system_config.settings.web_server_port;
-    let axum_server = AxumServer::new(voice_service.clone(), system_config);
+    let axum_server = AxumServer::new(
+        voice_service.clone(),
+        voice_processor.clone(),
+        system_config,
+    );
     let server_handle = tokio::spawn(async move {
         if let Err(e) = axum_server.run(web_port).await {
             tracing::error!("Axum server error: {}", e);

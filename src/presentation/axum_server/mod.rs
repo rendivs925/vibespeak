@@ -10,7 +10,7 @@ pub mod handlers;
 pub mod routes;
 pub mod state;
 
-use crate::application::services::VoiceProcessingService;
+use crate::application::services::{VoiceCommandProcessor, VoiceProcessingService};
 use crate::infrastructure::config::SystemConfig;
 use crate::shared::Result;
 use state::AppState;
@@ -23,9 +23,13 @@ pub struct AxumServer {
 }
 
 impl AxumServer {
-    pub fn new(voice_service: Arc<VoiceProcessingService>, config: SystemConfig) -> Self {
+    pub fn new(
+        voice_service: Arc<VoiceProcessingService>,
+        voice_processor: Arc<VoiceCommandProcessor>,
+        config: SystemConfig,
+    ) -> Self {
         Self {
-            state: AppState::new(voice_service, config),
+            state: AppState::new(voice_service, voice_processor, config),
         }
     }
 

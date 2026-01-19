@@ -18,6 +18,12 @@ pub fn RemoteControl() -> impl IntoView {
     let (dictation_status, set_dictation_status) = create_signal("Dictation ready".to_string());
     let (last_sent_position, set_last_sent_position) = create_signal(0);
     let (is_dictating, set_is_dictating) = create_signal(false);
+
+    // Voice commands state
+    let (voice_command_text, set_voice_command_text) = create_signal(String::new());
+    let (voice_command_status, set_voice_command_status) =
+        create_signal("Voice commands ready".to_string());
+    let (is_voice_listening, set_is_voice_listening) = create_signal(false);
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
 
     // Screen sharing state
@@ -219,13 +225,171 @@ pub fn RemoteControl() -> impl IntoView {
         }
     };
 
-    let stop_dictation = move |_| {
-        if let Some(recognition) = &*recognition_ref.borrow() {
-            let _ = recognition.stop();
+    let stop_dictation = {
+        let recognition_ref = recognition_ref.clone();
+        move |_| {
+            if let Some(recognition) = &*recognition_ref.borrow() {
+                let _ = recognition.stop();
+            }
+            set_last_sent_position.set(dictation_text.get().len());
+            set_dictation_status.set("Dictation stopped".to_string());
+            set_is_dictating.set(false);
         }
-        set_last_sent_position.set(dictation_text.get().len());
-        set_dictation_status.set("Dictation stopped".to_string());
-        set_is_dictating.set(false);
+    };
+
+    // Voice command processing
+    let start_voice_commands = {
+        let set_text = set_voice_command_text.clone();
+        let set_status = set_voice_command_status.clone();
+        let execute_command = execute_command.clone();
+        let recognition_ref = recognition_ref.clone();
+        move |_| {
+            set_is_voice_listening.set(true);
+            set_voice_command_status.set("Listening for voice commands...".to_string());
+
+            #[cfg(target_arch = "wasm32")]
+            {
+                // Check if SpeechRecognition is available
+                let window = web_sys::window().expect("no global window");
+                let speech_recognition =
+                    js_sys::Reflect::get(&window, &"webkitSpeechRecognition".into())
+                        .or_else(|_| js_sys::Reflect::get(&window, &"SpeechRecognition".into()));
+
+                match speech_recognition {
+                    Ok(sr_constructor) if !sr_constructor.is_undefined() => {
+                        let sr_constructor: js_sys::Function = sr_constructor.unchecked_into();
+                        let recognition: SpeechRecognition =
+                            js_sys::Reflect::construct(&sr_constructor, &js_sys::Array::new())
+                                .expect("Failed to create SpeechRecognition")
+                                .unchecked_into();
+
+                        // Configure recognition for commands (shorter, more responsive)
+                        recognition.set_continuous(false);
+                        recognition.set_interim_results(false);
+                        recognition.set_lang("en-US");
+
+                        // Set up result handler for voice commands
+                        let set_text = set_text.clone();
+                        let set_status = set_status.clone();
+                        let execute_command = execute_command.clone();
+                        let on_result =
+                            Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
+                                if let Some(results) = event.results() {
+                                    if results.length() > 0 {
+                                        if let Some(result) = results.get(0) {
+                                            let alternative = result.item(0);
+                                            let command_text =
+                                                alternative.transcript().trim().to_string();
+                                            set_text.set(command_text.clone());
+
+                                            // Process the voice command
+                                            let set_status = set_status.clone();
+                                            wasm_bindgen_futures::spawn_local(async move {
+                                                set_status.set(format!(
+                                                    "Processing: \"{}\"",
+                                                    command_text
+                                                ));
+                                                match api::ApiClient::new_default()
+                                                    .process_voice_command(
+                                                        &command_text,
+                                                        Some(alternative.confidence()),
+                                                    )
+                                                    .await
+                                                {
+                                                    Ok(response) => {
+                                                        if response
+                                                            .get("success")
+                                                            .unwrap_or(&serde_json::Value::Bool(
+                                                                false,
+                                                            ))
+                                                            .as_bool()
+                                                            .unwrap_or(false)
+                                                        {
+                                                            set_status.set(format!(
+                                                                "Executed: {}",
+                                                                response
+                                                                    .get("message")
+                                                                    .unwrap_or(
+                                                                        &serde_json::Value::String(
+                                                                            "Command executed"
+                                                                                .to_string()
+                                                                        )
+                                                                    )
+                                                                    .as_str()
+                                                                    .unwrap_or("Command executed")
+                                                            ));
+                                                        } else {
+                                                            set_status.set(format!(
+                                                                "Failed: {}",
+                                                                response
+                                                                    .get("message")
+                                                                    .unwrap_or(
+                                                                        &serde_json::Value::String(
+                                                                            "Command failed"
+                                                                                .to_string()
+                                                                        )
+                                                                    )
+                                                                    .as_str()
+                                                                    .unwrap_or("Command failed")
+                                                            ));
+                                                        }
+                                                    }
+                                                    Err(e) => {
+                                                        set_status.set(format!("Error: {}", e));
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }) as Box<dyn FnMut(_)>);
+
+                        recognition.set_onresult(Some(on_result.as_ref().unchecked_ref()));
+                        on_result.forget();
+
+                        let set_status_err = set_status.clone();
+                        recognition.set_onerror(Some(
+                            Closure::wrap(Box::new(move |_: web_sys::Event| {
+                                set_status_err.set("Voice recognition error occurred".to_string());
+                            }) as Box<dyn FnMut(_)>)
+                            .as_ref()
+                            .unchecked_ref(),
+                        ));
+
+                        let set_status_end = set_status.clone();
+                        recognition.set_onend(Some(
+                            Closure::wrap(Box::new(move |_: web_sys::Event| {
+                                set_status_end.set("Voice command recognition ended".to_string());
+                                set_is_voice_listening.set(false);
+                            }) as Box<dyn FnMut(_)>)
+                            .as_ref()
+                            .unchecked_ref(),
+                        ));
+
+                        // Start recognition
+                        let _ = recognition.start();
+                        *recognition_ref.borrow_mut() = Some(recognition);
+                    }
+                    _ => {
+                        set_status.set(
+                            "Speech recognition not supported in this browser. Try Chrome or Edge."
+                                .to_string(),
+                        );
+                    }
+                }
+            }
+        }
+    };
+
+    let stop_voice_commands = {
+        let recognition_ref = recognition_ref.clone();
+        move |_| {
+            set_is_voice_listening.set(false);
+            set_voice_command_status.set("Voice commands stopped".to_string());
+            if let Some(recognition) = &*recognition_ref.borrow() {
+                let _ = recognition.stop();
+            }
+        }
     };
 
     // Screen sharing with getDisplayMedia
@@ -616,10 +780,122 @@ pub fn RemoteControl() -> impl IntoView {
                                             </p>
                                         </div>
                                     </div>
-                                </div>
-                            </section>
+                                 </div>
+                             </section>
 
-                            // Two-column layout for smaller cards
+                             // Voice Commands Card
+                             <section class="relative rounded-2xl bg-white shadow-sm shadow-slate-100/50 border border-slate-200/60 overflow-hidden transition-all duration-300 hover:shadow-md hover:shadow-slate-100/60">
+                                 <div class="px-6 sm:px-7 py-5 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/30">
+                                     <div class="flex items-center justify-between">
+                                         <div class="flex items-center gap-3">
+                                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-200/50">
+                                                 <Icon
+                                                     icon_type=IconType::Microphone
+                                                     class="w-5 h-5 text-white"
+                                                 />
+                                             </div>
+                                             <div>
+                                                 <h3 class="text-lg font-semibold text-gray-900 tracking-tight">
+                                                     "Voice Commands"
+                                                 </h3>
+                                                 <p class="text-xs text-slate-500">
+                                                     "Execute voice commands directly"
+                                                 </p>
+                                             </div>
+                                         </div>
+                                         <div class="flex items-center gap-2">
+                                             {move || {
+                                                 if is_voice_listening.get() {
+                                                     view! {
+                                                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                             "Listening"
+                                                         </span>
+                                                     }
+                                                         .into_view()
+                                                 } else {
+                                                     view! {
+                                                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                             "Ready"
+                                                         </span>
+                                                     }
+                                                         .into_view()
+                                                 }
+                                             }}
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div class="px-6 sm:px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
+                                     // Last Command
+                                     <div class="mb-4">
+                                         <label class="block text-sm font-medium text-gray-700 mb-2">
+                                             "Last Command"
+                                         </label>
+                                         <input
+                                             type="text"
+                                             readonly
+                                             class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-600 focus:outline-none focus:ring-0"
+                                             prop:value=move || voice_command_text.get()
+                                         />
+                                     </div>
+
+                                     // Status
+                                     <div class="mb-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                         <p class="text-sm text-slate-600">
+                                             {move || voice_command_status.get()}
+                                         </p>
+                                     </div>
+
+                                     // Controls
+                                     <div class="flex flex-wrap gap-3">
+                                         {
+                                             let start_voice_commands = StoredValue::new(start_voice_commands);
+                                             let stop_voice_commands = StoredValue::new(stop_voice_commands);
+                                             move || {
+                                                 if !is_voice_listening.get() {
+                                                     view! {
+                                                         <Button
+                                                             variant=ButtonVariant::Primary
+                                                             on:click=start_voice_commands.get_value()
+                                                         >
+                                                             <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
+                                                             "Listen for Command"
+                                                         </Button>
+                                                     }
+                                                         .into_view()
+                                                 } else {
+                                                     view! {
+                                                         <Button
+                                                             variant=ButtonVariant::Danger
+                                                             on:click=stop_voice_commands.get_value()
+                                                         >
+                                                             <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                             "Stop Listening"
+                                                         </Button>
+                                                     }
+                                                         .into_view()
+                                                 }
+                                             }
+                                         }
+                                     </div>
+
+                                     // Info Box
+                                     <div class="mt-4 p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+                                         <div class="flex gap-3">
+                                             <Icon
+                                                 icon_type=IconType::Microphone
+                                                 class="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5"
+                                             />
+                                             <p class="text-xs text-purple-700 leading-relaxed">
+                                                 "Say a voice command like 'open browser' or 'new window'. Commands are processed instantly when recognized."
+                                             </p>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </section>
+
+                             // Two-column layout for smaller cards
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 // Touch Controls Card
                                 <section class="relative rounded-2xl bg-white shadow-sm shadow-slate-100/50 border border-slate-200/60 overflow-hidden transition-all duration-300 hover:shadow-md hover:shadow-slate-100/60">
