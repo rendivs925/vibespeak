@@ -9,6 +9,8 @@ use crate::presentation::axum_server::state::AppState;
 #[derive(Debug, Serialize)]
 pub struct ConfigResponse {
     pub commands: Vec<CommandInfo>,
+    pub workflows: Vec<WorkflowInfo>,
+    pub scripts: Vec<ScriptInfo>,
     pub settings: SettingsInfo,
 }
 
@@ -18,13 +20,37 @@ pub struct CommandInfo {
     pub text: String,
     pub action: Value,
     pub category: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WorkflowInfo {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub steps: Vec<Value>,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ScriptInfo {
+    pub id: String,
+    pub name: String,
+    pub language: String,
+    pub content: String,
+    pub enabled: bool,
 }
 
 #[derive(Debug, Serialize)]
 pub struct SettingsInfo {
     pub vosk_model_path: String,
     pub sample_rate: f32,
+    #[serde(default)]
+    pub audio_device: Option<String>,
+    pub web_server_port: u16,
     pub enable_tts: bool,
+    #[serde(default)]
+    pub enable_webrtc: bool,
     pub tailscale_enabled: bool,
 }
 
@@ -39,17 +65,49 @@ pub async fn get_config(State(state): State<AppState>) -> Json<ConfigResponse> {
             text: cmd.text.clone(),
             action: serde_json::to_value(&cmd.action).unwrap_or(Value::Null),
             category: cmd.category.clone(),
+            enabled: cmd.enabled,
+        })
+        .collect();
+
+    // Map workflows from config
+    let workflows: Vec<WorkflowInfo> = config
+        .workflows
+        .iter()
+        .map(|wf| WorkflowInfo {
+            id: wf.id.clone(),
+            name: wf.name.clone(),
+            description: wf.description.clone(),
+            steps: wf.steps.iter()
+                .map(|s| serde_json::to_value(s).unwrap_or(Value::Null))
+                .collect(),
+            enabled: wf.enabled,
+        })
+        .collect();
+
+    // Map scripts from config
+    let scripts: Vec<ScriptInfo> = config
+        .scripts
+        .iter()
+        .map(|s| ScriptInfo {
+            id: s.id.clone(),
+            name: s.name.clone(),
+            language: format!("{:?}", s.script_type),
+            content: s.content.clone(),
+            enabled: s.enabled,
         })
         .collect();
 
     let settings = SettingsInfo {
         vosk_model_path: config.settings.vosk_model_path.clone(),
         sample_rate: config.settings.sample_rate,
+        audio_device: config.settings.audio_device.clone(),
+        web_server_port: config.settings.web_server_port,
         enable_tts: config.settings.enable_tts,
+        enable_webrtc: config.settings.enable_webrtc,
         tailscale_enabled: config.settings.tailscale_enabled,
     };
 
-    Json(ConfigResponse { commands, settings })
+    Json(ConfigResponse { commands, workflows, scripts, settings })
 }
 
 #[derive(Debug, Deserialize)]

@@ -79,7 +79,7 @@ pub fn VoiceCommands() -> impl IntoView {
                                                     </code>
                                                 </td>
                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-size: 13px;">
-                                                    {cmd.action.to_string()}
+                                                    {cmd.action_display()}
                                                 </td>
                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{cmd.category.clone()}</td>
                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">

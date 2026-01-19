@@ -23,7 +23,7 @@ impl CommandService {
     pub async fn create_command(
         &self,
         text: String,
-        action: CommandAction,
+        action: serde_json::Value,
         category: String,
     ) -> Result<Command, String> {
         let command = Command {

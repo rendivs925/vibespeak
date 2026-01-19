@@ -70,7 +70,7 @@ pub fn Scripts() -> impl IntoView {
                                     children=move |s| view! {
                                         <tr>
                                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{s.name.clone()}</td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{format!("{:?}", s.language)}</td>
+                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{s.language.clone()}</td>
                                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
                                                 {if s.enabled { "Enabled" } else { "Disabled" }}
                                             </td>

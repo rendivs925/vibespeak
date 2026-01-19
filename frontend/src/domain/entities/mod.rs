@@ -5,9 +5,13 @@ use serde::{Deserialize, Serialize};
 /// Core application configuration entity
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct AppConfig {
+    #[serde(default)]
     pub commands: Vec<Command>,
+    #[serde(default)]
     pub workflows: Vec<Workflow>,
+    #[serde(default)]
     pub scripts: Vec<Script>,
+    #[serde(default)]
     pub settings: SystemSettings,
 }
 
@@ -16,9 +20,36 @@ pub struct AppConfig {
 pub struct Command {
     pub id: String,
     pub text: String,
-    pub action: CommandAction,
+    pub action: serde_json::Value,  // Backend sends this as JSON value
     pub category: String,
+    #[serde(default = "default_enabled")]
     pub enabled: bool,
+}
+
+fn default_enabled() -> bool {
+    true
+}
+
+impl Command {
+    /// Get a display string for the action
+    pub fn action_display(&self) -> String {
+        if let Some(shell) = self.action.get("ShellCommand") {
+            if let Some(cmd) = shell.as_str() {
+                return format!("Shell: {}", cmd);
+            }
+        }
+        if let Some(workflow) = self.action.get("Workflow") {
+            if let Some(id) = workflow.as_str() {
+                return format!("Workflow: {}", id);
+            }
+        }
+        if let Some(script) = self.action.get("Script") {
+            if let Some(id) = script.as_str() {
+                return format!("Script: {}", id);
+            }
+        }
+        format!("{}", self.action)
+    }
 }
 
 /// Workflow entity for multi-step automation
@@ -36,22 +67,38 @@ pub struct Workflow {
 pub struct Script {
     pub id: String,
     pub name: String,
-    pub language: ScriptLanguage,
+    pub language: String,  // Backend sends as string like "Bash", "Python"
+    #[serde(default)]
     pub content: String,
+    #[serde(default = "default_enabled")]
     pub enabled: bool,
 }
 
 /// System settings entity
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SystemSettings {
+    #[serde(default)]
     pub vosk_model_path: String,
+    #[serde(default = "default_sample_rate")]
     pub sample_rate: f32,
+    #[serde(default)]
     pub audio_device: Option<String>,
+    #[serde(default = "default_port")]
     pub web_server_port: u16,
+    #[serde(default)]
     pub enable_tts: bool,
+    #[serde(default)]
     pub enable_webrtc: bool,
-    pub security_level: SecurityLevel,
+    #[serde(default)]
     pub tailscale_enabled: bool,
+}
+
+fn default_sample_rate() -> f32 {
+    16000.0
+}
+
+fn default_port() -> u16 {
+    8080
 }
 
 /// Tailscale status entity
@@ -81,43 +128,14 @@ pub struct RecognitionResult {
     pub timestamp: String,
 }
 
-/// Command action variants
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum CommandAction {
-    ShellCommand { command: String },
-    Workflow { workflow_id: String },
-    Script { script_id: String },
-    RemoteControl { action: RemoteAction },
-}
-
-impl std::fmt::Display for CommandAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CommandAction::ShellCommand { command } => write!(f, "Shell: {}", command),
-            CommandAction::Workflow { workflow_id } => write!(f, "Workflow: {}", workflow_id),
-            CommandAction::Script { script_id } => write!(f, "Script: {}", script_id),
-            CommandAction::RemoteControl { action } => write!(f, "Remote: {:?}", action),
-        }
-    }
-}
-
-/// Remote control actions
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "action")]
-pub enum RemoteAction {
-    MouseClick { x: i32, y: i32 },
-    MouseMove { x: i32, y: i32 },
-    KeyPress { key: String },
-    TextType { text: String },
-}
-
 /// Workflow step entity
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowStep {
     pub id: String,
-    pub action: CommandAction,
+    pub action: serde_json::Value,
+    #[serde(default)]
     pub delay_ms: Option<u64>,
+    #[serde(default)]
     pub condition: Option<Condition>,
 }
 

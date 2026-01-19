@@ -20,7 +20,7 @@ impl ManageCommandsUseCase {
     pub async fn create_new_command(
         &self,
         text: String,
-        action: CommandAction,
+        action: serde_json::Value,
         category: String,
     ) -> Result<Command, String> {
         // Validate input
@@ -37,7 +37,7 @@ impl ManageCommandsUseCase {
         &self,
         mut command: Command,
         new_text: Option<String>,
-        new_action: Option<CommandAction>,
+        new_action: Option<serde_json::Value>,
     ) -> Result<Command, String> {
         if let Some(text) = new_text {
             if text.trim().is_empty() {
@@ -107,26 +107,20 @@ impl ExecuteCommandUseCase {
     }
 
     async fn execute_command(&self, command: Command) -> Result<String, String> {
-        match command.action {
-            CommandAction::ShellCommand { command: cmd } => {
-                // Execute shell command (would integrate with backend API)
-                Ok(format!("Executed shell command: {}", cmd))
-            }
-            CommandAction::Workflow { workflow_id } => {
-                self.workflow_service.execute_workflow(workflow_id).await?;
-                Ok("Workflow executed successfully".to_string())
-            }
-            CommandAction::Script { script_id } => {
-                self.script_service.execute_script(script_id).await?;
-                Ok("Script executed successfully".to_string())
-            }
-            CommandAction::RemoteControl { action } => match action {
-                RemoteAction::MouseClick { x, y } => Ok(format!("Mouse clicked at ({}, {})", x, y)),
-                RemoteAction::MouseMove { x, y } => Ok(format!("Mouse moved to ({}, {})", x, y)),
-                RemoteAction::KeyPress { key } => Ok(format!("Key pressed: {}", key)),
-                RemoteAction::TextType { text } => Ok(format!("Text typed: {}", text)),
-            },
+        // Handle command action based on JSON structure
+        if let Some(shell_cmd) = command.action.get("ShellCommand").and_then(|v| v.as_str()) {
+            return Ok(format!("Executed shell command: {}", shell_cmd));
         }
+        if let Some(workflow_id) = command.action.get("Workflow").and_then(|v| v.as_str()) {
+            self.workflow_service.execute_workflow(workflow_id.to_string()).await?;
+            return Ok("Workflow executed successfully".to_string());
+        }
+        if let Some(script_id) = command.action.get("Script").and_then(|v| v.as_str()) {
+            self.script_service.execute_script(script_id.to_string()).await?;
+            return Ok("Script executed successfully".to_string());
+        }
+
+        Ok(format!("Executed command: {}", command.action))
     }
 }
 
