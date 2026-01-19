@@ -102,7 +102,7 @@ pub fn Settings() -> impl IntoView {
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
-            <NavBar active="settings" />
+            <NavBar _active="settings" />
 
             <div class="content">
                 <h2>"Settings"</h2>

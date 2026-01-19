@@ -176,7 +176,7 @@ pub fn VoiceCommands() -> impl IntoView {
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
-            <NavBar active="commands" />
+            <NavBar _active="commands" />
 
             <main class="max-w-7xl mx-auto px-8 py-6">
                 <h2>"Voice Commands"</h2>

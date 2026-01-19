@@ -147,7 +147,7 @@ pub fn Scripts() -> impl IntoView {
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
-            <NavBar active="scripts" />
+            <NavBar _active="scripts" />
 
             <main class="max-w-7xl mx-auto px-8 py-6">
                 <h2>"Scripts"</h2>

@@ -143,7 +143,7 @@ pub fn Workflows() -> impl IntoView {
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
-            <NavBar active="workflows" />
+            <NavBar _active="workflows" />
 
             <main class="max-w-7xl mx-auto px-8 py-6">
                 <h2>"Workflows"</h2>

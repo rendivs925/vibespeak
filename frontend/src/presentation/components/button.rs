@@ -20,7 +20,7 @@ pub enum ButtonSize {
 #[component]
 pub fn Button(
     #[prop(into)] variant: ButtonVariant,
-    #[prop(into)] size: ButtonSize,
+    #[prop(into, default = ButtonSize::Medium)] size: ButtonSize,
     #[prop(optional)] disabled: bool,
     #[prop(default = String::new())] class: String,
     children: Children,
