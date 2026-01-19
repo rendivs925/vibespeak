@@ -211,51 +211,56 @@ pub fn VoiceCommands() -> impl IntoView {
                                 </TableRow>
                             }
                         >
-                            <For
-                                each=move || commands.get()
-                                key=|cmd| cmd.id.clone()
-                                children=move |cmd| {
-                                    let cmd_clone1 = cmd.clone();
-                                    let cmd_clone2 = cmd.clone();
-                                    view! {
-                                        <TableRow>
-                                            <TableCell>
-                                                <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
-                                                    {cmd.text.clone()}
-                                                </code>
-                                            </TableCell>
-                                            <TableCell class="text-sm text-gray-600">
-                                                {cmd.action_display()}
-                                            </TableCell>
-                                            <TableCell>{cmd.category.clone()}</TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant=if cmd.enabled { BadgeVariant::Success } else { BadgeVariant::Neutral }
-                                                    text=if cmd.enabled { "Enabled" } else { "Disabled" }
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div class="flex gap-2">
-                                                    <Button
-                                                        variant=ButtonVariant::Secondary
-                                                        size=ButtonSize::Small
-                                                        on:click=move |_| start_edit(cmd_clone1)
-                                                    >
-                                                        "Edit"
-                                                    </Button>
-                                                    <Button
-                                                        variant=ButtonVariant::Danger
-                                                        size=ButtonSize::Small
-                                                        on:click=move |_| delete_command(cmd_clone2.id)
-                                                    >
-                                                        "Delete"
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
+                                <For
+                                    each=move || commands.get()
+                                    key=|cmd| cmd.id.clone()
+                                    children=move |cmd| {
+                                        let cmd_id = cmd.id.clone();
+                                        let cmd_text = cmd.text.clone();
+                                        let cmd_category = cmd.category.clone();
+                                        let cmd_enabled = cmd.enabled;
+                                        let cmd_action_display = cmd.action_display();
+                                        let cmd_clone_for_edit = cmd.clone();
+
+                                        view! {
+                                            <TableRow>
+                                                <TableCell>
+                                                    <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                                                        {cmd_text}
+                                                    </code>
+                                                </TableCell>
+                                                <TableCell class="text-sm text-gray-600">
+                                                    {cmd_action_display}
+                                                </TableCell>
+                                                <TableCell>{cmd_category}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant=if cmd_enabled { BadgeVariant::Success } else { BadgeVariant::Neutral }
+                                                        text=if cmd_enabled { "Enabled" } else { "Disabled" }
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div class="flex gap-2">
+                                                        <Button
+                                                            variant=ButtonVariant::Secondary
+                                                            size=ButtonSize::Small
+                                                            on:click=move |_| start_edit(cmd_clone_for_edit.clone())
+                                                        >
+                                                            "Edit"
+                                                        </Button>
+                                                        <Button
+                                                            variant=ButtonVariant::Danger
+                                                            size=ButtonSize::Small
+                                                            on:click=move |_| delete_command(cmd_id.clone())
+                                                        >
+                                                            "Delete"
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        }
                                     }
-                                }
-                            />
+                                />
                         </Show>
                     </DataTable>
                 </Card>

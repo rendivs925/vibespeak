@@ -226,7 +226,6 @@ pub fn Scripts() -> impl IntoView {
                 // Create Script Modal
                 <Modal
                     is_open=show_create_modal
-                    on_close=StoredValue::new(Box::new(move || set_show_create_modal.set(false)))
                     title="Create New Script"
                     size="lg"
                 >
@@ -236,7 +235,25 @@ pub fn Scripts() -> impl IntoView {
                                 input_type=InputType::Text
                                 value=form_name.get()
                                 on:input=move |e| set_form_name.set(event_target_value(&e))
-                                placeholder="Enter script name"
+                                placeholder="Enter script name".to_string()
+                            />
+                        </FormField>
+                        <FormField label="Language">
+                            <Select
+                                value=form_language.get()
+                                on:change=move |e| set_form_language.set(event_target_value(&e))
+                            >
+                                <option value="bash">"Bash"</option>
+                                <option value="python">"Python"</option>
+                                <option value="javascript">"JavaScript"</option>
+                            </Select>
+                        </FormField>
+                        <FormField label="Script Content">
+                            <Textarea
+                                value=form_content.get()
+                                on:input=move |e| set_form_content.set(event_target_value(&e))
+                                placeholder="Enter your script code here".to_string()
+                                rows=10
                             />
                         </FormField>
                         <FormField label="Language">
@@ -254,25 +271,24 @@ pub fn Scripts() -> impl IntoView {
                                 input_type=InputType::Text
                                 value=form_description.get()
                                 on:input=move |e| set_form_description.set(event_target_value(&e))
-                                placeholder="Describe what this script does"
+                                placeholder="Describe what this script does".to_string()
                             />
                         </FormField>
                         <FormField label="Script Content">
                             <Textarea
                                 value=form_content.get()
                                 on:input=move |e| set_form_content.set(event_target_value(&e))
-                                placeholder="Enter your script code here"
+                                placeholder="Enter your script code here".to_string()
                                 rows=10
                             />
                         </FormField>
                         <FormField label="Language">
                             <Select
-                                value=form_language
                                 on:change=move |e| set_form_language.set(event_target_value(&e))
                             >
-                                <option value="bash">"Bash"</option>
-                                <option value="python">"Python"</option>
-                                <option value="javascript">"JavaScript"</option>
+                                <option value="bash" selected=move || form_language.get() == "bash">"Bash"</option>
+                                <option value="python" selected=move || form_language.get() == "python">"Python"</option>
+                                <option value="javascript" selected=move || form_language.get() == "javascript">"JavaScript"</option>
                             </Select>
                         </FormField>
                         <FormField label="Description" help_text="Optional description of what this script does">
@@ -313,7 +329,6 @@ pub fn Scripts() -> impl IntoView {
                 // Edit Script Modal
                 <Modal
                     is_open=show_edit_modal
-                    on_close=StoredValue::new(Box::new(move || set_show_edit_modal.set(false)))
                     title="Edit Script"
                     size="lg"
                 >
@@ -321,26 +336,25 @@ pub fn Scripts() -> impl IntoView {
                         <FormField label="Script Name">
                             <Input
                                 input_type=InputType::Text
-                                value=form_name
+                                value=form_name.get()
                                 on:input=move |e| set_form_name.set(event_target_value(&e))
-                                placeholder="Enter script name"
+                                placeholder="Enter script name".to_string()
                             />
                         </FormField>
                         <FormField label="Language">
                             <Select
-                                value=form_language
                                 on:change=move |e| set_form_language.set(event_target_value(&e))
                             >
-                                <option value="bash">"Bash"</option>
-                                <option value="python">"Python"</option>
-                                <option value="javascript">"JavaScript"</option>
+                                <option value="bash" selected=move || form_language.get() == "bash">"Bash"</option>
+                                <option value="python" selected=move || form_language.get() == "python">"Python"</option>
+                                <option value="javascript" selected=move || form_language.get() == "javascript">"JavaScript"</option>
                             </Select>
                         </FormField>
                         <FormField label="Script Content">
                             <Textarea
-                                value=form_content
+                                value=form_content.get()
                                 on:input=move |e| set_form_content.set(event_target_value(&e))
-                                placeholder="Enter your script code here"
+                                placeholder="Enter your script code here".to_string()
                                 rows=10
                             />
                         </FormField>

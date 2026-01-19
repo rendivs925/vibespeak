@@ -222,7 +222,6 @@ pub fn Workflows() -> impl IntoView {
                 // Create Workflow Modal
                 <Modal
                     is_open=show_create_modal
-                    on_close=StoredValue::new(Box::new(move || set_show_create_modal.set(false)))
                     title="Create New Workflow"
                 >
                     <form class="space-y-6">
@@ -231,14 +230,22 @@ pub fn Workflows() -> impl IntoView {
                                 input_type=InputType::Text
                                 value=form_name.get()
                                 on:input=move |e| set_form_name.set(event_target_value(&e))
-                                placeholder="Enter workflow name"
+                                placeholder="Enter workflow name".to_string()
                             />
                         </FormField>
                         <FormField label="Description" help_text="Describe what this workflow does">
                             <Textarea
                                 value=form_description.get()
                                 on:input=move |e| set_form_description.set(event_target_value(&e))
-                                placeholder="Describe what this workflow does"
+                                placeholder="Describe what this workflow does".to_string()
+                                rows=3
+                            />
+                        </FormField>
+                        <FormField label="Description" help_text="Describe what this workflow does">
+                            <Textarea
+                                value=form_description.get()
+                                on:input=move |e| set_form_description.set(event_target_value(&e))
+                                placeholder="Describe what this workflow does".to_string()
                                 rows=3
                             />
                         </FormField>
@@ -264,23 +271,22 @@ pub fn Workflows() -> impl IntoView {
                 // Edit Workflow Modal
                 <Modal
                     is_open=show_edit_modal
-                    on_close=StoredValue::new(Box::new(move || set_show_edit_modal.set(false)))
                     title="Edit Workflow"
                 >
                     <form class="space-y-6">
                         <FormField label="Workflow Name">
                             <Input
                                 input_type=InputType::Text
-                                value=form_name
+                                value=form_name.get()
                                 on:input=move |e| set_form_name.set(event_target_value(&e))
-                                placeholder="Enter workflow name"
+                                placeholder="Enter workflow name".to_string()
                             />
                         </FormField>
                         <FormField label="Description" help_text="Describe what this workflow does">
                             <Textarea
-                                value=form_description
+                                value=form_description.get()
                                 on:input=move |e| set_form_description.set(event_target_value(&e))
-                                placeholder="Describe what this workflow does"
+                                placeholder="Describe what this workflow does".to_string()
                                 rows=3
                             />
                         </FormField>

@@ -4,10 +4,10 @@ public_url = "/"
 
 [[hooks]]
 stage = "pre_build"
-command = "tailwindcss"
-command_arguments = ["-i", "input.css", "-o", "styles.css", "--watch"]
+command = "npx"
+command_arguments = ["tailwindcss", "-i", "input.css", "-o", "styles.css", "--watch"]
 
 [[hooks]]
 stage = "build"
-command = "tailwindcss"
-command_arguments = ["-i", "input.css", "-o", "styles.css", "--minify"]
+command = "npx"
+command_arguments = ["tailwindcss", "-i", "input.css", "-o", "styles.css", "--minify"]

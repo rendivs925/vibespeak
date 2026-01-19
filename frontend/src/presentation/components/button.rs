@@ -22,7 +22,7 @@ pub fn Button(
     #[prop(into)] variant: ButtonVariant,
     #[prop(into)] size: ButtonSize,
     #[prop(optional)] disabled: bool,
-    #[prop(optional)] class: String,
+    #[prop(default = String::new())] class: String,
     children: Children,
 ) -> impl IntoView {
     let base_classes = "font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -42,10 +42,7 @@ pub fn Button(
 
     let classes = format!(
         "{} {} {} {}",
-        base_classes,
-        variant_classes,
-        size_classes,
-        class.unwrap_or_default()
+        base_classes, variant_classes, size_classes, class
     );
 
     if disabled {

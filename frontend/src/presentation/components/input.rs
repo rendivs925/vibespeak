@@ -16,9 +16,9 @@ pub enum InputType {
 #[component]
 pub fn Input(
     #[prop(into)] input_type: InputType,
-    #[prop(optional)] value: String,
-    #[prop(optional)] placeholder: String,
-    #[prop(optional)] class: String,
+    #[prop(optional, into)] value: String,
+    #[prop(optional, into)] placeholder: String,
+    #[prop(default = String::new())] class: String,
 ) -> impl IntoView {
     let input_type_str = match input_type {
         InputType::Text => "text",
@@ -32,14 +32,14 @@ pub fn Input(
 
     let base_classes = "w-full px-4 py-2.5 text-sm text-gray-900 bg-white border border-slate-200/80 rounded-xl shadow-sm shadow-slate-100/30 placeholder:text-gray-400 hover:border-slate-300/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200";
 
-    let classes = format!("{} {}", base_classes, class.unwrap_or_default());
+    let classes = format!("{} {}", base_classes, class);
 
     view! {
         <input
             type=input_type_str
             class=classes
-            value=value.unwrap_or_default()
-            placeholder=placeholder.unwrap_or_default()
+            prop:value=value
+            placeholder=placeholder
         />
     }
 }
