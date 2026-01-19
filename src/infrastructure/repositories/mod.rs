@@ -21,9 +21,11 @@ pub trait SessionRepository: Send + Sync {
 
 // Implementations
 pub mod command_repository;
-pub mod workflow_repository;
 pub mod session_repository;
+pub mod workflow_repository;
 
 pub use command_repository::{InMemoryCommandRepository, JsonFileCommandRepository};
-pub use workflow_repository::{WorkflowRepository, InMemoryWorkflowRepository, JsonFileWorkflowRepository};
-pub use session_repository::{InMemorySessionRepository};
+pub use session_repository::InMemorySessionRepository;
+pub use workflow_repository::{
+    InMemoryWorkflowRepository, JsonFileWorkflowRepository, WorkflowRepository,
+};

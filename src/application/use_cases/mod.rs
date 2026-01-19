@@ -1,12 +1,14 @@
 // Application use cases - business operations
 
-use crate::application::services::VoiceCommandProcessor;
 use crate::application::dtos::{VoiceCommandRequest, VoiceCommandResponse, WorkflowStepDto};
+use crate::application::services::VoiceCommandProcessor;
+use crate::domain::entities::{
+    BrowserAction, ComparisonOperator, Condition, VariableValue, WorkflowStep,
+};
 use crate::shared::{Result, ScriptType, SecurityLevel};
-use crate::domain::entities::{WorkflowStep, BrowserAction, Condition, ComparisonOperator, VariableValue};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Global start time for uptime tracking
 static START_TIME: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
@@ -30,9 +32,10 @@ impl ProcessVoiceCommandUseCase {
 
         // Process the voice command with the provided text
         // In a real implementation, this would handle actual audio data
-        let result = self.voice_processor.process_voice_command(
-            crate::shared::AudioSample::new(vec![], 16000, 1)
-        ).await?;
+        let result = self
+            .voice_processor
+            .process_voice_command(crate::shared::AudioSample::new(vec![], 16000, 1))
+            .await?;
 
         let execution_time = start_time.elapsed();
 
@@ -56,20 +59,27 @@ impl CreateWorkflowUseCase {
         Self { voice_processor }
     }
 
-    pub async fn execute(&self, request: crate::application::dtos::WorkflowCreationRequest) -> Result<String> {
+    pub async fn execute(
+        &self,
+        request: crate::application::dtos::WorkflowCreationRequest,
+    ) -> Result<String> {
         // Convert DTO to domain entity
         let mut workflow = crate::domain::entities::Workflow::new(
             request.name,
             match request.trigger {
-                crate::application::dtos::WorkflowTriggerDto::VoiceCommand(cmd) =>
-                    crate::domain::entities::WorkflowTrigger::VoiceCommand(cmd),
-                crate::application::dtos::WorkflowTriggerDto::Scheduled(cron) =>
-                    crate::domain::entities::WorkflowTrigger::Scheduled(cron),
-                crate::application::dtos::WorkflowTriggerDto::Event(event) =>
-                    crate::domain::entities::WorkflowTrigger::Event(event),
-                crate::application::dtos::WorkflowTriggerDto::Manual =>
-                    crate::domain::entities::WorkflowTrigger::Manual,
-            }
+                crate::application::dtos::WorkflowTriggerDto::VoiceCommand(cmd) => {
+                    crate::domain::entities::WorkflowTrigger::VoiceCommand(cmd)
+                }
+                crate::application::dtos::WorkflowTriggerDto::Scheduled(cron) => {
+                    crate::domain::entities::WorkflowTrigger::Scheduled(cron)
+                }
+                crate::application::dtos::WorkflowTriggerDto::Event(event) => {
+                    crate::domain::entities::WorkflowTrigger::Event(event)
+                }
+                crate::application::dtos::WorkflowTriggerDto::Manual => {
+                    crate::domain::entities::WorkflowTrigger::Manual
+                }
+            },
         );
 
         // Set description if provided
@@ -106,26 +116,26 @@ impl CreateWorkflowUseCase {
                     _ => SecurityLevel::Trusted,
                 };
 
-                Some(WorkflowStep::RunScript(crate::domain::entities::ScriptExecution {
-                    script_type,
-                    content: script.content,
-                    arguments: vec![],
-                    timeout: Duration::from_secs(script.timeout_seconds as u64),
-                    security_level,
-                    working_directory: None,
-                    environment: std::collections::HashMap::new(),
-                }))
+                Some(WorkflowStep::RunScript(
+                    crate::domain::entities::ScriptExecution {
+                        script_type,
+                        content: script.content,
+                        arguments: vec![],
+                        timeout: Duration::from_secs(script.timeout_seconds as u64),
+                        security_level,
+                        working_directory: None,
+                        environment: std::collections::HashMap::new(),
+                    },
+                ))
             }
             WorkflowStepDto::BrowserAction(action) => {
                 let browser_action = match action.action_type.to_lowercase().as_str() {
                     "navigate" | "goto" => action.value.map(BrowserAction::Navigate),
                     "click" => action.selector.map(BrowserAction::Click),
-                    "type" | "input" => {
-                        match (action.selector, action.value) {
-                            (Some(sel), Some(val)) => Some(BrowserAction::Type(sel, val)),
-                            _ => None,
-                        }
-                    }
+                    "type" | "input" => match (action.selector, action.value) {
+                        (Some(sel), Some(val)) => Some(BrowserAction::Type(sel, val)),
+                        _ => None,
+                    },
                     "wait" => action.selector.map(BrowserAction::WaitForElement),
                     "screenshot" => action.value.map(BrowserAction::Screenshot),
                     "script" | "execute" => action.value.map(BrowserAction::ExecuteScript),
@@ -137,21 +147,23 @@ impl CreateWorkflowUseCase {
             WorkflowStepDto::IntegrationCall(service, params) => {
                 Some(WorkflowStep::IntegrationCall(service, params))
             }
-            WorkflowStepDto::Wait(ms) => {
-                Some(WorkflowStep::Wait(Duration::from_millis(ms)))
-            }
+            WorkflowStepDto::Wait(ms) => Some(WorkflowStep::Wait(Duration::from_millis(ms))),
             WorkflowStepDto::SetVariable(name, value) => {
                 let var_value = match value {
-                    crate::application::dtos::VariableValueDto::String(s) => VariableValue::String(s),
-                    crate::application::dtos::VariableValueDto::Number(n) => VariableValue::Number(n),
-                    crate::application::dtos::VariableValueDto::Boolean(b) => VariableValue::Boolean(b),
+                    crate::application::dtos::VariableValueDto::String(s) => {
+                        VariableValue::String(s)
+                    }
+                    crate::application::dtos::VariableValueDto::Number(n) => {
+                        VariableValue::Number(n)
+                    }
+                    crate::application::dtos::VariableValueDto::Boolean(b) => {
+                        VariableValue::Boolean(b)
+                    }
                     crate::application::dtos::VariableValueDto::Json(j) => VariableValue::Json(j),
                 };
                 Some(WorkflowStep::SetVariable(name, var_value))
             }
-            WorkflowStepDto::UserPrompt(prompt) => {
-                Some(WorkflowStep::UserPrompt(prompt))
-            }
+            WorkflowStepDto::UserPrompt(prompt) => Some(WorkflowStep::UserPrompt(prompt)),
             WorkflowStepDto::Conditional(cond, then_step, else_step) => {
                 let operator = match cond.operator.to_lowercase().as_str() {
                     "eq" | "equals" | "==" => ComparisonOperator::Equals,
@@ -166,7 +178,9 @@ impl CreateWorkflowUseCase {
 
                 let value = match cond.value {
                     serde_json::Value::String(s) => VariableValue::String(s),
-                    serde_json::Value::Number(n) => VariableValue::Number(n.as_f64().unwrap_or(0.0)),
+                    serde_json::Value::Number(n) => {
+                        VariableValue::Number(n.as_f64().unwrap_or(0.0))
+                    }
                     serde_json::Value::Bool(b) => VariableValue::Boolean(b),
                     other => VariableValue::Json(other),
                 };
@@ -177,10 +191,15 @@ impl CreateWorkflowUseCase {
                     value,
                 };
 
-                match (Self::convert_step_dto(*then_step), Self::convert_step_dto(*else_step)) {
-                    (Some(then_s), Some(else_s)) => {
-                        Some(WorkflowStep::Conditional(condition, Box::new(then_s), Box::new(else_s)))
-                    }
+                match (
+                    Self::convert_step_dto(*then_step),
+                    Self::convert_step_dto(*else_step),
+                ) {
+                    (Some(then_s), Some(else_s)) => Some(WorkflowStep::Conditional(
+                        condition,
+                        Box::new(then_s),
+                        Box::new(else_s),
+                    )),
                     _ => None,
                 }
             }

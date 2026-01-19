@@ -8,7 +8,10 @@ mod tts_adapter_tests {
         use vibespeak::infrastructure::adapters::TtsAdapter;
 
         let adapter = TtsAdapter::new();
-        assert!(adapter.is_ok(), "TTS adapter should be created successfully");
+        assert!(
+            adapter.is_ok(),
+            "TTS adapter should be created successfully"
+        );
     }
 
     #[tokio::test]
@@ -30,7 +33,10 @@ mod tts_adapter_tests {
         assert!(voices.is_ok(), "Should get available voices");
         let voices = voices.unwrap();
         assert!(!voices.is_empty(), "Should have at least one voice");
-        assert!(voices.contains(&"default".to_string()), "Should have default voice");
+        assert!(
+            voices.contains(&"default".to_string()),
+            "Should have default voice"
+        );
     }
 
     #[tokio::test]
@@ -54,8 +60,16 @@ mod tts_adapter_tests {
         // Test different voices
         for voice in &["male", "female", "fast", "slow"] {
             let result = adapter.synthesize("Test", Some(voice)).await;
-            assert!(result.is_ok(), "Synthesis with {} voice should succeed", voice);
-            assert!(!result.unwrap().is_empty(), "{} voice should produce samples", voice);
+            assert!(
+                result.is_ok(),
+                "Synthesis with {} voice should succeed",
+                voice
+            );
+            assert!(
+                !result.unwrap().is_empty(),
+                "{} voice should produce samples",
+                voice
+            );
         }
     }
 
@@ -75,7 +89,8 @@ mod tts_adapter_tests {
         use vibespeak::infrastructure::adapters::TtsAdapter;
 
         let adapter = TtsAdapter::new().expect("Failed to create adapter");
-        let long_text = "This is a longer piece of text that should be synthesized properly. ".repeat(10);
+        let long_text =
+            "This is a longer piece of text that should be synthesized properly. ".repeat(10);
         let result = adapter.synthesize(&long_text, None).await;
 
         assert!(result.is_ok(), "Long text synthesis should succeed");
@@ -110,8 +125,11 @@ mod audio_player_tests {
             Err(e) => {
                 let err_msg = e.to_string();
                 assert!(
-                    err_msg.contains("audio") || err_msg.contains("output") || err_msg.contains("device"),
-                    "Error should be about audio device, got: {}", err_msg
+                    err_msg.contains("audio")
+                        || err_msg.contains("output")
+                        || err_msg.contains("device"),
+                    "Error should be about audio device, got: {}",
+                    err_msg
                 );
             }
         }
@@ -186,8 +204,8 @@ mod audio_player_tests {
 mod command_interpreter_tests {
     #[tokio::test]
     async fn test_fuzzy_command_interpreter_creation() {
-        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
         use std::collections::HashMap;
+        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
 
         let commands: HashMap<String, String> = HashMap::new();
         let interpreter = FuzzyCommandInterpreter::new(commands);
@@ -198,9 +216,9 @@ mod command_interpreter_tests {
 
     #[tokio::test]
     async fn test_fuzzy_command_interpreter_with_commands() {
-        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
-        use vibespeak::domain::services::CommandInterpreter;
         use std::collections::HashMap;
+        use vibespeak::domain::services::CommandInterpreter;
+        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
 
         let mut commands = HashMap::new();
         commands.insert("hello".to_string(), "echo hello".to_string());
@@ -216,9 +234,9 @@ mod command_interpreter_tests {
 
     #[tokio::test]
     async fn test_fuzzy_command_interpreter_interpret() {
-        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
-        use vibespeak::domain::services::{CommandInterpreter, CommandContext};
         use std::collections::HashMap;
+        use vibespeak::domain::services::{CommandContext, CommandInterpreter};
+        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
 
         let mut commands = HashMap::new();
         commands.insert("hello".to_string(), "echo hello".to_string());
@@ -242,9 +260,9 @@ mod command_interpreter_tests {
 
     #[tokio::test]
     async fn test_fuzzy_command_interpreter_fuzzy_match() {
-        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
-        use vibespeak::domain::services::{CommandInterpreter, CommandContext};
         use std::collections::HashMap;
+        use vibespeak::domain::services::{CommandContext, CommandInterpreter};
+        use vibespeak::infrastructure::adapters::FuzzyCommandInterpreter;
 
         let mut commands = HashMap::new();
         commands.insert("hello".to_string(), "echo hello".to_string());

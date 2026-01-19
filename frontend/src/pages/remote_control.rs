@@ -1,8 +1,8 @@
 //! Remote Control page component
 
-use leptos::*;
 use crate::api;
-use crate::components::{Header, NavBar, StatusBadge, Card};
+use crate::components::{Card, Header, NavBar, StatusBadge};
+use leptos::*;
 
 #[component]
 pub fn RemoteControl() -> impl IntoView {
@@ -26,7 +26,9 @@ pub fn RemoteControl() -> impl IntoView {
                     } else {
                         set_status.set(format!(
                             "Failed: {}",
-                            response.error.unwrap_or_else(|| "Unknown error".to_string())
+                            response
+                                .error
+                                .unwrap_or_else(|| "Unknown error".to_string())
                         ));
                         set_status_type.set("error".to_string());
                     }
@@ -34,7 +36,11 @@ pub fn RemoteControl() -> impl IntoView {
                     // Add to history
                     set_commands_history.update(|h| {
                         let time = js_sys::Date::new_0().to_locale_time_string("en-US");
-                        h.push(format!("{}: \"{}\"", time.as_string().unwrap_or_default(), command));
+                        h.push(format!(
+                            "{}: \"{}\"",
+                            time.as_string().unwrap_or_default(),
+                            command
+                        ));
                     });
                 }
                 Err(e) => {
@@ -48,7 +54,8 @@ pub fn RemoteControl() -> impl IntoView {
     let type_dictation = move |_| {
         let text = dictation_text.get();
         if text.trim().is_empty() {
-            set_dictation_status.set("No text to insert. Please dictate some text first.".to_string());
+            set_dictation_status
+                .set("No text to insert. Please dictate some text first.".to_string());
             return;
         }
 
@@ -62,7 +69,9 @@ pub fn RemoteControl() -> impl IntoView {
                     } else {
                         set_dictation_status.set(format!(
                             "Typing failed: {}",
-                            response.error.unwrap_or_else(|| "Unknown error".to_string())
+                            response
+                                .error
+                                .unwrap_or_else(|| "Unknown error".to_string())
                         ));
                     }
                 }

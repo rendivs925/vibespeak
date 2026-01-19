@@ -1,12 +1,12 @@
 //! WebRTC screen sharing implementation
 
-use crate::shared::{Result, Error, AudioSample};
+use crate::shared::{AudioSample, Error, Result};
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{mpsc, RwLock};
 use webrtc::api::APIBuilder;
 use webrtc::peer_connection::configuration::RTCConfiguration;
-use webrtc::peer_connection::RTCPeerConnection;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
+use webrtc::peer_connection::RTCPeerConnection;
 use webrtc::track::track_local::track_local_static_rtp::TrackLocalStaticRTP;
 use webrtc::track::track_remote::TrackRemote;
 
@@ -38,7 +38,11 @@ impl ScreenSharingManager {
     }
 
     /// Set up audio receiver for voice recognition
-    pub async fn setup_audio_receiver(&self, session_id: &str, audio_sender: mpsc::UnboundedSender<AudioSample>) -> Result<()> {
+    pub async fn setup_audio_receiver(
+        &self,
+        session_id: &str,
+        audio_sender: mpsc::UnboundedSender<AudioSample>,
+    ) -> Result<()> {
         let mut sessions = self.sessions.write().await;
         if let Some(session) = sessions.get_mut(session_id) {
             session.audio_receiver = Some(audio_sender);
@@ -56,9 +60,10 @@ impl ScreenSharingManager {
         };
 
         let peer_connection = Arc::new(
-            self.api.new_peer_connection(config)
+            self.api
+                .new_peer_connection(config)
                 .await
-                .map_err(|e| Error::WebRTC(format!("Failed to create peer connection: {}", e)))?
+                .map_err(|e| Error::WebRTC(format!("Failed to create peer connection: {}", e)))?,
         );
 
         let session = ScreenSharingSession {
@@ -79,7 +84,10 @@ impl ScreenSharingManager {
         let sessions_clone = self.sessions.clone();
         data_channel.on_open(Box::new(move || {
             let session_id = session_id_clone1.clone();
-            tracing::info!("Screen sharing data channel opened for session {}", session_id);
+            tracing::info!(
+                "Screen sharing data channel opened for session {}",
+                session_id
+            );
             Box::pin(async move {
                 let mut sessions = sessions_clone.write().await;
                 if let Some(session) = sessions.get_mut(&session_id) {
@@ -90,7 +98,10 @@ impl ScreenSharingManager {
 
         let session_id_clone2 = session_id.clone();
         data_channel.on_close(Box::new(move || {
-            tracing::info!("Screen sharing data channel closed for session {}", session_id_clone2);
+            tracing::info!(
+                "Screen sharing data channel closed for session {}",
+                session_id_clone2
+            );
             Box::pin(async move {})
         }));
 
@@ -99,7 +110,10 @@ impl ScreenSharingManager {
         peer_connection.on_track(Box::new(move |track: Arc<TrackRemote>, _receiver, _| {
             let session_id = session_id_clone3.clone();
             Box::pin(async move {
-                tracing::info!("Received audio track for session {} - voice recognition integration pending", session_id);
+                tracing::info!(
+                    "Received audio track for session {} - voice recognition integration pending",
+                    session_id
+                );
                 // TODO: Implement RTP packet reading and voice recognition
                 // This requires proper codec handling and integration with the voice processing pipeline
             })
@@ -157,7 +171,10 @@ impl ScreenSharingManager {
     pub async fn end_session(&self, session_id: &str) -> Result<()> {
         let mut sessions = self.sessions.write().await;
         if let Some(session) = sessions.remove(session_id) {
-            session.peer_connection.close().await
+            session
+                .peer_connection
+                .close()
+                .await
                 .map_err(|e| Error::WebRTC(format!("Failed to close peer connection: {}", e)))?;
             tracing::info!("Screen sharing session {} ended", session_id);
         }
@@ -175,18 +192,26 @@ impl ScreenSharingManager {
     }
 
     /// Process voice audio from remote device
-    pub async fn process_voice_audio(&self, session_id: &str, audio: AudioSample) -> Result<Option<String>> {
+    pub async fn process_voice_audio(
+        &self,
+        session_id: &str,
+        audio: AudioSample,
+    ) -> Result<Option<String>> {
         let sessions = self.sessions.read().await;
         if let Some(session) = sessions.get(session_id) {
             if let Some(audio_sender) = &session.audio_receiver {
                 // Send audio to voice recognition pipeline
-                audio_sender.send(audio)
-                    .map_err(|e| Error::WebRTC(format!("Failed to send audio for processing: {}", e)))?;
+                audio_sender.send(audio).map_err(|e| {
+                    Error::WebRTC(format!("Failed to send audio for processing: {}", e))
+                })?;
 
                 // For now, return placeholder - actual voice recognition would be handled asynchronously
                 Ok(Some("Voice command processed".to_string()))
             } else {
-                Err(Error::WebRTC(format!("No audio receiver configured for session {}", session_id)))
+                Err(Error::WebRTC(format!(
+                    "No audio receiver configured for session {}",
+                    session_id
+                )))
             }
         } else {
             Err(Error::WebRTC(format!("Session {} not found", session_id)))

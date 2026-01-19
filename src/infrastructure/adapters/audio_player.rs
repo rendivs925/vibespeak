@@ -38,8 +38,9 @@ impl AudioPlayer {
         let host = cpal::default_host();
         let device = match device_name {
             Some(name) => {
-                let devices = host.output_devices()
-                    .map_err(|e| Error::Audio(format!("Failed to enumerate output devices: {}", e)))?;
+                let devices = host.output_devices().map_err(|e| {
+                    Error::Audio(format!("Failed to enumerate output devices: {}", e))
+                })?;
 
                 let mut selected_device = None;
                 for device in devices {
@@ -51,7 +52,8 @@ impl AudioPlayer {
                     }
                 }
 
-                selected_device.ok_or_else(|| Error::Audio(format!("Output device '{}' not found", name)))?
+                selected_device
+                    .ok_or_else(|| Error::Audio(format!("Output device '{}' not found", name)))?
             }
             None => host
                 .default_output_device()
@@ -88,14 +90,10 @@ impl AudioPlayer {
             .output_devices()
             .map_err(|e| Error::Audio(format!("Failed to enumerate output devices: {}", e)))?;
 
-        let device_names: Vec<String> = devices
-            .filter_map(|d| d.name().ok())
-            .collect();
+        let device_names: Vec<String> = devices.filter_map(|d| d.name().ok()).collect();
 
         Ok(device_names)
     }
-
-
 
     /// Pick a SupportedStreamConfig matching requested sample rate if possible, else fallback to default.
     fn select_config(&self, sample_rate: u32) -> Result<cpal::SupportedStreamConfig> {
@@ -415,28 +413,28 @@ impl AudioPlayer {
                                             return;
                                         }
 
-                                    let mut pos = position.lock().unwrap();
-                                    let frames = output.len() / channels;
+                                        let mut pos = position.lock().unwrap();
+                                        let frames = output.len() / channels;
 
-                                    for frame in 0..frames {
-                                        let sample = if *pos < samples.len() {
-                                            let s = samples[*pos];
-                                            *pos = *pos + 1;
-                                            s
-                                        } else {
-                                            is_playing_clone.store(false, Ordering::SeqCst);
-                                            0.0
-                                        };
+                                        for frame in 0..frames {
+                                            let sample = if *pos < samples.len() {
+                                                let s = samples[*pos];
+                                                *pos = *pos + 1;
+                                                s
+                                            } else {
+                                                is_playing_clone.store(false, Ordering::SeqCst);
+                                                0.0
+                                            };
 
-                                        let base = frame * channels;
-                                        for ch in 0..channels {
-                                            output[base + ch] = sample;
+                                            let base = frame * channels;
+                                            for ch in 0..channels {
+                                                output[base + ch] = sample;
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            err_fn,
-                            None,
+                                },
+                                err_fn,
+                                None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))
@@ -476,31 +474,32 @@ impl AudioPlayer {
                                             return;
                                         }
 
-                                    let mut pos = position.lock().unwrap();
-                                    let frames = output.len() / channels;
+                                        let mut pos = position.lock().unwrap();
+                                        let frames = output.len() / channels;
 
-                                    for frame in 0..frames {
-                                        let sample_f32 = if *pos < samples.len() {
-                                            let s = samples[*pos];
-                                            *pos = *pos + 1;
-                                            s
-                                        } else {
-                                            is_playing_clone.store(false, Ordering::SeqCst);
-                                            0.0
-                                        };
+                                        for frame in 0..frames {
+                                            let sample_f32 = if *pos < samples.len() {
+                                                let s = samples[*pos];
+                                                *pos = *pos + 1;
+                                                s
+                                            } else {
+                                                is_playing_clone.store(false, Ordering::SeqCst);
+                                                0.0
+                                            };
 
-                                        let sample_i16 =
-                                            (sample_f32.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+                                            let sample_i16 = (sample_f32.clamp(-1.0, 1.0)
+                                                * i16::MAX as f32)
+                                                as i16;
 
-                                        let base = frame * channels;
-                                        for ch in 0..channels {
-                                            output[base + ch] = sample_i16;
+                                            let base = frame * channels;
+                                            for ch in 0..channels {
+                                                output[base + ch] = sample_i16;
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            err_fn,
-                            None,
+                                },
+                                err_fn,
+                                None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))
@@ -544,29 +543,29 @@ impl AudioPlayer {
                                         let frames = output.len() / channels;
 
                                         for frame in 0..frames {
-                                        let sample_f32 = if *pos < samples.len() {
-                                            let s = samples[*pos];
-                                            *pos = *pos + 1;
-                                            s
-                                        } else {
-                                            is_playing_clone.store(false, Ordering::SeqCst);
-                                            0.0
-                                        };
+                                            let sample_f32 = if *pos < samples.len() {
+                                                let s = samples[*pos];
+                                                *pos = *pos + 1;
+                                                s
+                                            } else {
+                                                is_playing_clone.store(false, Ordering::SeqCst);
+                                                0.0
+                                            };
 
-                                        let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
-                                            * 0.5
-                                            * u16::MAX as f32)
-                                            as u16;
+                                            let u = ((sample_f32.clamp(-1.0, 1.0) + 1.0)
+                                                * 0.5
+                                                * u16::MAX as f32)
+                                                as u16;
 
-                                        let base = frame * channels;
-                                        for ch in 0..channels {
-                                            output[base + ch] = u;
+                                            let base = frame * channels;
+                                            for ch in 0..channels {
+                                                output[base + ch] = u;
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            err_fn,
-                            None,
+                                },
+                                err_fn,
+                                None,
                             )
                             .map_err(|e| {
                                 Error::Audio(format!("Failed to build output stream: {}", e))
@@ -610,7 +609,8 @@ impl AudioPlayer {
 
         // Read WAV header (simplified parser for standard WAV)
         let mut header = [0u8; 44];
-        reader.read_exact(&mut header)
+        reader
+            .read_exact(&mut header)
             .map_err(|e| Error::Audio(format!("Failed to read WAV header: {}", e)))?;
 
         // Verify RIFF header
@@ -621,7 +621,8 @@ impl AudioPlayer {
         // Find data chunk (may not be at offset 44 for all WAV files)
         let mut data_start = 12;
         loop {
-            reader.seek(SeekFrom::Start(data_start as u64))
+            reader
+                .seek(SeekFrom::Start(data_start as u64))
                 .map_err(|e| Error::Audio(format!("Failed to seek in WAV: {}", e)))?;
 
             let mut chunk_header = [0u8; 8];
@@ -630,13 +631,19 @@ impl AudioPlayer {
             }
 
             let chunk_id = &chunk_header[0..4];
-            let chunk_size = u32::from_le_bytes([chunk_header[4], chunk_header[5], chunk_header[6], chunk_header[7]]);
+            let chunk_size = u32::from_le_bytes([
+                chunk_header[4],
+                chunk_header[5],
+                chunk_header[6],
+                chunk_header[7],
+            ]);
 
             if chunk_id == b"data" {
                 // Read PCM data
                 let mut data = vec![0u8; chunk_size as usize];
-                reader.read_exact(&mut data)
-                    .map_err(|e| Error::Infrastructure(format!("Failed to read PCM data: {}", e)))?;
+                reader.read_exact(&mut data).map_err(|e| {
+                    Error::Infrastructure(format!("Failed to read PCM data: {}", e))
+                })?;
 
                 // Convert bytes to i16 samples (assuming 16-bit little-endian)
                 let samples: Vec<i16> = data
@@ -668,7 +675,8 @@ impl AudioPlayer {
 
     /// Get information about the current audio device
     pub fn device_info(&self) -> Result<AudioDeviceInfo> {
-        let name = self.device
+        let name = self
+            .device
             .name()
             .unwrap_or_else(|_| "Unknown device".to_string());
 
@@ -701,7 +709,9 @@ impl AudioPlayer {
             tracing::info!("Reinitialized with default device");
             Ok(())
         } else {
-            Err(Error::Audio("Failed to reinitialize audio player with any device".to_string()))
+            Err(Error::Audio(
+                "Failed to reinitialize audio player with any device".to_string(),
+            ))
         }
     }
 }

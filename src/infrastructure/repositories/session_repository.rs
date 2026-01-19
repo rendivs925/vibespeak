@@ -1,6 +1,6 @@
 use crate::domain::entities::{RecognitionSession, SessionStatus};
 use crate::infrastructure::repositories::SessionRepository;
-use crate::shared::{Result, Error, SessionId};
+use crate::shared::{Error, Result, SessionId};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -47,7 +47,8 @@ impl InMemorySessionRepository {
     pub fn cleanup_old_sessions(&self, max_age: std::time::Duration) {
         let mut sessions = self.sessions.write().unwrap();
         let now = chrono::Utc::now();
-        let cutoff = now - chrono::Duration::from_std(max_age).unwrap_or(chrono::Duration::hours(1));
+        let cutoff =
+            now - chrono::Duration::from_std(max_age).unwrap_or(chrono::Duration::hours(1));
 
         sessions.retain(|_, session| {
             if session.status == SessionStatus::Active {
@@ -66,6 +67,9 @@ impl InMemorySessionRepository {
     /// Get active session count
     pub fn active_count(&self) -> usize {
         let sessions = self.sessions.read().unwrap();
-        sessions.values().filter(|s| s.status == SessionStatus::Active).count()
+        sessions
+            .values()
+            .filter(|s| s.status == SessionStatus::Active)
+            .count()
     }
 }

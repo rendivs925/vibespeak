@@ -9,7 +9,7 @@ A comprehensive voice-controlled automation platform that transforms your comput
 - **Real Keyboard Simulation** - Uses Linux uinput for kernel-level key events that work in any application
 - **Browser Automation** - Control web browsers programmatically with Chromium
 - **Extensible Plugin System** - Add custom commands, workflows, and integrations
-- **Modern Web Stack** - Axum backend with Leptos CSR frontend for reactive UI
+- **Modern Full-Stack Web** - Integrated Leptos CSR frontend with Axum backend for reactive UI
 - **Remote Access** - Tailscale integration for global access
 - **Real-time Processing** - Low-latency voice command execution
 - **Privacy-First** - All processing local, no cloud dependencies
@@ -38,7 +38,10 @@ cd vibespeak
 # Run setup (installs dependencies and creates config)
 make setup
 
-# Start development server
+# Start full-stack development server (recommended)
+make dev-fullstack
+
+# Or choose interactively
 make dev
 ```
 
@@ -781,18 +784,19 @@ cargo build --verbose
 ```
 ┌─────────────────────────────────────┐
 │         Presentation Layer          │
-│  - Leptos CSR Frontend              │
+│  - Leptos CSR Frontend (integrated) │
 │  - Axum REST API                    │
 │  - WebSocket                        │
+│  - Single full-stack server         │
 └─────────────────────────────────────┘
-                    │
+                     │
 ┌─────────────────────────────────────┐
 │       Application Layer             │
 │  - Use Cases                        │
 │  - Application Services             │
 │  - DTOs                             │
 └─────────────────────────────────────┘
-                    │
+                     │
 ┌─────────────────────────────────────┐
 │         Domain Layer                │
 │  - Entities                         │
@@ -800,7 +804,7 @@ cargo build --verbose
 │  - Domain Services                  │
 │  - Business Rules                   │
 └─────────────────────────────────────┘
-                    │
+                     │
 ┌─────────────────────────────────────┐
 │     Infrastructure Layer            │
 │  - Vosk Adapter (Speech-to-Text)    │

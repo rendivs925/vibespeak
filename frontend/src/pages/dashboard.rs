@@ -1,8 +1,8 @@
 //! Dashboard page component
 
-use leptos::*;
 use crate::api;
-use crate::components::{Header, NavBar, StatusBadge, Card};
+use crate::components::{Card, Header, NavBar, StatusBadge};
+use leptos::*;
 
 #[component]
 pub fn Dashboard() -> impl IntoView {

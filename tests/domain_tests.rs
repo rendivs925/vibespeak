@@ -3,11 +3,11 @@
 mod voice_command_tests {
     #[test]
     fn test_voice_command_creation() {
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
 
         let cmd = VoiceCommand::new(
             "hello".to_string(),
-            CommandAction::ShellCommand("echo hello".to_string())
+            CommandAction::ShellCommand("echo hello".to_string()),
         );
 
         assert_eq!(cmd.text, "hello");
@@ -17,23 +17,24 @@ mod voice_command_tests {
 
     #[test]
     fn test_voice_command_with_category() {
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
 
         let cmd = VoiceCommand::new(
             "test".to_string(),
-            CommandAction::ShellCommand("echo test".to_string())
-        ).with_category("custom".to_string());
+            CommandAction::ShellCommand("echo test".to_string()),
+        )
+        .with_category("custom".to_string());
 
         assert_eq!(cmd.category, "custom");
     }
 
     #[test]
     fn test_voice_command_validation_empty_text() {
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
 
         let cmd = VoiceCommand::new(
             "   ".to_string(), // whitespace only
-            CommandAction::ShellCommand("echo".to_string())
+            CommandAction::ShellCommand("echo".to_string()),
         );
 
         let result = cmd.validate();
@@ -42,11 +43,11 @@ mod voice_command_tests {
 
     #[test]
     fn test_voice_command_validation_valid() {
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
 
         let cmd = VoiceCommand::new(
             "valid command".to_string(),
-            CommandAction::ShellCommand("echo valid".to_string())
+            CommandAction::ShellCommand("echo valid".to_string()),
         );
 
         let result = cmd.validate();
@@ -86,10 +87,7 @@ mod workflow_tests {
     fn test_workflow_creation() {
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
 
-        let workflow = Workflow::new(
-            "Test Workflow".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let workflow = Workflow::new("Test Workflow".to_string(), WorkflowTrigger::Manual);
 
         assert_eq!(workflow.name, "Test Workflow");
         assert!(workflow.enabled);
@@ -99,12 +97,9 @@ mod workflow_tests {
 
     #[test]
     fn test_workflow_add_step() {
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep};
+        use vibespeak::domain::entities::{Workflow, WorkflowStep, WorkflowTrigger};
 
-        let mut workflow = Workflow::new(
-            "Test".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut workflow = Workflow::new("Test".to_string(), WorkflowTrigger::Manual);
 
         workflow.add_step(WorkflowStep::ExecuteCommand("echo 1".to_string()));
         workflow.add_step(WorkflowStep::ExecuteCommand("echo 2".to_string()));
@@ -114,11 +109,11 @@ mod workflow_tests {
 
     #[test]
     fn test_workflow_validation_empty_name() {
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep};
+        use vibespeak::domain::entities::{Workflow, WorkflowStep, WorkflowTrigger};
 
         let mut workflow = Workflow::new(
             "   ".to_string(), // whitespace only
-            WorkflowTrigger::Manual
+            WorkflowTrigger::Manual,
         );
         workflow.add_step(WorkflowStep::ExecuteCommand("echo".to_string()));
 
@@ -130,10 +125,7 @@ mod workflow_tests {
     fn test_workflow_validation_no_steps() {
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
 
-        let workflow = Workflow::new(
-            "Valid Name".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let workflow = Workflow::new("Valid Name".to_string(), WorkflowTrigger::Manual);
 
         let result = workflow.validate();
         assert!(result.is_err()); // No steps
@@ -141,12 +133,9 @@ mod workflow_tests {
 
     #[test]
     fn test_workflow_validation_valid() {
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep};
+        use vibespeak::domain::entities::{Workflow, WorkflowStep, WorkflowTrigger};
 
-        let mut workflow = Workflow::new(
-            "Valid Workflow".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut workflow = Workflow::new("Valid Workflow".to_string(), WorkflowTrigger::Manual);
         workflow.add_step(WorkflowStep::ExecuteCommand("echo test".to_string()));
 
         let result = workflow.validate();
@@ -175,8 +164,8 @@ mod workflow_tests {
 
     #[test]
     fn test_workflow_step_wait() {
-        use vibespeak::domain::entities::WorkflowStep;
         use std::time::Duration;
+        use vibespeak::domain::entities::WorkflowStep;
 
         let step = WorkflowStep::Wait(Duration::from_secs(5));
 
@@ -188,9 +177,10 @@ mod workflow_tests {
 
     #[test]
     fn test_workflow_step_browser_action() {
-        use vibespeak::domain::entities::{WorkflowStep, BrowserAction};
+        use vibespeak::domain::entities::{BrowserAction, WorkflowStep};
 
-        let step = WorkflowStep::BrowserAction(BrowserAction::Navigate("https://example.com".to_string()));
+        let step =
+            WorkflowStep::BrowserAction(BrowserAction::Navigate("https://example.com".to_string()));
 
         match step {
             WorkflowStep::BrowserAction(BrowserAction::Navigate(url)) => {
@@ -264,9 +254,9 @@ mod workflow_tests {
         let stop = ErrorStrategy::Stop;
         let continue_strat = ErrorStrategy::Continue;
         let retry = ErrorStrategy::Retry(3);
-        let fallback = ErrorStrategy::Fallback(Box::new(
-            WorkflowStep::ExecuteCommand("echo fallback".to_string())
-        ));
+        let fallback = ErrorStrategy::Fallback(Box::new(WorkflowStep::ExecuteCommand(
+            "echo fallback".to_string(),
+        )));
 
         match retry {
             ErrorStrategy::Retry(n) => assert_eq!(n, 3),
@@ -303,7 +293,7 @@ mod recognition_session_tests {
 
     #[test]
     fn test_recognition_session_add_result() {
-        use vibespeak::domain::entities::{RecognitionSession, RecognitionResult};
+        use vibespeak::domain::entities::{RecognitionResult, RecognitionSession};
 
         let mut session = RecognitionSession::new();
 

@@ -62,7 +62,12 @@ impl CommandInterpreter for FuzzyCommandInterpreter {
 
         // Find best matching command
         if let Some((matched_command, confidence)) = self.find_best_match(&input) {
-            tracing::info!("Matched '{}' to '{}' with confidence {:.2}", input, matched_command, confidence);
+            tracing::info!(
+                "Matched '{}' to '{}' with confidence {:.2}",
+                input,
+                matched_command,
+                confidence
+            );
             if let Some(command_action) = self.commands.get(&matched_command) {
                 return Ok(InterpretedCommand {
                     command_id: Some(matched_command),

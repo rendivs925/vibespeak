@@ -61,7 +61,7 @@ impl AxumServer {
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<SocketAddr> {
-    bind_addr
-        .parse()
-        .map_err(|_| crate::shared::Error::Configuration(format!("Invalid bind address: {}", bind_addr)))
+    bind_addr.parse().map_err(|_| {
+        crate::shared::Error::Configuration(format!("Invalid bind address: {}", bind_addr))
+    })
 }

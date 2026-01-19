@@ -1,11 +1,11 @@
 // CLI presentation layer
 
+use crate::application::dtos::{SystemStatusResponse, VoiceCommandRequest};
 use crate::application::services::VoiceCommandProcessor;
-use crate::application::use_cases::{ProcessVoiceCommandUseCase, GetSystemStatusUseCase};
-use crate::application::dtos::{VoiceCommandRequest, SystemStatusResponse};
-use crate::shared::{Result, Error};
-use std::sync::Arc;
+use crate::application::use_cases::{GetSystemStatusUseCase, ProcessVoiceCommandUseCase};
+use crate::shared::{Error, Result};
 use std::io::Write;
+use std::sync::Arc;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 pub struct CliInterface {
@@ -145,8 +145,15 @@ impl CliInterface {
         println!("Loaded plugins ({}):", plugins.len());
 
         for plugin in plugins {
-            println!("  {} v{} - {}", plugin.name, plugin.version, plugin.description);
-            let caps: Vec<String> = plugin.capabilities.iter().map(|c| format!("{:?}", c)).collect();
+            println!(
+                "  {} v{} - {}",
+                plugin.name, plugin.version, plugin.description
+            );
+            let caps: Vec<String> = plugin
+                .capabilities
+                .iter()
+                .map(|c| format!("{:?}", c))
+                .collect();
             println!("    Capabilities: {}", caps.join(", "));
         }
         println!();

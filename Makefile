@@ -23,6 +23,7 @@ help:
 	@echo "  run       - Build and run the application"
 	@echo "  dev       - Run in development mode (interactive mode selection)"
 	@echo "  dev-web   - Run development mode with web interface"
+	@echo "  dev-fullstack - Run full-stack application (Leptos frontend + backend API)"
 	@echo "  dev-listen - Run development mode with voice listening"
 	@echo "  test      - Run all tests"
 	@echo "  clean     - Clean build artifacts"
@@ -42,6 +43,7 @@ help:
 	@echo ""
 	@echo "Development workflow:"
 	@echo "  make setup && make dev"
+	@echo "  make dev-fullstack               # Full-stack web application"
 	@echo "  VIBESPEAK_MODE=listen make dev  # Auto-start voice listening"
 	@echo "  VIBESPEAK_MODE=web make dev     # Auto-start web interface"
 
@@ -109,6 +111,14 @@ dev:
 dev-web:
 	@echo "Starting Vibespeak web interface (development mode)..."
 	@echo "Web UI: http://localhost:8080"
+	@echo "Press Ctrl+C to stop"
+	cargo run -- --mode web
+
+# Run full-stack application (Leptos frontend + backend API)
+dev-fullstack:
+	@echo "Starting Vibespeak full-stack application..."
+	@echo "Web UI: http://localhost:8080"
+	@echo "API endpoints: http://localhost:8080/api/*"
 	@echo "Press Ctrl+C to stop"
 	cargo run -- --mode web
 

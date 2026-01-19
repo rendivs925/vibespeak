@@ -1,5 +1,5 @@
 use crate::domain::entities::Workflow;
-use crate::shared::{Result, Error, WorkflowId};
+use crate::shared::{Error, Result, WorkflowId};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -99,16 +99,22 @@ impl JsonFileWorkflowRepository {
 
     fn load_from_file(&self) -> Result<()> {
         if self.file_path.exists() {
-            let content = std::fs::read_to_string(&self.file_path)
-                .map_err(|e| Error::Infrastructure(format!("Failed to read workflows file: {}", e)))?;
-            let workflows: Vec<Workflow> = serde_json::from_str(&content)
-                .map_err(|e| Error::Infrastructure(format!("Failed to parse workflows file: {}", e)))?;
+            let content = std::fs::read_to_string(&self.file_path).map_err(|e| {
+                Error::Infrastructure(format!("Failed to read workflows file: {}", e))
+            })?;
+            let workflows: Vec<Workflow> = serde_json::from_str(&content).map_err(|e| {
+                Error::Infrastructure(format!("Failed to parse workflows file: {}", e))
+            })?;
 
             let mut cache = self.cache.write().unwrap();
             for workflow in workflows {
                 cache.insert(workflow.id.clone(), workflow);
             }
-            tracing::info!("Loaded {} workflows from {}", cache.len(), self.file_path.display());
+            tracing::info!(
+                "Loaded {} workflows from {}",
+                cache.len(),
+                self.file_path.display()
+            );
         } else {
             tracing::info!("Workflows file does not exist, starting with empty repository");
         }
@@ -118,8 +124,9 @@ impl JsonFileWorkflowRepository {
     fn save_to_file(&self) -> Result<()> {
         // Ensure parent directory exists
         if let Some(parent) = self.file_path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| Error::Infrastructure(format!("Failed to create data directory: {}", e)))?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                Error::Infrastructure(format!("Failed to create data directory: {}", e))
+            })?;
         }
 
         let workflows = self.cache.read().unwrap();
@@ -130,7 +137,11 @@ impl JsonFileWorkflowRepository {
         std::fs::write(&self.file_path, content)
             .map_err(|e| Error::Infrastructure(format!("Failed to write workflows file: {}", e)))?;
 
-        tracing::debug!("Saved {} workflows to {}", workflows.len(), self.file_path.display());
+        tracing::debug!(
+            "Saved {} workflows to {}",
+            workflows.len(),
+            self.file_path.display()
+        );
         Ok(())
     }
 }

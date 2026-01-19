@@ -1,16 +1,17 @@
 //! Settings page component
 
-use leptos::*;
 use crate::api;
-use crate::components::{Header, NavBar, StatusBadge, Card};
+use crate::components::{Card, Header, NavBar, StatusBadge};
 use crate::state::TailscaleStatus;
+use leptos::*;
 
 #[component]
 pub fn Settings() -> impl IntoView {
     let (status, set_status) = create_signal("Loading settings...".to_string());
     let (status_type, set_status_type) = create_signal("info".to_string());
 
-    let (model_path, set_model_path) = create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
+    let (model_path, set_model_path) =
+        create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
     let (sample_rate, set_sample_rate) = create_signal(16000.0_f32);
     let (enable_tts, set_enable_tts) = create_signal(true);
 

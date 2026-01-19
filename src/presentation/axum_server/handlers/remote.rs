@@ -99,7 +99,11 @@ pub async fn create_screen_offer(
 
     tracing::info!("Creating screen sharing session: {}", session_id);
 
-    match state.voice_service.start_screen_sharing(session_id.clone()).await {
+    match state
+        .voice_service
+        .start_screen_sharing(session_id.clone())
+        .await
+    {
         Ok(offer) => Json(json!({
             "status": "ok",
             "session_id": session_id,

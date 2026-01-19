@@ -160,7 +160,8 @@ impl AudioSample {
             params,
             samples_per_channel,
             self.channels as usize, // output channels = input channels
-        ).map_err(|e| Error::Audio(format!("Failed to create resampler: {}", e)))?;
+        )
+        .map_err(|e| Error::Audio(format!("Failed to create resampler: {}", e)))?;
 
         // Pre-allocate output buffers
         let mut output_channels: Vec<Vec<f32>> = (0..self.channels as usize)
@@ -169,10 +170,14 @@ impl AudioSample {
 
         // Create slices for resampler
         let input_slices: Vec<&[f32]> = channel_data.iter().map(|ch| ch.as_slice()).collect();
-        let mut output_slices: Vec<&mut [f32]> = output_channels.iter_mut().map(|ch| ch.as_mut_slice()).collect();
+        let mut output_slices: Vec<&mut [f32]> = output_channels
+            .iter_mut()
+            .map(|ch| ch.as_mut_slice())
+            .collect();
 
         // Resample
-        let (_frames_consumed, frames_written) = resampler.process_into_buffer(&input_slices, &mut output_slices, None)
+        let (_frames_consumed, frames_written) = resampler
+            .process_into_buffer(&input_slices, &mut output_slices, None)
             .map_err(|e| Error::Audio(format!("Failed to resample audio: {}", e)))?;
 
         // Interleave channels back into single buffer
@@ -185,7 +190,11 @@ impl AudioSample {
             }
         }
 
-        Ok(AudioSample::new(resampled_data, target_sample_rate, self.channels))
+        Ok(AudioSample::new(
+            resampled_data,
+            target_sample_rate,
+            self.channels,
+        ))
     }
 
     /// Convert to 16kHz mono (optimal for speech recognition)
@@ -201,10 +210,7 @@ impl AudioSample {
         }
 
         // Find the peak value
-        let peak = self.data.iter()
-            .map(|&x| x.abs())
-            .max()
-            .unwrap_or(1) as f32;
+        let peak = self.data.iter().map(|&x| x.abs()).max().unwrap_or(1) as f32;
 
         if peak == 0.0 {
             return; // Avoid division by zero
@@ -245,7 +251,9 @@ impl AudioSample {
             return 0.0;
         }
 
-        let sum_squares: f64 = self.data.iter()
+        let sum_squares: f64 = self
+            .data
+            .iter()
             .map(|&x| (x as f64 / i16::MAX as f64).powi(2))
             .sum();
 

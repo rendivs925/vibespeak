@@ -11,15 +11,15 @@ mod command_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_command_repository_save_and_find() {
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
         use vibespeak::infrastructure::repositories::command_repository::InMemoryCommandRepository;
         use vibespeak::infrastructure::repositories::CommandRepository;
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
 
         let repo = InMemoryCommandRepository::new();
 
         let cmd = VoiceCommand::new(
             "test command".to_string(),
-            CommandAction::ShellCommand("echo test".to_string())
+            CommandAction::ShellCommand("echo test".to_string()),
         );
         let cmd_id = cmd.id.clone();
 
@@ -27,16 +27,19 @@ mod command_repository_tests {
         repo.save(&cmd).await.expect("Failed to save command");
 
         // Find by ID
-        let found = repo.find_by_id(&cmd_id).await.expect("Failed to find command");
+        let found = repo
+            .find_by_id(&cmd_id)
+            .await
+            .expect("Failed to find command");
         assert!(found.is_some());
         assert_eq!(found.unwrap().text, "test command");
     }
 
     #[tokio::test]
     async fn test_in_memory_command_repository_find_all() {
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
         use vibespeak::infrastructure::repositories::command_repository::InMemoryCommandRepository;
         use vibespeak::infrastructure::repositories::CommandRepository;
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
 
         let repo = InMemoryCommandRepository::new();
 
@@ -44,7 +47,7 @@ mod command_repository_tests {
         for i in 0..5 {
             let cmd = VoiceCommand::new(
                 format!("command {}", i),
-                CommandAction::ShellCommand(format!("echo {}", i))
+                CommandAction::ShellCommand(format!("echo {}", i)),
             );
             repo.save(&cmd).await.expect("Failed to save command");
         }
@@ -55,15 +58,15 @@ mod command_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_command_repository_delete() {
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
         use vibespeak::infrastructure::repositories::command_repository::InMemoryCommandRepository;
         use vibespeak::infrastructure::repositories::CommandRepository;
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
 
         let repo = InMemoryCommandRepository::new();
 
         let cmd = VoiceCommand::new(
             "to delete".to_string(),
-            CommandAction::ShellCommand("echo delete".to_string())
+            CommandAction::ShellCommand("echo delete".to_string()),
         );
         let cmd_id = cmd.id.clone();
 
@@ -87,29 +90,28 @@ mod command_repository_tests {
 
     #[tokio::test]
     async fn test_json_file_command_repository_persistence() {
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
         use vibespeak::infrastructure::repositories::command_repository::JsonFileCommandRepository;
         use vibespeak::infrastructure::repositories::CommandRepository;
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
 
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let file_path = temp_dir.path().join("test_commands.json");
 
         // Create repository and save a command
         {
-            let repo = JsonFileCommandRepository::new(file_path.clone())
-                .expect("Failed to create repo");
+            let repo =
+                JsonFileCommandRepository::new(file_path.clone()).expect("Failed to create repo");
 
             let cmd = VoiceCommand::new(
                 "persistent test".to_string(),
-                CommandAction::ShellCommand("echo persistent".to_string())
+                CommandAction::ShellCommand("echo persistent".to_string()),
             );
             repo.save(&cmd).await.expect("Failed to save");
         }
 
         // Create new repository instance and verify data persisted
         {
-            let repo = JsonFileCommandRepository::new(file_path)
-                .expect("Failed to create repo");
+            let repo = JsonFileCommandRepository::new(file_path).expect("Failed to create repo");
 
             let all = repo.find_all().await.expect("Failed to find all");
             assert_eq!(all.len(), 1);
@@ -123,17 +125,14 @@ mod workflow_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_workflow_repository_save_and_find() {
-        use vibespeak::infrastructure::repositories::workflow_repository::{
-            InMemoryWorkflowRepository, WorkflowRepository
-        };
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
+        use vibespeak::infrastructure::repositories::workflow_repository::{
+            InMemoryWorkflowRepository, WorkflowRepository,
+        };
 
         let repo = InMemoryWorkflowRepository::new();
 
-        let workflow = Workflow::new(
-            "test workflow".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let workflow = Workflow::new("test workflow".to_string(), WorkflowTrigger::Manual);
         let workflow_id = workflow.id.clone();
 
         repo.save(&workflow).await.expect("Failed to save");
@@ -145,20 +144,23 @@ mod workflow_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_workflow_repository_find_by_name() {
-        use vibespeak::infrastructure::repositories::workflow_repository::{
-            InMemoryWorkflowRepository, WorkflowRepository
-        };
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
+        use vibespeak::infrastructure::repositories::workflow_repository::{
+            InMemoryWorkflowRepository, WorkflowRepository,
+        };
 
         let repo = InMemoryWorkflowRepository::new();
 
         let workflow = Workflow::new(
             "unique_name".to_string(),
-            WorkflowTrigger::VoiceCommand("start workflow".to_string())
+            WorkflowTrigger::VoiceCommand("start workflow".to_string()),
         );
         repo.save(&workflow).await.expect("Failed to save");
 
-        let found = repo.find_by_name("unique_name").await.expect("Failed to find");
+        let found = repo
+            .find_by_name("unique_name")
+            .await
+            .expect("Failed to find");
         assert!(found.is_some());
         assert_eq!(found.unwrap().name, "unique_name");
 
@@ -168,23 +170,17 @@ mod workflow_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_workflow_repository_find_enabled() {
-        use vibespeak::infrastructure::repositories::workflow_repository::{
-            InMemoryWorkflowRepository, WorkflowRepository
-        };
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
+        use vibespeak::infrastructure::repositories::workflow_repository::{
+            InMemoryWorkflowRepository, WorkflowRepository,
+        };
 
         let repo = InMemoryWorkflowRepository::new();
 
-        let mut enabled_workflow = Workflow::new(
-            "enabled".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut enabled_workflow = Workflow::new("enabled".to_string(), WorkflowTrigger::Manual);
         enabled_workflow.enabled = true;
 
-        let mut disabled_workflow = Workflow::new(
-            "disabled".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut disabled_workflow = Workflow::new("disabled".to_string(), WorkflowTrigger::Manual);
         disabled_workflow.enabled = false;
 
         repo.save(&enabled_workflow).await.expect("Failed to save");
@@ -197,20 +193,17 @@ mod workflow_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_workflow_repository_count() {
-        use vibespeak::infrastructure::repositories::workflow_repository::{
-            InMemoryWorkflowRepository, WorkflowRepository
-        };
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
+        use vibespeak::infrastructure::repositories::workflow_repository::{
+            InMemoryWorkflowRepository, WorkflowRepository,
+        };
 
         let repo = InMemoryWorkflowRepository::new();
 
         assert_eq!(repo.count().await.expect("Count failed"), 0);
 
         for i in 0..3 {
-            let workflow = Workflow::new(
-                format!("workflow {}", i),
-                WorkflowTrigger::Manual
-            );
+            let workflow = Workflow::new(format!("workflow {}", i), WorkflowTrigger::Manual);
             repo.save(&workflow).await.expect("Failed to save");
         }
 
@@ -219,22 +212,22 @@ mod workflow_repository_tests {
 
     #[tokio::test]
     async fn test_json_file_workflow_repository_persistence() {
+        use vibespeak::domain::entities::{Workflow, WorkflowStep, WorkflowTrigger};
         use vibespeak::infrastructure::repositories::workflow_repository::{
-            JsonFileWorkflowRepository, WorkflowRepository
+            JsonFileWorkflowRepository, WorkflowRepository,
         };
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep};
 
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let file_path = temp_dir.path().join("test_workflows.json");
 
         // Create and save workflow
         {
-            let repo = JsonFileWorkflowRepository::new(file_path.clone())
-                .expect("Failed to create repo");
+            let repo =
+                JsonFileWorkflowRepository::new(file_path.clone()).expect("Failed to create repo");
 
             let mut workflow = Workflow::new(
                 "persistent workflow".to_string(),
-                WorkflowTrigger::VoiceCommand("run task".to_string())
+                WorkflowTrigger::VoiceCommand("run task".to_string()),
             );
             workflow.add_step(WorkflowStep::ExecuteCommand("echo hello".to_string()));
 
@@ -243,8 +236,7 @@ mod workflow_repository_tests {
 
         // Verify persistence
         {
-            let repo = JsonFileWorkflowRepository::new(file_path)
-                .expect("Failed to create repo");
+            let repo = JsonFileWorkflowRepository::new(file_path).expect("Failed to create repo");
 
             let all = repo.find_all().await.expect("Failed to find all");
             assert_eq!(all.len(), 1);
@@ -259,9 +251,9 @@ mod session_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_session_repository_save_and_find() {
+        use vibespeak::domain::entities::RecognitionSession;
         use vibespeak::infrastructure::repositories::session_repository::InMemorySessionRepository;
         use vibespeak::infrastructure::repositories::SessionRepository;
-        use vibespeak::domain::entities::RecognitionSession;
 
         let repo = InMemorySessionRepository::new();
 
@@ -276,9 +268,9 @@ mod session_repository_tests {
 
     #[tokio::test]
     async fn test_in_memory_session_repository_find_active() {
+        use vibespeak::domain::entities::RecognitionSession;
         use vibespeak::infrastructure::repositories::session_repository::InMemorySessionRepository;
         use vibespeak::infrastructure::repositories::SessionRepository;
-        use vibespeak::domain::entities::RecognitionSession;
 
         let repo = InMemorySessionRepository::new();
 
@@ -291,7 +283,10 @@ mod session_repository_tests {
         completed_session.end_session();
         repo.save(&completed_session).await.expect("Failed to save");
 
-        let active = repo.find_active_sessions().await.expect("Failed to find active");
+        let active = repo
+            .find_active_sessions()
+            .await
+            .expect("Failed to find active");
         assert_eq!(active.len(), 1);
     }
 

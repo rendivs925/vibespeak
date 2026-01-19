@@ -1,6 +1,6 @@
 // Domain value objects - immutable business values
 
-use crate::shared::{Result, Error};
+use crate::shared::{Error, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -13,7 +13,9 @@ impl CommandText {
             return Err(Error::Domain("Command text cannot be empty".to_string()));
         }
         if trimmed.len() > 100 {
-            return Err(Error::Domain("Command text too long (max 100 characters)".to_string()));
+            return Err(Error::Domain(
+                "Command text too long (max 100 characters)".to_string(),
+            ));
         }
         Ok(Self(trimmed.to_lowercase()))
     }
@@ -39,7 +41,9 @@ pub struct Confidence(f64);
 impl Confidence {
     pub fn new(value: f64) -> Result<Self> {
         if !(0.0..=1.0).contains(&value) {
-            return Err(Error::Domain("Confidence must be between 0.0 and 1.0".to_string()));
+            return Err(Error::Domain(
+                "Confidence must be between 0.0 and 1.0".to_string(),
+            ));
         }
         Ok(Self(value))
     }
@@ -73,11 +77,18 @@ impl Category {
             return Err(Error::Domain("Category cannot be empty".to_string()));
         }
         if trimmed.len() > 50 {
-            return Err(Error::Domain("Category too long (max 50 characters)".to_string()));
+            return Err(Error::Domain(
+                "Category too long (max 50 characters)".to_string(),
+            ));
         }
         // Only allow alphanumeric characters, spaces, and hyphens
-        if !trimmed.chars().all(|c| c.is_alphanumeric() || c.is_whitespace() || c == '-') {
-            return Err(Error::Domain("Category contains invalid characters".to_string()));
+        if !trimmed
+            .chars()
+            .all(|c| c.is_alphanumeric() || c.is_whitespace() || c == '-')
+        {
+            return Err(Error::Domain(
+                "Category contains invalid characters".to_string(),
+            ));
         }
         Ok(Self(trimmed.to_lowercase()))
     }
@@ -147,20 +158,37 @@ pub struct PluginVersion {
 
 impl PluginVersion {
     pub fn new(major: u32, minor: u32, patch: u32) -> Self {
-        Self { major, minor, patch }
+        Self {
+            major,
+            minor,
+            patch,
+        }
     }
 
     pub fn parse(version: &str) -> Result<Self> {
         let parts: Vec<&str> = version.split('.').collect();
         if parts.len() != 3 {
-            return Err(Error::Domain(format!("Invalid version format: {}", version)));
+            return Err(Error::Domain(format!(
+                "Invalid version format: {}",
+                version
+            )));
         }
 
-        let major = parts[0].parse().map_err(|_| Error::Domain("Invalid major version".to_string()))?;
-        let minor = parts[1].parse().map_err(|_| Error::Domain("Invalid minor version".to_string()))?;
-        let patch = parts[2].parse().map_err(|_| Error::Domain("Invalid patch version".to_string()))?;
+        let major = parts[0]
+            .parse()
+            .map_err(|_| Error::Domain("Invalid major version".to_string()))?;
+        let minor = parts[1]
+            .parse()
+            .map_err(|_| Error::Domain("Invalid minor version".to_string()))?;
+        let patch = parts[2]
+            .parse()
+            .map_err(|_| Error::Domain("Invalid patch version".to_string()))?;
 
-        Ok(Self { major, minor, patch })
+        Ok(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 
     pub fn is_compatible(&self, other: &Self) -> bool {
@@ -180,7 +208,9 @@ pub struct Port(u16);
 impl Port {
     pub fn new(port: u16) -> Result<Self> {
         if port < 1024 {
-            return Err(Error::Domain("Port numbers below 1024 are reserved".to_string()));
+            return Err(Error::Domain(
+                "Port numbers below 1024 are reserved".to_string(),
+            ));
         }
         Ok(Self(port))
     }

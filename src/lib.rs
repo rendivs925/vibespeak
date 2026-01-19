@@ -10,4 +10,4 @@ pub mod screen;
 pub mod shared;
 
 // Re-export commonly used types
-pub use shared::{Error, Result, AudioSample, ScriptType, SecurityLevel};
+pub use shared::{AudioSample, Error, Result, ScriptType, SecurityLevel};

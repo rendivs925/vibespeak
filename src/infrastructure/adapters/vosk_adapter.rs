@@ -32,7 +32,8 @@ impl VoskAdapter {
 impl SpeechRecognitionService for VoskAdapter {
     async fn recognize(&self, audio: AudioSample) -> Result<RecognitionResult> {
         // Preprocess audio to 16kHz mono for optimal Vosk performance
-        let processed_audio = audio.to_16khz_mono()
+        let processed_audio = audio
+            .to_16khz_mono()
             .map_err(|e| Error::Infrastructure(format!("Failed to preprocess audio: {}", e)))?;
 
         tracing::debug!(
@@ -46,8 +47,14 @@ impl SpeechRecognitionService for VoskAdapter {
 
         // Create recognizer with grammar for command recognition
         let grammar_refs: Vec<&str> = self.grammar.iter().map(|s| s.as_str()).collect();
-        let mut recognizer = Recognizer::new_with_grammar(&self.model, processed_audio.sample_rate as f32, &grammar_refs)
-            .ok_or_else(|| Error::Infrastructure("Failed to create Vosk recognizer with grammar".to_string()))?;
+        let mut recognizer = Recognizer::new_with_grammar(
+            &self.model,
+            processed_audio.sample_rate as f32,
+            &grammar_refs,
+        )
+        .ok_or_else(|| {
+            Error::Infrastructure("Failed to create Vosk recognizer with grammar".to_string())
+        })?;
 
         // Process the audio - Vosk expects &[i16]
         let _state = recognizer

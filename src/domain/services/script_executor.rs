@@ -1,4 +1,4 @@
-use crate::shared::{Result, Error, ScriptType, SecurityLevel};
+use crate::shared::{Error, Result, ScriptType, SecurityLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -113,16 +113,24 @@ impl ScriptExecutor {
             SecurityLevel::Sandboxed => {
                 // Restrict dangerous operations
                 let dangerous_patterns = [
-                    "rm -rf", "sudo", "chmod 777", "mkfs", "dd if=",
-                    "> /dev/", "curl | sh", "wget | sh", "eval",
+                    "rm -rf",
+                    "sudo",
+                    "chmod 777",
+                    "mkfs",
+                    "dd if=",
+                    "> /dev/",
+                    "curl | sh",
+                    "wget | sh",
+                    "eval",
                     ":(){ :|:& };:", // Fork bomb
                 ];
 
                 for pattern in dangerous_patterns {
                     if script.content.contains(pattern) {
-                        return Err(Error::Infrastructure(
-                            format!("Dangerous operation '{}' not allowed in sandboxed mode", pattern)
-                        ));
+                        return Err(Error::Infrastructure(format!(
+                            "Dangerous operation '{}' not allowed in sandboxed mode",
+                            pattern
+                        )));
                     }
                 }
                 tracing::info!("Sandboxed execution validated");
@@ -152,7 +160,10 @@ impl ScriptExecutor {
     }
 
     /// Execute script in a Docker container for isolation
-    async fn execute_in_container(&self, script: &ScriptExecution) -> Result<(i32, String, String)> {
+    async fn execute_in_container(
+        &self,
+        script: &ScriptExecution,
+    ) -> Result<(i32, String, String)> {
         if !Self::is_docker_available() {
             return Err(Error::Infrastructure(
                 "Docker not available for isolated execution. Install Docker or use a different security level.".to_string()
@@ -173,12 +184,12 @@ impl ScriptExecutor {
         let mut docker_cmd = Command::new("docker");
         docker_cmd
             .arg("run")
-            .arg("--rm")                           // Remove container after execution
-            .arg("--network=none")                 // No network access
-            .arg("--memory=256m")                  // Memory limit
-            .arg("--cpus=0.5")                     // CPU limit
-            .arg("--pids-limit=100")               // Process limit
-            .arg("--read-only")                    // Read-only filesystem
+            .arg("--rm") // Remove container after execution
+            .arg("--network=none") // No network access
+            .arg("--memory=256m") // Memory limit
+            .arg("--cpus=0.5") // CPU limit
+            .arg("--pids-limit=100") // Process limit
+            .arg("--read-only") // Read-only filesystem
             .arg("--tmpfs=/tmp:size=64m,mode=1777") // Writable /tmp
             .arg("--security-opt=no-new-privileges") // No privilege escalation
             .arg(image);
@@ -214,11 +225,18 @@ impl ScriptExecutor {
                 let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                 Ok((output.status.code().unwrap_or(-1), stdout, stderr))
             }
-            Ok(Err(e)) => Err(Error::Infrastructure(format!("Docker execution failed: {}", e))),
+            Ok(Err(e)) => Err(Error::Infrastructure(format!(
+                "Docker execution failed: {}",
+                e
+            ))),
             Err(_) => {
                 // Kill any running containers on timeout (best effort)
-                let _ = std::process::Command::new("docker").args(["container", "prune", "-f"]).output();
-                Err(Error::Infrastructure("Containerized script execution timed out".to_string()))
+                let _ = std::process::Command::new("docker")
+                    .args(["container", "prune", "-f"])
+                    .output();
+                Err(Error::Infrastructure(
+                    "Containerized script execution timed out".to_string(),
+                ))
             }
         }
     }
@@ -244,8 +262,13 @@ impl ScriptExecutor {
                 let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                 Ok((output.status.code().unwrap_or(-1), stdout, stderr))
             }
-            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to execute command: {}", e))),
-            Err(_) => Err(Error::Infrastructure("Script execution timed out".to_string())),
+            Ok(Err(e)) => Err(Error::Infrastructure(format!(
+                "Failed to execute command: {}",
+                e
+            ))),
+            Err(_) => Err(Error::Infrastructure(
+                "Script execution timed out".to_string(),
+            )),
         }
     }
 
@@ -277,14 +300,22 @@ impl ScriptExecutor {
         self.execute_interpreter(cmd, script).await
     }
 
-    async fn execute_custom(&self, script: &ScriptExecution, interpreter: &str) -> Result<(i32, String, String)> {
+    async fn execute_custom(
+        &self,
+        script: &ScriptExecution,
+        interpreter: &str,
+    ) -> Result<(i32, String, String)> {
         let mut cmd = Command::new(interpreter);
         cmd.arg(&script.content);
 
         self.execute_interpreter(cmd, script).await
     }
 
-    async fn execute_interpreter(&self, mut cmd: Command, script: &ScriptExecution) -> Result<(i32, String, String)> {
+    async fn execute_interpreter(
+        &self,
+        mut cmd: Command,
+        script: &ScriptExecution,
+    ) -> Result<(i32, String, String)> {
         // Set working directory if specified
         if let Some(ref dir) = script.working_directory {
             cmd.current_dir(dir);
@@ -302,8 +333,13 @@ impl ScriptExecutor {
                 let stderr = String::from_utf8_lossy(&output.stderr).to_string();
                 Ok((output.status.code().unwrap_or(-1), stdout, stderr))
             }
-            Ok(Err(e)) => Err(Error::Infrastructure(format!("Failed to execute command: {}", e))),
-            Err(_) => Err(Error::Infrastructure("Script execution timed out".to_string())),
+            Ok(Err(e)) => Err(Error::Infrastructure(format!(
+                "Failed to execute command: {}",
+                e
+            ))),
+            Err(_) => Err(Error::Infrastructure(
+                "Script execution timed out".to_string(),
+            )),
         }
     }
 }

@@ -18,15 +18,14 @@ impl TtsAdapter {
         if !piper_available {
             return Err(Error::Infrastructure(
                 "Piper TTS not found. Piper TTS is required for voice synthesis.\n\
-                 Please ensure Piper is installed and available in PATH or in ./piper/piper".to_string()
+                 Please ensure Piper is installed and available in PATH or in ./piper/piper"
+                    .to_string(),
             ));
         }
 
         tracing::info!("TTS: Piper neural TTS with Amy voice model ready for high-quality natural voice synthesis");
 
-        Ok(Self {
-            sample_rate: 44100,
-        })
+        Ok(Self { sample_rate: 44100 })
     }
 
     /// Check if Piper TTS is available
@@ -79,7 +78,8 @@ impl TtsAdapter {
             "piper".to_string()
         } else {
             // Use local piper binary
-            let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+            let current_dir =
+                std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
             let piper_path = current_dir.join("piper").join("piper");
             piper_path.to_string_lossy().to_string()
         };
@@ -87,9 +87,12 @@ impl TtsAdapter {
         // Run Piper TTS with exact same command structure as manual usage
         let mut child = Command::new(&piper_cmd)
             .args([
-                "--espeak_data", "./piper/espeak-ng-data",
-                "--model", &voice_model_path,
-                "--output_file", &temp_path,
+                "--espeak_data",
+                "./piper/espeak-ng-data",
+                "--model",
+                &voice_model_path,
+                "--output_file",
+                &temp_path,
             ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::null())
@@ -100,17 +103,22 @@ impl TtsAdapter {
         // Write text to Piper's stdin
         if let Some(ref mut stdin) = child.stdin {
             use std::io::Write;
-            stdin.write_all(processed_text.as_bytes())
-                .map_err(|e| Error::Infrastructure(format!("Failed to write text to Piper: {}", e)))?;
+            stdin.write_all(processed_text.as_bytes()).map_err(|e| {
+                Error::Infrastructure(format!("Failed to write text to Piper: {}", e))
+            })?;
         }
 
         // Wait for Piper to complete
-        let result = child.wait_with_output()
+        let result = child
+            .wait_with_output()
             .map_err(|e| Error::Infrastructure(format!("Failed to wait for Piper: {}", e)))?;
 
         if !result.status.success() {
             let stderr = String::from_utf8_lossy(&result.stderr);
-            return Err(Error::Infrastructure(format!("Piper TTS failed: {}", stderr)));
+            return Err(Error::Infrastructure(format!(
+                "Piper TTS failed: {}",
+                stderr
+            )));
         }
 
         // Read WAV file and extract PCM samples
@@ -119,27 +127,31 @@ impl TtsAdapter {
         // Clean up temp file
         let _ = std::fs::remove_file(&temp_path);
 
-        tracing::debug!("Generated {} PCM samples using Piper Amy voice model", samples.len());
+        tracing::debug!(
+            "Generated {} PCM samples using Piper Amy voice model",
+            samples.len()
+        );
         Ok(samples)
     }
-
-
 
     /// Preprocess text for better TTS synthesis of long paragraphs
     fn preprocess_text_for_tts(&self, text: &str) -> String {
         let mut processed = text.to_string();
 
         // Clean up excessive whitespace
-        processed = processed.split_whitespace().collect::<Vec<&str>>().join(" ");
+        processed = processed
+            .split_whitespace()
+            .collect::<Vec<&str>>()
+            .join(" ");
 
         // Add small pauses after sentences for better listening experience
         // Piper handles sentence boundaries automatically, but we can ensure clean text
         processed = processed
-            .replace("  ", " ")  // Remove double spaces
-            .replace(" ,", ",")  // Fix spacing around commas
-            .replace(" .", ".")  // Fix spacing around periods
-            .replace(" !", "!")  // Fix spacing around exclamation marks
-            .replace(" ?", "?")  // Fix spacing around question marks
+            .replace("  ", " ") // Remove double spaces
+            .replace(" ,", ",") // Fix spacing around commas
+            .replace(" .", ".") // Fix spacing around periods
+            .replace(" !", "!") // Fix spacing around exclamation marks
+            .replace(" ?", "?") // Fix spacing around question marks
             .trim()
             .to_string();
 
@@ -148,12 +160,17 @@ impl TtsAdapter {
         if processed.len() > 15000 {
             processed = processed.chars().take(15000).collect();
             // Try to end at a sentence boundary for better listening experience
-            if let Some(last_sentence_end) = processed.rfind(|c: char| c == '.' || c == '!' || c == '?') {
+            if let Some(last_sentence_end) =
+                processed.rfind(|c: char| c == '.' || c == '!' || c == '?')
+            {
                 if last_sentence_end > processed.len() / 2 {
                     processed = processed.chars().take(last_sentence_end + 1).collect();
                 }
             }
-            tracing::info!("Long text truncated to {} characters for optimal TTS performance", processed.len());
+            tracing::info!(
+                "Long text truncated to {} characters for optimal TTS performance",
+                processed.len()
+            );
         }
 
         processed
@@ -170,7 +187,8 @@ impl TtsAdapter {
 
         // Read WAV header (simplified parser for standard WAV)
         let mut header = [0u8; 44];
-        reader.read_exact(&mut header)
+        reader
+            .read_exact(&mut header)
             .map_err(|e| Error::Infrastructure(format!("Failed to read WAV header: {}", e)))?;
 
         // Verify RIFF header
@@ -181,7 +199,8 @@ impl TtsAdapter {
         // Find data chunk (may not be at offset 44 for all WAV files)
         let mut data_start = 12;
         loop {
-            reader.seek(SeekFrom::Start(data_start as u64))
+            reader
+                .seek(SeekFrom::Start(data_start as u64))
                 .map_err(|e| Error::Infrastructure(format!("Failed to seek in WAV: {}", e)))?;
 
             let mut chunk_header = [0u8; 8];
@@ -190,13 +209,19 @@ impl TtsAdapter {
             }
 
             let chunk_id = &chunk_header[0..4];
-            let chunk_size = u32::from_le_bytes([chunk_header[4], chunk_header[5], chunk_header[6], chunk_header[7]]);
+            let chunk_size = u32::from_le_bytes([
+                chunk_header[4],
+                chunk_header[5],
+                chunk_header[6],
+                chunk_header[7],
+            ]);
 
             if chunk_id == b"data" {
                 // Read PCM data
                 let mut data = vec![0u8; chunk_size as usize];
-                reader.read_exact(&mut data)
-                    .map_err(|e| Error::Infrastructure(format!("Failed to read PCM data: {}", e)))?;
+                reader.read_exact(&mut data).map_err(|e| {
+                    Error::Infrastructure(format!("Failed to read PCM data: {}", e))
+                })?;
 
                 // Convert bytes to i16 samples (assuming 16-bit little-endian)
                 let samples: Vec<i16> = data
@@ -210,10 +235,10 @@ impl TtsAdapter {
             data_start += 8 + chunk_size as usize;
         }
 
-        Err(Error::Infrastructure("No data chunk found in WAV file".to_string()))
+        Err(Error::Infrastructure(
+            "No data chunk found in WAV file".to_string(),
+        ))
     }
-
-
 }
 
 #[async_trait]
@@ -227,10 +252,7 @@ impl TextToSpeechService for TtsAdapter {
 
     async fn get_available_voices(&self) -> Result<Vec<String>> {
         // Only Amy voice model is available
-        let voices = vec![
-            "default".to_string(),
-            "amy".to_string(),
-        ];
+        let voices = vec!["default".to_string(), "amy".to_string()];
 
         Ok(voices)
     }

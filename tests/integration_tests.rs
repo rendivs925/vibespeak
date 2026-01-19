@@ -53,7 +53,7 @@ mod plugin_tests {
 
     #[test]
     fn test_builtin_commands_plugin() {
-        use vibespeak::domain::services::plugin::{PluginRegistry, BuiltinCommandsPlugin};
+        use vibespeak::domain::services::plugin::{BuiltinCommandsPlugin, PluginRegistry};
 
         let mut registry = PluginRegistry::new();
         let result = registry.register(Box::new(BuiltinCommandsPlugin));
@@ -64,7 +64,9 @@ mod plugin_tests {
 
     #[test]
     fn test_plugin_metadata() {
-        use vibespeak::domain::services::plugin::{PluginRegistry, BuiltinCommandsPlugin, VoicePlugin};
+        use vibespeak::domain::services::plugin::{
+            BuiltinCommandsPlugin, PluginRegistry, VoicePlugin,
+        };
 
         let plugin = BuiltinCommandsPlugin;
         let metadata = plugin.metadata();
@@ -76,7 +78,9 @@ mod plugin_tests {
 
     #[test]
     fn test_plugin_capability_check() {
-        use vibespeak::domain::services::plugin::{PluginRegistry, BuiltinCommandsPlugin, PluginCapability};
+        use vibespeak::domain::services::plugin::{
+            BuiltinCommandsPlugin, PluginCapability, PluginRegistry,
+        };
 
         let mut registry = PluginRegistry::new();
         registry.register(Box::new(BuiltinCommandsPlugin)).unwrap();
@@ -108,8 +112,8 @@ mod error_tests {
 
     #[test]
     fn test_error_from_io() {
-        use vibespeak::shared::Error;
         use std::io;
+        use vibespeak::shared::Error;
 
         let io_error = io::Error::new(io::ErrorKind::NotFound, "file not found");
         let error: Error = io_error.into();
@@ -148,7 +152,8 @@ mod fuzzy_matching_tests {
         let commands = vec!["hello", "help", "status", "stop", "start"];
         let input = "helo"; // typo for "hello"
 
-        let best_match = commands.iter()
+        let best_match = commands
+            .iter()
             .map(|cmd| (cmd, strsim::jaro_winkler(input, cmd)))
             .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -171,21 +176,21 @@ mod fuzzy_matching_tests {
 mod workflow_executor_tests {
     #[tokio::test]
     async fn test_workflow_executor_validate() {
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep};
-        use vibespeak::domain::services::workflow_executor::{DefaultWorkflowExecutor, WorkflowExecutor};
-        use vibespeak::domain::services::script_executor::ScriptExecutor;
-        use vibespeak::domain::services::browser_automation::ChromiumBrowserService;
         use std::sync::Arc;
+        use vibespeak::domain::entities::{Workflow, WorkflowStep, WorkflowTrigger};
+        use vibespeak::domain::services::browser_automation::ChromiumBrowserService;
+        use vibespeak::domain::services::script_executor::ScriptExecutor;
+        use vibespeak::domain::services::workflow_executor::{
+            DefaultWorkflowExecutor, WorkflowExecutor,
+        };
 
         let script_executor = Arc::new(ScriptExecutor::new());
-        let browser_service: Arc<dyn vibespeak::domain::services::browser_automation::BrowserAutomationService> =
-            Arc::new(ChromiumBrowserService::new());
+        let browser_service: Arc<
+            dyn vibespeak::domain::services::browser_automation::BrowserAutomationService,
+        > = Arc::new(ChromiumBrowserService::new());
         let executor = DefaultWorkflowExecutor::new(script_executor, browser_service);
 
-        let mut workflow = Workflow::new(
-            "Test".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut workflow = Workflow::new("Test".to_string(), WorkflowTrigger::Manual);
         workflow.add_step(WorkflowStep::ExecuteCommand("echo test".to_string()));
 
         let result = executor.validate_workflow(&workflow).await;
@@ -194,22 +199,22 @@ mod workflow_executor_tests {
 
     #[tokio::test]
     async fn test_workflow_executor_execute_simple() {
-        use vibespeak::domain::entities::{Workflow, WorkflowTrigger, WorkflowStep, VariableValue};
-        use vibespeak::domain::services::workflow_executor::{DefaultWorkflowExecutor, WorkflowExecutor};
-        use vibespeak::domain::services::script_executor::ScriptExecutor;
-        use vibespeak::domain::services::browser_automation::ChromiumBrowserService;
-        use std::sync::Arc;
         use std::collections::HashMap;
+        use std::sync::Arc;
+        use vibespeak::domain::entities::{VariableValue, Workflow, WorkflowStep, WorkflowTrigger};
+        use vibespeak::domain::services::browser_automation::ChromiumBrowserService;
+        use vibespeak::domain::services::script_executor::ScriptExecutor;
+        use vibespeak::domain::services::workflow_executor::{
+            DefaultWorkflowExecutor, WorkflowExecutor,
+        };
 
         let script_executor = Arc::new(ScriptExecutor::new());
-        let browser_service: Arc<dyn vibespeak::domain::services::browser_automation::BrowserAutomationService> =
-            Arc::new(ChromiumBrowserService::new());
+        let browser_service: Arc<
+            dyn vibespeak::domain::services::browser_automation::BrowserAutomationService,
+        > = Arc::new(ChromiumBrowserService::new());
         let executor = DefaultWorkflowExecutor::new(script_executor, browser_service);
 
-        let mut workflow = Workflow::new(
-            "Simple".to_string(),
-            WorkflowTrigger::Manual
-        );
+        let mut workflow = Workflow::new("Simple".to_string(), WorkflowTrigger::Manual);
         workflow.add_step(WorkflowStep::ExecuteCommand("echo 'step 1'".to_string()));
         workflow.add_step(WorkflowStep::ExecuteCommand("echo 'step 2'".to_string()));
 
@@ -226,10 +231,12 @@ mod workflow_executor_tests {
 mod voice_processing_tests {
     #[tokio::test]
     async fn test_voice_processing_service_creation() {
-        use vibespeak::application::services::VoiceProcessingService;
-        use vibespeak::infrastructure::adapters::{VoskAdapter, TtsAdapter, FuzzyCommandInterpreter};
-        use std::sync::Arc;
         use std::collections::HashMap;
+        use std::sync::Arc;
+        use vibespeak::application::services::VoiceProcessingService;
+        use vibespeak::infrastructure::adapters::{
+            FuzzyCommandInterpreter, TtsAdapter, VoskAdapter,
+        };
 
         // Try to create the Vosk adapter (may fail if model not present)
         let vosk_result = VoskAdapter::new("model/vosk-model-en-us-0.22-lgraph", 16000.0, vec![]);
@@ -238,11 +245,8 @@ mod voice_processing_tests {
             let tts = TtsAdapter::new().expect("TTS creation failed");
             let interpreter = FuzzyCommandInterpreter::new(HashMap::new());
 
-            let service = VoiceProcessingService::new(
-                Arc::new(vosk),
-                Arc::new(tts),
-                Arc::new(interpreter),
-            );
+            let service =
+                VoiceProcessingService::new(Arc::new(vosk), Arc::new(tts), Arc::new(interpreter));
 
             let init_result = service.initialize().await;
             // May fail if hardware not available, but should not panic
@@ -256,9 +260,9 @@ mod concurrent_access_tests {
 
     #[tokio::test]
     async fn test_repository_concurrent_access() {
+        use vibespeak::domain::entities::{CommandAction, VoiceCommand};
         use vibespeak::infrastructure::repositories::command_repository::InMemoryCommandRepository;
         use vibespeak::infrastructure::repositories::CommandRepository;
-        use vibespeak::domain::entities::{VoiceCommand, CommandAction};
 
         let repo = Arc::new(InMemoryCommandRepository::new());
 
@@ -269,7 +273,7 @@ mod concurrent_access_tests {
             let handle = tokio::spawn(async move {
                 let cmd = VoiceCommand::new(
                     format!("command {}", i),
-                    CommandAction::ShellCommand(format!("echo {}", i))
+                    CommandAction::ShellCommand(format!("echo {}", i)),
                 );
                 repo_clone.save(&cmd).await
             });
@@ -288,10 +292,10 @@ mod concurrent_access_tests {
 
     #[tokio::test]
     async fn test_workflow_repository_concurrent_access() {
-        use vibespeak::infrastructure::repositories::workflow_repository::{
-            InMemoryWorkflowRepository, WorkflowRepository
-        };
         use vibespeak::domain::entities::{Workflow, WorkflowTrigger};
+        use vibespeak::infrastructure::repositories::workflow_repository::{
+            InMemoryWorkflowRepository, WorkflowRepository,
+        };
 
         let repo = Arc::new(InMemoryWorkflowRepository::new());
 
@@ -300,10 +304,7 @@ mod concurrent_access_tests {
         for i in 0..5 {
             let repo_clone = repo.clone();
             let handle = tokio::spawn(async move {
-                let workflow = Workflow::new(
-                    format!("workflow {}", i),
-                    WorkflowTrigger::Manual
-                );
+                let workflow = Workflow::new(format!("workflow {}", i), WorkflowTrigger::Manual);
                 repo_clone.save(&workflow).await
             });
             handles.push(handle);

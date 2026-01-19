@@ -1,6 +1,11 @@
-use crate::domain::entities::{Workflow, WorkflowStep, Variable, VariableValue, ComparisonOperator, Condition, ErrorStrategy};
-use crate::domain::services::{script_executor::{ScriptExecutor, ScriptExecution}, browser_automation::BrowserAutomationService};
-use crate::shared::{Result, Error};
+use crate::domain::entities::{
+    ComparisonOperator, Condition, ErrorStrategy, Variable, VariableValue, Workflow, WorkflowStep,
+};
+use crate::domain::services::{
+    browser_automation::BrowserAutomationService,
+    script_executor::{ScriptExecution, ScriptExecutor},
+};
+use crate::shared::{Error, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -19,7 +24,11 @@ pub struct WorkflowExecutionResult {
 
 #[async_trait]
 pub trait WorkflowExecutor: Send + Sync {
-    async fn execute_workflow(&self, workflow: &Workflow, variables: HashMap<String, VariableValue>) -> Result<WorkflowExecutionResult>;
+    async fn execute_workflow(
+        &self,
+        workflow: &Workflow,
+        variables: HashMap<String, VariableValue>,
+    ) -> Result<WorkflowExecutionResult>;
     async fn validate_workflow(&self, workflow: &Workflow) -> Result<()>;
 }
 
@@ -42,7 +51,11 @@ impl DefaultWorkflowExecutor {
 
 #[async_trait]
 impl WorkflowExecutor for DefaultWorkflowExecutor {
-    async fn execute_workflow(&self, workflow: &Workflow, initial_variables: HashMap<String, VariableValue>) -> Result<WorkflowExecutionResult> {
+    async fn execute_workflow(
+        &self,
+        workflow: &Workflow,
+        initial_variables: HashMap<String, VariableValue>,
+    ) -> Result<WorkflowExecutionResult> {
         let start_time = std::time::Instant::now();
         let mut variables = initial_variables.clone();
         let mut errors = Vec::new();
@@ -118,12 +131,15 @@ impl WorkflowExecutor for DefaultWorkflowExecutor {
         }
 
         if workflow.steps.is_empty() {
-            return Err(Error::Domain("Workflow must have at least one step".to_string()));
+            return Err(Error::Domain(
+                "Workflow must have at least one step".to_string(),
+            ));
         }
 
         // Validate each step
         for (index, step) in workflow.steps.iter().enumerate() {
-            self.validate_step(step).await
+            self.validate_step(step)
+                .await
                 .map_err(|e| Error::Domain(format!("Step {}: {}", index, e)))?;
         }
 
@@ -132,11 +148,13 @@ impl WorkflowExecutor for DefaultWorkflowExecutor {
 }
 
 impl DefaultWorkflowExecutor {
-    async fn execute_step(&self, step: &WorkflowStep, variables: &HashMap<String, VariableValue>) -> Result<serde_json::Value> {
+    async fn execute_step(
+        &self,
+        step: &WorkflowStep,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<serde_json::Value> {
         match step {
-            WorkflowStep::ExecuteCommand(command) => {
-                self.execute_command(command, variables).await
-            }
+            WorkflowStep::ExecuteCommand(command) => self.execute_command(command, variables).await,
             WorkflowStep::RunScript(script_exec) => {
                 self.execute_script(script_exec, variables).await
             }
@@ -144,7 +162,8 @@ impl DefaultWorkflowExecutor {
                 self.execute_browser_action(action, variables).await
             }
             WorkflowStep::IntegrationCall(service, params) => {
-                self.execute_integration_call(service, params, variables).await
+                self.execute_integration_call(service, params, variables)
+                    .await
             }
             WorkflowStep::Conditional(condition, then_step, else_step) => {
                 if self.evaluate_condition(condition, variables).await? {
@@ -185,7 +204,9 @@ impl DefaultWorkflowExecutor {
             }
             WorkflowStep::IntegrationCall(service, _) => {
                 if service.trim().is_empty() {
-                    return Err(Error::Domain("Integration service cannot be empty".to_string()));
+                    return Err(Error::Domain(
+                        "Integration service cannot be empty".to_string(),
+                    ));
                 }
             }
             WorkflowStep::Conditional(condition, _, _) => {
@@ -208,7 +229,11 @@ impl DefaultWorkflowExecutor {
         Ok(())
     }
 
-    async fn execute_command(&self, command: &str, variables: &HashMap<String, VariableValue>) -> Result<serde_json::Value> {
+    async fn execute_command(
+        &self,
+        command: &str,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<serde_json::Value> {
         let resolved_command = self.resolve_variables(command, variables);
 
         // Execute command using system shell
@@ -230,7 +255,11 @@ impl DefaultWorkflowExecutor {
         }))
     }
 
-    async fn execute_script(&self, script: &crate::domain::entities::workflow::ScriptExecution, variables: &HashMap<String, VariableValue>) -> Result<serde_json::Value> {
+    async fn execute_script(
+        &self,
+        script: &crate::domain::entities::workflow::ScriptExecution,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<serde_json::Value> {
         let resolved_script = crate::domain::services::script_executor::ScriptExecution {
             script_type: script.script_type.clone(),
             content: self.resolve_variables(&script.content, variables),
@@ -253,7 +282,11 @@ impl DefaultWorkflowExecutor {
         }))
     }
 
-    async fn execute_browser_action(&self, action: &crate::domain::entities::BrowserAction, variables: &HashMap<String, VariableValue>) -> Result<serde_json::Value> {
+    async fn execute_browser_action(
+        &self,
+        action: &crate::domain::entities::BrowserAction,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<serde_json::Value> {
         // Create a temporary browser session for the action
         let session_config = crate::domain::entities::BrowserSession {
             browser: crate::domain::entities::BrowserType::Chrome,
@@ -263,7 +296,10 @@ impl DefaultWorkflowExecutor {
         };
 
         let session_id = self.browser_service.start_session(session_config).await?;
-        let result = self.browser_service.execute_action(&session_id, action.clone()).await?;
+        let result = self
+            .browser_service
+            .execute_action(&session_id, action.clone())
+            .await?;
         self.browser_service.close_session(&session_id).await?;
 
         Ok(serde_json::json!({
@@ -274,7 +310,12 @@ impl DefaultWorkflowExecutor {
         }))
     }
 
-    async fn execute_integration_call(&self, service: &str, params: &serde_json::Value, variables: &HashMap<String, VariableValue>) -> Result<serde_json::Value> {
+    async fn execute_integration_call(
+        &self,
+        service: &str,
+        params: &serde_json::Value,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<serde_json::Value> {
         // Placeholder for integration calls
         tracing::info!("Integration call to {} with params: {}", service, params);
         Ok(serde_json::json!({
@@ -284,7 +325,11 @@ impl DefaultWorkflowExecutor {
         }))
     }
 
-    async fn evaluate_condition(&self, condition: &Condition, variables: &HashMap<String, VariableValue>) -> Result<bool> {
+    async fn evaluate_condition(
+        &self,
+        condition: &Condition,
+        variables: &HashMap<String, VariableValue>,
+    ) -> Result<bool> {
         let left_value = self.resolve_variable_value(&condition.variable, variables);
         let right_value = &condition.value;
 
@@ -309,12 +354,18 @@ impl DefaultWorkflowExecutor {
 
     fn validate_condition(&self, condition: &Condition) -> Result<()> {
         if condition.variable.trim().is_empty() {
-            return Err(Error::Domain("Condition variable cannot be empty".to_string()));
+            return Err(Error::Domain(
+                "Condition variable cannot be empty".to_string(),
+            ));
         }
         Ok(())
     }
 
-    fn resolve_variables(&self, template: &str, variables: &HashMap<String, VariableValue>) -> String {
+    fn resolve_variables(
+        &self,
+        template: &str,
+        variables: &HashMap<String, VariableValue>,
+    ) -> String {
         let mut result = template.to_string();
 
         for (key, value) in variables {
@@ -331,8 +382,13 @@ impl DefaultWorkflowExecutor {
         result
     }
 
-    fn resolve_variable_value(&self, variable: &str, variables: &HashMap<String, VariableValue>) -> String {
-        variables.get(variable)
+    fn resolve_variable_value(
+        &self,
+        variable: &str,
+        variables: &HashMap<String, VariableValue>,
+    ) -> String {
+        variables
+            .get(variable)
             .map(|v| match v {
                 VariableValue::String(s) => s.clone(),
                 VariableValue::Number(n) => n.to_string(),

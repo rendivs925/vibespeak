@@ -19,10 +19,7 @@ mod script_executor_tests {
         use vibespeak::domain::services::script_executor::ScriptExecution;
         use vibespeak::shared::{ScriptType, SecurityLevel};
 
-        let script = ScriptExecution::new(
-            ScriptType::Bash,
-            "echo hello".to_string()
-        );
+        let script = ScriptExecution::new(ScriptType::Bash, "echo hello".to_string());
 
         assert_eq!(script.content, "echo hello");
         assert_eq!(script.security_level, SecurityLevel::Trusted);
@@ -65,7 +62,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_bash_script_success() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -82,7 +79,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_bash_script_with_exit_code() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -98,7 +95,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_bash_script_with_stderr() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -113,7 +110,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_bash_script_with_environment_variable() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -130,7 +127,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_sandboxed_rejects_dangerous_commands() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::{ScriptType, SecurityLevel};
 
         let executor = ScriptExecutor::new();
@@ -149,7 +146,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_sandboxed_rejects_sudo() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::{ScriptType, SecurityLevel};
 
         let executor = ScriptExecutor::new();
@@ -164,7 +161,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_script_timeout() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -181,14 +178,12 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_python_script() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
-        let script = ScriptExecution::new(
-            ScriptType::Python,
-            "print('Hello from Python')".to_string()
-        );
+        let script =
+            ScriptExecution::new(ScriptType::Python, "print('Hello from Python')".to_string());
 
         let result = executor.execute(&script).await;
 
@@ -202,13 +197,13 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_javascript_script() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
         let script = ScriptExecution::new(
             ScriptType::JavaScript,
-            "console.log('Hello from JS')".to_string()
+            "console.log('Hello from JS')".to_string(),
         );
 
         let result = executor.execute(&script).await;
@@ -223,7 +218,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_script_result_execution_time() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
@@ -238,7 +233,7 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_isolated_without_docker() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::{ScriptType, SecurityLevel};
 
         let executor = ScriptExecutor::new();
@@ -257,16 +252,13 @@ mod script_executor_tests {
 
     #[tokio::test]
     async fn test_execute_multiple_scripts_sequentially() {
-        use vibespeak::domain::services::script_executor::{ScriptExecutor, ScriptExecution};
+        use vibespeak::domain::services::script_executor::{ScriptExecution, ScriptExecutor};
         use vibespeak::shared::ScriptType;
 
         let executor = ScriptExecutor::new();
 
         for i in 0..5 {
-            let script = ScriptExecution::new(
-                ScriptType::Bash,
-                format!("echo 'Script {}'", i)
-            );
+            let script = ScriptExecution::new(ScriptType::Bash, format!("echo 'Script {}'", i));
 
             let result = executor.execute(&script).await;
             assert!(result.is_ok());
@@ -285,7 +277,10 @@ mod script_type_tests {
         assert_eq!(format!("{}", ScriptType::JavaScript), "javascript");
         assert_eq!(format!("{}", ScriptType::Ruby), "ruby");
         assert_eq!(format!("{}", ScriptType::PowerShell), "powershell");
-        assert_eq!(format!("{}", ScriptType::Custom("lua".to_string())), "custom:lua");
+        assert_eq!(
+            format!("{}", ScriptType::Custom("lua".to_string())),
+            "custom:lua"
+        );
     }
 }
 

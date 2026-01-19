@@ -1,9 +1,9 @@
 //! Voice Commands page component
 
-use leptos::*;
 use crate::api;
-use crate::components::{Header, NavBar, StatusBadge, Card};
+use crate::components::{Card, Header, NavBar, StatusBadge};
 use crate::state::CommandInfo;
+use leptos::*;
 
 #[component]
 pub fn VoiceCommands() -> impl IntoView {

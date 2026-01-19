@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use super::{handlers, state::AppState};
 
@@ -36,8 +36,7 @@ pub fn create_router(state: AppState) -> Router {
 
     Router::new()
         .nest("/api", api_routes)
-        .nest_service("/static", ServeDir::new("web/static"))
-        .fallback_service(ServeDir::new("web/dist").append_index_html_on_directories(true))
+        .fallback_service(vibespeak_frontend::create_leptos_router().into_service()) // Leptos handles all non-API routes
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

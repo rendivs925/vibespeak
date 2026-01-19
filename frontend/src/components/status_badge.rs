@@ -3,10 +3,7 @@
 use leptos::*;
 
 #[component]
-pub fn StatusBadge(
-    message: ReadSignal<String>,
-    status_type: ReadSignal<String>,
-) -> impl IntoView {
+pub fn StatusBadge(message: ReadSignal<String>, status_type: ReadSignal<String>) -> impl IntoView {
     view! {
         <div
             class="status-badge"

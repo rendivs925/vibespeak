@@ -1,12 +1,14 @@
-use crate::domain::services::{
-    SpeechRecognitionService, TextToSpeechService, CommandInterpreter,
-    plugin::{PluginRegistry, PluginInput, PluginOutput},
-    script_executor::{ScriptExecutor, ScriptExecution},
-    browser_automation::BrowserAutomationService,
-    workflow_executor::WorkflowExecutor,
+use crate::domain::entities::{
+    BrowserAction, BrowserSession, BrowserType, RecognitionSession, VoiceCommand, Workflow,
 };
-use crate::domain::entities::{VoiceCommand, RecognitionSession, Workflow, BrowserAction, BrowserSession, BrowserType};
-use crate::shared::{Result, Error, AudioSample, ScriptType, SecurityLevel};
+use crate::domain::services::{
+    browser_automation::BrowserAutomationService,
+    plugin::{PluginInput, PluginOutput, PluginRegistry},
+    script_executor::{ScriptExecution, ScriptExecutor},
+    workflow_executor::WorkflowExecutor,
+    CommandInterpreter, SpeechRecognitionService, TextToSpeechService,
+};
+use crate::shared::{AudioSample, Error, Result, ScriptType, SecurityLevel};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -57,13 +59,22 @@ impl VoiceCommandProcessor {
         let recognition_result = self.speech_recognition.recognize(audio).await?;
         let recognized_text = recognition_result.text.clone();
 
-        tracing::info!("Recognized text: '{}' (confidence: {:.2})", recognized_text, recognition_result.confidence);
+        tracing::info!(
+            "Recognized text: '{}' (confidence: {:.2})",
+            recognized_text,
+            recognition_result.confidence
+        );
 
-        self.process_text_command(recognized_text, recognition_result.confidence).await
+        self.process_text_command(recognized_text, recognition_result.confidence)
+            .await
     }
 
     /// Process a voice command from pre-recognized text
-    pub async fn process_text_command(&self, text: String, confidence: f64) -> Result<VoiceCommandResult> {
+    pub async fn process_text_command(
+        &self,
+        text: String,
+        confidence: f64,
+    ) -> Result<VoiceCommandResult> {
         let recognized_text = text.trim();
 
         // Step 1: Command interpretation
@@ -74,7 +85,10 @@ impl VoiceCommandProcessor {
             environment: HashMap::new(),
         };
 
-        let interpreted = self.command_interpreter.interpret(recognized_text, &context).await?;
+        let interpreted = self
+            .command_interpreter
+            .interpret(recognized_text, &context)
+            .await?;
 
         // Step 2: Execute based on interpretation
         let execution_result = match interpreted.action {
@@ -93,7 +107,9 @@ impl VoiceCommandProcessor {
         };
 
         // Step 3: Handle plugins
-        let plugin_result = self.process_with_plugins(recognized_text, &interpreted).await?;
+        let plugin_result = self
+            .process_with_plugins(recognized_text, &interpreted)
+            .await?;
 
         // Step 4: Combine results
         let final_result = if plugin_result.success {
@@ -177,7 +193,7 @@ impl VoiceCommandProcessor {
         // Create a simple test script
         let script = ScriptExecution::new(
             ScriptType::Bash,
-            format!("echo 'Script {} executed successfully'", script_id)
+            format!("echo 'Script {} executed successfully'", script_id),
         );
 
         let result = self.script_executor.execute(&script).await?;
@@ -200,10 +216,18 @@ impl VoiceCommandProcessor {
         }))
     }
 
-    async fn process_with_plugins(&self, text: &str, interpreted: &crate::domain::services::InterpretedCommand) -> Result<PluginOutput> {
+    async fn process_with_plugins(
+        &self,
+        text: &str,
+        interpreted: &crate::domain::services::InterpretedCommand,
+    ) -> Result<PluginOutput> {
         let input = PluginInput {
             command: text.to_string(),
-            parameters: interpreted.parameters.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect(),
+            parameters: interpreted
+                .parameters
+                .iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect(),
             context: crate::domain::services::plugin::PluginContext {
                 config: HashMap::new(),
                 shared_data: HashMap::new(),
@@ -212,7 +236,10 @@ impl VoiceCommandProcessor {
         };
 
         // Try built-in commands plugin first
-        if let Some(plugin) = self.plugin_registry.get_plugin(&"builtin-commands".to_string()) {
+        if let Some(plugin) = self
+            .plugin_registry
+            .get_plugin(&"builtin-commands".to_string())
+        {
             match plugin.execute(&input).await {
                 Ok(result) if result.success => return Ok(result),
                 _ => {} // Continue to other plugins
@@ -220,7 +247,10 @@ impl VoiceCommandProcessor {
         }
 
         // Try other plugins that can handle commands
-        for plugin_id in self.plugin_registry.has_capability(&crate::domain::services::plugin::PluginCapability::CommandProvider) {
+        for plugin_id in self
+            .plugin_registry
+            .has_capability(&crate::domain::services::plugin::PluginCapability::CommandProvider)
+        {
             if plugin_id == "builtin-commands" {
                 continue; // Already tried
             }
@@ -253,8 +283,15 @@ impl VoiceCommandProcessor {
         self.browser_service.start_session(config).await
     }
 
-    pub async fn execute_browser_action(&self, session_id: &str, action: BrowserAction) -> Result<serde_json::Value> {
-        let result = self.browser_service.execute_action(session_id, action).await?;
+    pub async fn execute_browser_action(
+        &self,
+        session_id: &str,
+        action: BrowserAction,
+    ) -> Result<serde_json::Value> {
+        let result = self
+            .browser_service
+            .execute_action(session_id, action)
+            .await?;
 
         Ok(serde_json::json!({
             "success": result.success,
@@ -302,7 +339,10 @@ impl VoiceCommandProcessor {
     }
 
     // Plugin management
-    pub fn register_plugin(&self, plugin: Box<dyn crate::domain::services::plugin::VoicePlugin>) -> Result<()> {
+    pub fn register_plugin(
+        &self,
+        plugin: Box<dyn crate::domain::services::plugin::VoicePlugin>,
+    ) -> Result<()> {
         // Note: This would need mutable access to plugin registry in practice
         tracing::info!("Plugin registration requested (not yet implemented)");
         Ok(())

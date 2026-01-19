@@ -1,6 +1,6 @@
 //! Remote control functionality for simulating input from mobile devices
 
-use crate::shared::{Result, Error};
+use crate::shared::{Error, Result};
 use std::process::Command;
 use tokio::time::{sleep, Duration};
 use tracing;
@@ -14,7 +14,11 @@ impl RemoteControlManager {
     }
 
     /// Execute a remote control command
-    pub async fn execute_command(&self, command: &str, parameters: Option<&serde_json::Value>) -> Result<String> {
+    pub async fn execute_command(
+        &self,
+        command: &str,
+        parameters: Option<&serde_json::Value>,
+    ) -> Result<String> {
         match command.to_lowercase().as_str() {
             // Window management
             "open terminal" => self.open_terminal().await,
@@ -97,8 +101,13 @@ impl RemoteControlManager {
         // For safety, we'll only allow specific safe commands
         // In a real implementation, this would be more sophisticated
         let allowed_commands = [
-            "ls", "pwd", "date", "whoami", "uptime",
-            "git status", "git log --oneline -5",
+            "ls",
+            "pwd",
+            "date",
+            "whoami",
+            "uptime",
+            "git status",
+            "git log --oneline -5",
         ];
 
         if allowed_commands.contains(&command) {
@@ -107,7 +116,8 @@ impl RemoteControlManager {
                 .map(|output| format!("Command executed: {}", output.trim()))
         } else {
             Err(Error::InvalidCommand(format!(
-                "Command '{}' is not allowed for remote execution", command
+                "Command '{}' is not allowed for remote execution",
+                command
             )))
         }
     }
@@ -119,26 +129,36 @@ impl RemoteControlManager {
             "right_click" => self.mouse_right_click(x, y).await,
             "move" => self.mouse_move(x, y).await,
             "double_click" => self.mouse_double_click(x, y).await,
-            _ => Err(Error::InvalidInput(format!("Unknown mouse event type: {}", event_type))),
+            _ => Err(Error::InvalidInput(format!(
+                "Unknown mouse event type: {}",
+                event_type
+            ))),
         }
     }
 
     async fn mouse_click(&self, x: i32, y: i32) -> Result<String> {
         let mouse_controller = MouseController::new();
-        mouse_controller.click(x, y).await
+        mouse_controller
+            .click(x, y)
+            .await
             .map(|_| format!("Mouse clicked at ({}, {})", x, y))
     }
 
     async fn mouse_right_click(&self, x: i32, y: i32) -> Result<String> {
         // Right click using xdotool - simplified for now
         // TODO: Implement proper right click in MouseController
-        format!("Right mouse clicked at ({}, {}) - implementation pending", x, y);
+        format!(
+            "Right mouse clicked at ({}, {}) - implementation pending",
+            x, y
+        );
         Ok("Right click simulated".to_string())
     }
 
     async fn mouse_move(&self, x: i32, y: i32) -> Result<String> {
         let mouse_controller = MouseController::new();
-        mouse_controller.move_to(x, y).await
+        mouse_controller
+            .move_to(x, y)
+            .await
             .map(|_| format!("Mouse moved to ({}, {})", x, y))
     }
 
@@ -162,7 +182,10 @@ impl RemoteControlManager {
             Ok(stdout.to_string())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(Error::CommandExecution(format!("Command failed: {}", stderr)))
+            Err(Error::CommandExecution(format!(
+                "Command failed: {}",
+                stderr
+            )))
         }
     }
 }

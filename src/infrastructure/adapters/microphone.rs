@@ -70,7 +70,7 @@ impl MicrophoneConfig {
             channels: 1,
             buffer_size: 1024,
             silence_threshold: 0.025, // Increased from 0.01 to be more sensitive to normal speech
-            min_speech_ms: 300, // Reduced from 500ms to catch shorter commands
+            min_speech_ms: 300,       // Reduced from 500ms to catch shorter commands
             max_speech_ms: 45000,
             silence_end_ms: 1200, // Reduced from 1500ms for faster response
         }
@@ -122,13 +122,17 @@ impl MicrophoneCapture {
     }
 
     /// Create a new microphone capture instance with custom configuration and specific device
-    pub fn with_config_and_device(config: MicrophoneConfig, device_name: Option<&str>) -> Result<Self> {
+    pub fn with_config_and_device(
+        config: MicrophoneConfig,
+        device_name: Option<&str>,
+    ) -> Result<Self> {
         // Verify audio host is available
         let host = cpal::default_host();
         let device = match device_name {
             Some(name) => {
-                let devices = host.input_devices()
-                    .map_err(|e| Error::Audio(format!("Failed to enumerate input devices: {}", e)))?;
+                let devices = host.input_devices().map_err(|e| {
+                    Error::Audio(format!("Failed to enumerate input devices: {}", e))
+                })?;
 
                 let mut selected_device = None;
                 for device in devices {
@@ -140,9 +144,11 @@ impl MicrophoneCapture {
                     }
                 }
 
-                selected_device.ok_or_else(|| Error::Audio(format!("Input device '{}' not found", name)))?
+                selected_device
+                    .ok_or_else(|| Error::Audio(format!("Input device '{}' not found", name)))?
             }
-            None => host.default_input_device()
+            None => host
+                .default_input_device()
                 .ok_or_else(|| Error::Audio("No input device available".to_string()))?,
         };
 
@@ -213,7 +219,10 @@ impl MicrophoneCapture {
         Cow::Owned(mono)
     }
 
-    fn get_candidate_configs(&self, device: &cpal::Device) -> Result<Vec<cpal::SupportedStreamConfig>> {
+    fn get_candidate_configs(
+        &self,
+        device: &cpal::Device,
+    ) -> Result<Vec<cpal::SupportedStreamConfig>> {
         let desired_rate = cpal::SampleRate(self.config.sample_rate);
         let desired_channels = self.config.channels;
         let mut candidates = Vec::new();
@@ -258,7 +267,9 @@ impl MicrophoneCapture {
         }
 
         if candidates.is_empty() {
-            return Err(Error::Audio("No supported input configurations found".to_string()));
+            return Err(Error::Audio(
+                "No supported input configurations found".to_string(),
+            ));
         }
 
         Ok(candidates)
@@ -360,7 +371,9 @@ impl MicrophoneCapture {
 
     /// Get information about the current microphone device
     pub fn device_info(&self) -> Result<AudioDeviceInfo> {
-        let name = self.device_name.clone()
+        let name = self
+            .device_name
+            .clone()
             .unwrap_or_else(|| "Unknown device".to_string());
 
         // We can't easily get the actual config without creating a device,
@@ -380,9 +393,14 @@ impl MicrophoneCapture {
         // Try to find another available input device
         if let Ok(devices) = Self::list_devices() {
             for device_name in devices {
-                if let Ok(new_mic) = Self::with_config_and_device(self.config.clone(), Some(&device_name)) {
+                if let Ok(new_mic) =
+                    Self::with_config_and_device(self.config.clone(), Some(&device_name))
+                {
                     *self = new_mic;
-                    tracing::info!("Successfully reinitialized microphone with device: {}", device_name);
+                    tracing::info!(
+                        "Successfully reinitialized microphone with device: {}",
+                        device_name
+                    );
                     return Ok(());
                 }
             }
@@ -394,7 +412,9 @@ impl MicrophoneCapture {
             tracing::info!("Reinitialized microphone with default device");
             Ok(())
         } else {
-            Err(Error::Audio("Failed to reinitialize microphone with any device".to_string()))
+            Err(Error::Audio(
+                "Failed to reinitialize microphone with any device".to_string(),
+            ))
         }
     }
 
@@ -453,7 +473,9 @@ impl MicrophoneCapture {
                 buffer.extend_from_slice(samples);
 
                 let silence_count = *silence_samples_clone.lock().unwrap();
-                if speech_detected_clone.load(Ordering::SeqCst) && silence_count >= *silence_end_samples_clone.lock().unwrap() {
+                if speech_detected_clone.load(Ordering::SeqCst)
+                    && silence_count >= *silence_end_samples_clone.lock().unwrap()
+                {
                     is_recording.store(false, Ordering::SeqCst);
                 }
                 if buffer.len() >= *max_samples_clone.lock().unwrap() {
@@ -476,7 +498,9 @@ impl MicrophoneCapture {
         );
 
         // Start recording
-        stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
+        stream
+            .play()
+            .map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 
         tracing::info!("Recording started. Speak now...");
 
@@ -495,7 +519,8 @@ impl MicrophoneCapture {
             return Err(Error::Audio("No audio recorded".to_string()));
         }
 
-        tracing::info!("Recording complete. Captured {} samples ({:.2}s)",
+        tracing::info!(
+            "Recording complete. Captured {} samples ({:.2}s)",
             samples.len(),
             samples.len() as f32 / sample_rate as f32
         );
@@ -538,7 +563,9 @@ impl MicrophoneCapture {
         *target_samples.lock().unwrap() =
             (duration_ms as f32 / 1000.0 * sample_rate as f32) as usize;
 
-        stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
+        stream
+            .play()
+            .map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 
         tracing::info!("Recording for {} ms...", duration_ms);
 
@@ -575,14 +602,15 @@ impl MicrophoneCapture {
             },
         )?;
 
-        stream.play().map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
+        stream
+            .play()
+            .map_err(|e| Error::Audio(format!("Failed to start recording: {}", e)))?;
 
         Ok(ContinuousRecording {
             _stream: stream,
             is_recording: self.is_recording.clone(),
         })
     }
-
 }
 
 /// Handle for continuous recording that stops when dropped

@@ -71,18 +71,26 @@ impl PluginRegistry {
     pub fn register(&mut self, plugin: Box<dyn VoicePlugin>) -> Result<()> {
         let metadata = plugin.metadata();
         if self.plugins.contains_key(&metadata.id) {
-            return Err(Error::Plugin(format!("Plugin {} already registered", metadata.id)));
+            return Err(Error::Plugin(format!(
+                "Plugin {} already registered",
+                metadata.id
+            )));
         }
 
-        tracing::info!("Registering plugin: {} v{}", metadata.name, metadata.version);
+        tracing::info!(
+            "Registering plugin: {} v{}",
+            metadata.name,
+            metadata.version
+        );
         self.plugins.insert(metadata.id, plugin);
         Ok(())
     }
 
     pub fn load_plugin(&mut self, path: &Path) -> Result<()> {
         unsafe {
-            let library = Library::new(path)
-                .map_err(|e| Error::Plugin(format!("Failed to load library {}: {}", path.display(), e)))?;
+            let library = Library::new(path).map_err(|e| {
+                Error::Plugin(format!("Failed to load library {}: {}", path.display(), e))
+            })?;
 
             // Look for the create_plugin function
             let create_fn: Symbol<extern "C" fn() -> *mut dyn VoicePlugin> = library
@@ -91,7 +99,9 @@ impl PluginRegistry {
 
             let plugin_ptr = create_fn();
             if plugin_ptr.is_null() {
-                return Err(Error::Plugin("Plugin creation returned null pointer".to_string()));
+                return Err(Error::Plugin(
+                    "Plugin creation returned null pointer".to_string(),
+                ));
             }
 
             // Convert to Box (this is unsafe and simplified - in practice you'd need proper memory management)

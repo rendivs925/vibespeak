@@ -1,13 +1,20 @@
 use clap::{Arg, Command};
-use vibespeak::application::services::{VoiceProcessingService, VoiceCommandProcessor};
+use std::collections::HashMap;
+use std::sync::Arc;
+use vibespeak::application::services::{VoiceCommandProcessor, VoiceProcessingService};
 use vibespeak::domain::entities::CommandAction;
-use vibespeak::domain::services::{plugin::{PluginRegistry, BuiltinCommandsPlugin}, script_executor::ScriptExecutor, browser_automation::ChromiumBrowserService, workflow_executor::DefaultWorkflowExecutor};
-use vibespeak::infrastructure::adapters::{FuzzyCommandInterpreter, TtsAdapter, VoskAdapter, MicrophoneCapture, MicrophoneConfig};
-use vibespeak::infrastructure::config::{SystemConfig, CommandConfig};
+use vibespeak::domain::services::{
+    browser_automation::ChromiumBrowserService,
+    plugin::{BuiltinCommandsPlugin, PluginRegistry},
+    script_executor::ScriptExecutor,
+    workflow_executor::DefaultWorkflowExecutor,
+};
+use vibespeak::infrastructure::adapters::{
+    FuzzyCommandInterpreter, MicrophoneCapture, MicrophoneConfig, TtsAdapter, VoskAdapter,
+};
+use vibespeak::infrastructure::config::{CommandConfig, SystemConfig};
 use vibespeak::presentation::axum_server::AxumServer;
 use vibespeak::shared::Result;
-use std::sync::Arc;
-use std::collections::HashMap;
 
 const MODEL_PATH: &str = "model/vosk-model-en-us-0.22-lgraph";
 const CONFIG_PATH: &str = "config/system.json";
@@ -37,7 +44,10 @@ async fn main() -> Result<()> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    tracing::info!("Starting Vibespeak Voice Automation System (mode: {})", mode);
+    tracing::info!(
+        "Starting Vibespeak Voice Automation System (mode: {})",
+        mode
+    );
 
     // Load or create system configuration
     let mut system_config = if std::path::Path::new(CONFIG_PATH).exists() {
@@ -60,23 +70,30 @@ async fn main() -> Result<()> {
     }
 
     // Extract command texts for grammar-based recognition
-    let command_grammar: Vec<String> = system_config.commands.iter()
+    let command_grammar: Vec<String> = system_config
+        .commands
+        .iter()
         .map(|cmd| cmd.text.clone())
         .collect();
-    tracing::info!("Loaded {} commands for grammar-based recognition", command_grammar.len());
+    tracing::info!(
+        "Loaded {} commands for grammar-based recognition",
+        command_grammar.len()
+    );
 
     // Initialize infrastructure adapters
     let speech_recognition = Arc::new(VoskAdapter::new(
         &system_config.settings.vosk_model_path,
         system_config.settings.sample_rate,
-        command_grammar
+        command_grammar,
     )?);
 
     let text_to_speech = Arc::new(TtsAdapter::new()?);
 
     // Create command interpreter with system commands
     let command_interpreter = Arc::new(FuzzyCommandInterpreter::new(
-        system_config.commands.iter()
+        system_config
+            .commands
+            .iter()
             .filter_map(|cmd| {
                 match &cmd.action {
                     CommandAction::ShellCommand(command) => {
@@ -85,12 +102,14 @@ async fn main() -> Result<()> {
                     _ => None, // Skip other command types for now
                 }
             })
-            .collect()
+            .collect(),
     ));
 
     // Initialize plugin system
     let mut plugin_registry = PluginRegistry::new();
-    plugin_registry.register(Box::new(BuiltinCommandsPlugin)).unwrap();
+    plugin_registry
+        .register(Box::new(BuiltinCommandsPlugin))
+        .unwrap();
     let plugin_registry = Arc::new(plugin_registry);
 
     // Initialize script executor
@@ -130,17 +149,16 @@ async fn main() -> Result<()> {
     let voice_service = Arc::new(voice_service);
 
     match mode.as_str() {
-        "web" => {
-            run_web_mode(voice_service, system_config).await
-        }
-        "listen" => {
-            run_listen_mode(voice_processor, voice_service, system_config).await
-        }
+        "web" => run_web_mode(voice_service, system_config).await,
+        "listen" => run_listen_mode(voice_processor, voice_service, system_config).await,
         _ => unreachable!(),
     }
 }
 
-async fn run_web_mode(voice_service: Arc<VoiceProcessingService>, system_config: SystemConfig) -> Result<()> {
+async fn run_web_mode(
+    voice_service: Arc<VoiceProcessingService>,
+    system_config: SystemConfig,
+) -> Result<()> {
     let web_port = system_config.settings.web_server_port;
     let axum_server = AxumServer::new(voice_service.clone(), system_config);
     let server_handle = tokio::spawn(async move {
@@ -192,7 +210,9 @@ async fn run_listen_mode(
     }
 
     let microphone = match system_config.settings.audio_device.as_deref() {
-        Some(device_name) => MicrophoneCapture::with_config_and_device(mic_config, Some(device_name))?,
+        Some(device_name) => {
+            MicrophoneCapture::with_config_and_device(mic_config, Some(device_name))?
+        }
         None => MicrophoneCapture::with_config(mic_config)?,
     };
     tracing::info!("Microphone initialized successfully");

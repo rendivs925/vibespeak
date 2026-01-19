@@ -48,7 +48,7 @@ pub enum CommandAction {
     Integration(String),
 }
 
+pub mod browser_automation;
 pub mod plugin;
 pub mod script_executor;
-pub mod browser_automation;
 pub mod workflow_executor;

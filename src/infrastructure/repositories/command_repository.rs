@@ -1,10 +1,10 @@
 use crate::domain::entities::VoiceCommand;
 use crate::infrastructure::repositories::CommandRepository;
-use crate::shared::{CommandId, Result, Error};
+use crate::shared::{CommandId, Error, Result};
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::sync::RwLock;
 use std::path::PathBuf;
+use std::sync::RwLock;
 
 /// In-memory implementation for quick access
 pub struct InMemoryCommandRepository {
@@ -25,13 +25,17 @@ impl InMemoryCommandRepository {
         // Add some built-in commands
         let hello_cmd = VoiceCommand::new(
             "hello".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("echo 'Hello! How can I help you?'".to_string())
+            crate::domain::entities::CommandAction::ShellCommand(
+                "echo 'Hello! How can I help you?'".to_string(),
+            ),
         );
         commands.insert(hello_cmd.id.clone(), hello_cmd);
 
         let status_cmd = VoiceCommand::new(
             "status".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("echo 'System is running'".to_string())
+            crate::domain::entities::CommandAction::ShellCommand(
+                "echo 'System is running'".to_string(),
+            ),
         );
         commands.insert(status_cmd.id.clone(), status_cmd);
 
@@ -94,16 +98,22 @@ impl JsonFileCommandRepository {
 
     fn load_from_file(&self) -> Result<()> {
         if self.file_path.exists() {
-            let content = std::fs::read_to_string(&self.file_path)
-                .map_err(|e| Error::Infrastructure(format!("Failed to read commands file: {}", e)))?;
-            let commands: Vec<VoiceCommand> = serde_json::from_str(&content)
-                .map_err(|e| Error::Infrastructure(format!("Failed to parse commands file: {}", e)))?;
+            let content = std::fs::read_to_string(&self.file_path).map_err(|e| {
+                Error::Infrastructure(format!("Failed to read commands file: {}", e))
+            })?;
+            let commands: Vec<VoiceCommand> = serde_json::from_str(&content).map_err(|e| {
+                Error::Infrastructure(format!("Failed to parse commands file: {}", e))
+            })?;
 
             let mut cache = self.cache.write().unwrap();
             for cmd in commands {
                 cache.insert(cmd.id.clone(), cmd);
             }
-            tracing::info!("Loaded {} commands from {}", cache.len(), self.file_path.display());
+            tracing::info!(
+                "Loaded {} commands from {}",
+                cache.len(),
+                self.file_path.display()
+            );
         } else {
             tracing::info!("Commands file does not exist, starting with empty repository");
         }
@@ -113,8 +123,9 @@ impl JsonFileCommandRepository {
     fn save_to_file(&self) -> Result<()> {
         // Ensure parent directory exists
         if let Some(parent) = self.file_path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| Error::Infrastructure(format!("Failed to create data directory: {}", e)))?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                Error::Infrastructure(format!("Failed to create data directory: {}", e))
+            })?;
         }
 
         let commands = self.cache.read().unwrap();
@@ -125,7 +136,11 @@ impl JsonFileCommandRepository {
         std::fs::write(&self.file_path, content)
             .map_err(|e| Error::Infrastructure(format!("Failed to write commands file: {}", e)))?;
 
-        tracing::debug!("Saved {} commands to {}", commands.len(), self.file_path.display());
+        tracing::debug!(
+            "Saved {} commands to {}",
+            commands.len(),
+            self.file_path.display()
+        );
         Ok(())
     }
 
@@ -143,27 +158,33 @@ impl JsonFileCommandRepository {
         // Add default commands
         let hello_cmd = VoiceCommand::new(
             "hello".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("echo 'Hello! How can I help you?'".to_string())
+            crate::domain::entities::CommandAction::ShellCommand(
+                "echo 'Hello! How can I help you?'".to_string(),
+            ),
         );
 
         let status_cmd = VoiceCommand::new(
             "status".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("echo 'System is running'".to_string())
+            crate::domain::entities::CommandAction::ShellCommand(
+                "echo 'System is running'".to_string(),
+            ),
         );
 
         let help_cmd = VoiceCommand::new(
             "help".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("echo 'Available commands: hello, status, help, time, date'".to_string())
+            crate::domain::entities::CommandAction::ShellCommand(
+                "echo 'Available commands: hello, status, help, time, date'".to_string(),
+            ),
         );
 
         let time_cmd = VoiceCommand::new(
             "time".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("date +%H:%M:%S".to_string())
+            crate::domain::entities::CommandAction::ShellCommand("date +%H:%M:%S".to_string()),
         );
 
         let date_cmd = VoiceCommand::new(
             "date".to_string(),
-            crate::domain::entities::CommandAction::ShellCommand("date +%Y-%m-%d".to_string())
+            crate::domain::entities::CommandAction::ShellCommand("date +%Y-%m-%d".to_string()),
         );
 
         {

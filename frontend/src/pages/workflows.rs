@@ -1,7 +1,7 @@
 //! Workflows page component
 
+use crate::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
-use crate::components::{Header, NavBar, StatusBadge, Card};
 
 #[component]
 pub fn Workflows() -> impl IntoView {

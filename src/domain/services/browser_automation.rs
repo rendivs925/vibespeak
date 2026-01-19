@@ -1,5 +1,5 @@
 use crate::domain::entities::{BrowserAction, BrowserSession};
-use crate::shared::{Result, Error};
+use crate::shared::{Error, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -17,7 +17,11 @@ pub struct BrowserResult {
 #[async_trait]
 pub trait BrowserAutomationService: Send + Sync {
     async fn start_session(&self, config: BrowserSession) -> Result<String>;
-    async fn execute_action(&self, session_id: &str, action: BrowserAction) -> Result<BrowserResult>;
+    async fn execute_action(
+        &self,
+        session_id: &str,
+        action: BrowserAction,
+    ) -> Result<BrowserResult>;
     async fn get_page_content(&self, session_id: &str) -> Result<String>;
     async fn take_screenshot(&self, session_id: &str, path: &str) -> Result<()>;
     async fn close_session(&self, session_id: &str) -> Result<()>;
@@ -106,28 +110,34 @@ impl BrowserAutomationService for ChromiumBrowserService {
             temp_dir: temp_dir.clone(),
         };
 
-        self.sessions.lock().unwrap().insert(session_id.clone(), instance);
+        self.sessions
+            .lock()
+            .unwrap()
+            .insert(session_id.clone(), instance);
 
         tracing::info!("Started browser session: {}", session_id);
         Ok(session_id)
     }
 
-    async fn execute_action(&self, session_id: &str, action: BrowserAction) -> Result<BrowserResult> {
+    async fn execute_action(
+        &self,
+        session_id: &str,
+        action: BrowserAction,
+    ) -> Result<BrowserResult> {
         // Check if session exists first
         {
             let sessions = self.sessions.lock().unwrap();
             if !sessions.contains_key(session_id) {
-                return Err(Error::Infrastructure(format!("Session {} not found", session_id)));
+                return Err(Error::Infrastructure(format!(
+                    "Session {} not found",
+                    session_id
+                )));
             }
         }
 
         match action {
-            BrowserAction::Navigate(url) => {
-                self.navigate_to(session_id, &url).await
-            }
-            BrowserAction::Click(selector) => {
-                self.click_element(session_id, &selector).await
-            }
+            BrowserAction::Navigate(url) => self.navigate_to(session_id, &url).await,
+            BrowserAction::Click(selector) => self.click_element(session_id, &selector).await,
             BrowserAction::Type(selector, text) => {
                 self.type_text(session_id, &selector, &text).await
             }
@@ -146,27 +156,26 @@ impl BrowserAutomationService for ChromiumBrowserService {
             BrowserAction::ExecuteScript(script) => {
                 self.execute_javascript(session_id, &script).await
             }
-            BrowserAction::GetText(selector) => {
-                self.get_element_text(session_id, &selector).await
-            }
-            BrowserAction::Scroll(x, y) => {
-                self.scroll_page(session_id, x, y).await
-            }
+            BrowserAction::GetText(selector) => self.get_element_text(session_id, &selector).await,
+            BrowserAction::Scroll(x, y) => self.scroll_page(session_id, x, y).await,
         }
     }
 
     async fn get_page_content(&self, session_id: &str) -> Result<String> {
         // Simplified implementation - in practice, you'd use Chrome DevTools Protocol
         // For now, return placeholder
-        Ok("<html><body>Browser automation content</body></html>".to_string())
+        Ok("Page content not yet implemented".to_string())
     }
 
     async fn take_screenshot(&self, session_id: &str, path: &str) -> Result<()> {
         // Simplified implementation - in practice, you'd use Chrome DevTools Protocol
         // For now, create a placeholder screenshot
-        tokio::fs::write(path, b"PNG placeholder - actual screenshot would be captured here")
-            .await
-            .map_err(|e| Error::Infrastructure(format!("Failed to create screenshot: {}", e)))?;
+        tokio::fs::write(
+            path,
+            b"PNG placeholder - actual screenshot would be captured here",
+        )
+        .await
+        .map_err(|e| Error::Infrastructure(format!("Failed to create screenshot: {}", e)))?;
         Ok(())
     }
 
@@ -254,8 +263,18 @@ impl ChromiumBrowserService {
         })
     }
 
-    async fn type_text(&self, session_id: &str, selector: &str, text: &str) -> Result<BrowserResult> {
-        tracing::info!("Typing \"{}\" into {} in session {}", text, selector, session_id);
+    async fn type_text(
+        &self,
+        session_id: &str,
+        selector: &str,
+        text: &str,
+    ) -> Result<BrowserResult> {
+        tracing::info!(
+            "Typing \"{}\" into {} in session {}",
+            text,
+            selector,
+            session_id
+        );
         Ok(BrowserResult {
             success: true,
             data: serde_json::json!({

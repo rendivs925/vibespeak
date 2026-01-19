@@ -3,9 +3,9 @@
 mod system_status_tests {
     #[test]
     fn test_uptime_tracking() {
-        use std::time::Instant;
         use std::thread::sleep;
         use std::time::Duration;
+        use std::time::Instant;
 
         let start = Instant::now();
         sleep(Duration::from_millis(100));
@@ -126,7 +126,8 @@ mod dto_tests {
         use vibespeak::application::dtos::VoiceCommandRequest;
 
         let json = r#"{"text": "test command", "voice": null, "context": null}"#;
-        let request: VoiceCommandRequest = serde_json::from_str(json).expect("Deserialization failed");
+        let request: VoiceCommandRequest =
+            serde_json::from_str(json).expect("Deserialization failed");
 
         assert_eq!(request.text, "test command");
         assert!(request.voice.is_none());
@@ -172,7 +173,9 @@ mod dto_tests {
 
     #[test]
     fn test_workflow_creation_request() {
-        use vibespeak::application::dtos::{WorkflowCreationRequest, WorkflowTriggerDto, WorkflowStepDto};
+        use vibespeak::application::dtos::{
+            WorkflowCreationRequest, WorkflowStepDto, WorkflowTriggerDto,
+        };
 
         let request = WorkflowCreationRequest {
             name: "My Workflow".to_string(),

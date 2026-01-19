@@ -2,7 +2,7 @@ use crate::domain::services::{
     CommandContext, CommandInterpreter, InterpretedCommand, SpeechRecognitionService,
     TextToSpeechService,
 };
-use crate::screen::{ScreenSharingManager, RemoteControlManager};
+use crate::screen::{RemoteControlManager, ScreenSharingManager};
 use crate::shared::{AudioSample, Result};
 use std::sync::Arc;
 
@@ -79,7 +79,9 @@ impl VoiceProcessingService {
     }
 
     pub async fn handle_screen_answer(&self, session_id: &str, answer_sdp: &str) -> Result<()> {
-        self.screen_sharing.handle_answer(session_id, answer_sdp).await
+        self.screen_sharing
+            .handle_answer(session_id, answer_sdp)
+            .await
     }
 
     pub async fn stop_screen_sharing(&self, session_id: &str) -> Result<()> {
@@ -95,13 +97,21 @@ impl VoiceProcessingService {
         self.remote_control.execute_command(command, None).await
     }
 
-    pub async fn execute_remote_command(&self, command: &str, parameters: Option<&serde_json::Value>) -> Result<String> {
-        self.remote_control.execute_command(command, parameters).await
+    pub async fn execute_remote_command(
+        &self,
+        command: &str,
+        parameters: Option<&serde_json::Value>,
+    ) -> Result<String> {
+        self.remote_control
+            .execute_command(command, parameters)
+            .await
     }
 
     // Remote mouse control
     pub async fn handle_remote_mouse(&self, event_type: &str, x: i32, y: i32) -> Result<String> {
-        self.remote_control.handle_mouse_event(event_type, x, y).await
+        self.remote_control
+            .handle_mouse_event(event_type, x, y)
+            .await
     }
 
     // Remote voice processing
