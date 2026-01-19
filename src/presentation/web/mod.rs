@@ -2,6 +2,7 @@ use crate::application::services::VoiceProcessingService;
 use crate::infrastructure::config::SystemConfig;
 use crate::shared::{Result, Error};
 use std::sync::Arc;
+use tokio::process::Command;
 use tokio::sync::RwLock;
 use warp::Filter;
 use warp::reject::Reject;
@@ -148,6 +149,13 @@ impl WebServer {
             .and(warp::body::json())
             .and_then(handle_dictation_insert);
 
+        let dictation_type = warp::path("api")
+            .and(warp::path("dictation"))
+            .and(warp::path("type"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and_then(handle_dictation_type);
+
         // Tailscale routes
         let tailscale_status = warp::path("api")
             .and(warp::path("tailscale"))
@@ -164,7 +172,7 @@ impl WebServer {
             .and(with_config(self.config.clone()))
             .and_then(handle_tailscale_config);
 
-        config_get.or(config_post).or(voice_test).or(tts_audio).or(screen_offer).or(screen_answer).or(remote_command).or(remote_mouse).or(dictation_start).or(dictation_stop).or(dictation_insert).or(tailscale_status).or(tailscale_config)
+        config_get.or(config_post).or(voice_test).or(tts_audio).or(screen_offer).or(screen_answer).or(remote_command).or(remote_mouse).or(dictation_start).or(dictation_stop).or(dictation_insert).or(dictation_type).or(tailscale_status).or(tailscale_config)
     }
 }
 
@@ -622,6 +630,81 @@ async fn handle_tailscale_config(
     });
 
     Ok(warp::reply::json(&response))
+}
+
+// Dictation typing handler - simulates keyboard input on desktop
+#[derive(serde::Deserialize)]
+struct DictationTypeRequest {
+    text: String,
+    #[serde(default)]
+    simulate_keyboard: bool,
+}
+
+async fn handle_dictation_type(
+    request: DictationTypeRequest,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    tracing::info!("Typing text on desktop: '{}' (keyboard simulation: {})", request.text, request.simulate_keyboard);
+
+    if request.text.trim().is_empty() {
+        let response = serde_json::json!({
+            "success": false,
+            "error": "Empty text provided",
+            "message": "No text to type"
+        });
+        return Ok(warp::reply::json(&response));
+    }
+
+    // Use xdotool to simulate typing the text on the desktop
+    match simulate_keyboard_input(&request.text).await {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "success": true,
+                "message": "Text typed successfully on desktop",
+                "characters_typed": request.text.len()
+            });
+            Ok(warp::reply::json(&response))
+        }
+        Err(e) => {
+            tracing::error!("Failed to simulate keyboard input: {}", e);
+            let response = serde_json::json!({
+                "success": false,
+                "error": e.to_string(),
+                "message": "Failed to type text on desktop"
+            });
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
+
+async fn simulate_keyboard_input(text: &str) -> Result<()> {
+    // Escape special characters that might cause issues with xdotool
+    let escaped_text = text
+        .replace("\\", "\\\\")  // Escape backslashes first
+        .replace("\"", "\\\"")  // Escape quotes
+        .replace("'", "\\'")    // Escape single quotes
+        .replace("$", "\\$")    // Escape dollar signs
+        .replace("`", "\\`");   // Escape backticks
+
+    // Use xdotool to type the text
+    // Note: xdotool type handles most characters, but we could also use xdotool key for special keys
+    let command = format!("xdotool type \"{}\"", escaped_text);
+
+    tracing::debug!("Executing xdotool command: {}", command);
+
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(&command)
+        .output()
+        .await
+        .map_err(|e| Error::CommandExecution(format!("Failed to execute xdotool: {}", e)))?;
+
+    if output.status.success() {
+        tracing::info!("Successfully typed {} characters on desktop", text.len());
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(Error::CommandExecution(format!("xdotool failed: {}", stderr)))
+    }
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {

@@ -445,22 +445,23 @@
               <input type="text" id="dictation-text" placeholder="Dictated text will appear here..." style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;" readonly>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button id="insert-text" class="btn" style="flex: 1;">Insert Text</button>
+              <button id="insert-text" class="btn">⌨️ Type Text</button>
               <button id="clear-dictation" class="btn btn-secondary">Clear</button>
             </div>
             <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-size: 14px;">
               <strong>How to use dictation:</strong>
               <ol style="margin: 5px 0; padding-left: 20px;">
-                <li><strong>Focus on any text input field</strong> (click in a text box, editor, search bar, etc.)</li>
                 <li>Click "Start Dictation" and allow microphone access</li>
                 <li><strong>Speak clearly</strong> - text appears in real-time above</li>
-                <li>Click "Insert Text" to type the dictated text into the focused field</li>
-                <li>Or install the browser extension for advanced features</li>
+                <li>Switch to any application (Gmail, code editor, browser, etc.)</li>
+                <li>Click "Insert Text" to <strong>type directly into the active application</strong></li>
               </ol>
-              <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
-                <strong>💡 Tip:</strong> Dictation works in Gmail, Google Docs, code editors, search bars, and most text inputs!
+              <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
+                <strong>⌨️ Keyboard Simulation:</strong> Dictation types text globally like a real keyboard - it works in <strong>any application</strong> that has focus!
               </div>
-              <p style="margin: 8px 0 0 0;"><strong>Browser Extension:</strong> Check <code>web/extension/</code> folder for advanced dictation features</p>
+              <div style="margin-top: 8px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
+                <strong>💡 Works everywhere:</strong> Gmail, VS Code, Terminal, Browsers, Word, Excel, any text input!
+              </div>
             </div>
           </div>
         </section>
@@ -1534,16 +1535,16 @@
           });
 
           if (response.ok) {
-            // Try to insert text into the currently focused input field
-            const textInserted = await insertTextIntoActiveElement(dictatedText);
+            // Send text to server to simulate keystrokes globally (like a real keyboard)
+            const typingResult = await simulateTypingOnDesktop(dictatedText);
 
-            if (textInserted) {
-              updateDictationStatus("✅ Text inserted into focused field", "success");
+            if (typingResult) {
+              updateDictationStatus("✅ Text typed into active application!", "success");
             } else {
-              updateDictationStatus("⚠️ Text sent to server, but could not insert into focused field. Make sure an input field is focused.", "warning");
+              updateDictationStatus("⚠️ Text sent to server but desktop typing may have failed", "warning");
             }
 
-            console.log('Text insertion requested:', dictatedText);
+            console.log('Desktop typing requested:', dictatedText);
           } else {
             throw new Error('Failed to insert text');
           }
@@ -1561,6 +1562,35 @@
 
       function updateDictationText() {
         document.getElementById('dictation-text').value = dictatedText;
+      }
+
+      // Simulate typing on the desktop (sends keystrokes globally like a real keyboard)
+      async function simulateTypingOnDesktop(text) {
+        try {
+          console.log('Sending text to desktop for typing:', text);
+
+          // Send the text to the server to simulate typing on the desktop
+          const response = await fetch('/api/dictation/type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: text,
+              simulateKeyboard: true
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('Desktop typing result:', result);
+            return result.success !== false; // Default to true if not specified
+          } else {
+            console.error('Desktop typing failed:', response.status);
+            return false;
+          }
+        } catch (error) {
+          console.error('Error simulating desktop typing:', error);
+          return false;
+        }
       }
 
       // Insert text into the currently focused input element
