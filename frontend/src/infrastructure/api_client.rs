@@ -170,6 +170,11 @@ impl ApiClient {
         )
         .await
     }
+
+    /// Test keyboard simulation
+    pub async fn test_keyboard(&self) -> Result<serde_json::Value, String> {
+        self.get("/dictation/test-keyboard").await
+    }
 }
 
 /// Health check operations

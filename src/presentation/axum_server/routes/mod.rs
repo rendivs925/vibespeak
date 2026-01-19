@@ -32,7 +32,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/dictation/start", post(handlers::start_dictation))
         .route("/dictation/stop", post(handlers::stop_dictation))
         .route("/dictation/insert", post(handlers::insert_dictation))
-        .route("/dictation/type", post(handlers::type_dictation));
+        .route("/dictation/type", post(handlers::type_dictation))
+        .route("/dictation/test-keyboard", get(handlers::test_keyboard));
 
     Router::new()
         .nest("/api", api_routes)

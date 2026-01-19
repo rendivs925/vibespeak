@@ -73,6 +73,32 @@ pub struct DictationTypeResponse {
     pub error: Option<String>,
 }
 
+/// Test keyboard simulation with a simple string
+pub async fn test_keyboard() -> Json<serde_json::Value> {
+    tracing::info!("Testing keyboard simulation");
+
+    let test_text = "Hello from Vibespeak!";
+    match simulate_keyboard_input(test_text).await {
+        Ok(()) => {
+            tracing::info!("Keyboard test successful");
+            Json(serde_json::json!({
+                "success": true,
+                "message": "Keyboard simulation test passed",
+                "test_text": test_text
+            }))
+        }
+        Err(e) => {
+            tracing::error!("Keyboard test failed: {}", e);
+            Json(serde_json::json!({
+                "success": false,
+                "message": "Keyboard simulation test failed",
+                "error": e.to_string(),
+                "test_text": test_text
+            }))
+        }
+    }
+}
+
 pub async fn type_dictation(
     Json(request): Json<DictationTypeRequest>,
 ) -> Result<Json<DictationTypeResponse>, StatusCode> {
@@ -82,15 +108,42 @@ pub async fn type_dictation(
         request.simulate_keyboard
     );
 
+    // Validate input
+    if !request.simulate_keyboard.unwrap_or(true) {
+        tracing::warn!("Keyboard simulation disabled in request");
+        return Ok(Json(DictationTypeResponse {
+            success: false,
+            characters_typed: 0,
+            message: "Keyboard simulation disabled".to_string(),
+            error: Some("simulate_keyboard was set to false".to_string()),
+        }));
+    }
+
+    if request.text.trim().is_empty() {
+        tracing::warn!("Received empty text for dictation typing");
+        return Ok(Json(DictationTypeResponse {
+            success: false,
+            characters_typed: 0,
+            message: "Cannot type empty text".to_string(),
+            error: Some("Text was empty or contained only whitespace".to_string()),
+        }));
+    }
+
     match simulate_keyboard_input(&request.text).await {
-        Ok(()) => Ok(Json(DictationTypeResponse {
-            success: true,
-            characters_typed: request.text.len(),
-            message: "Text typed successfully on desktop".to_string(),
-            error: None,
-        })),
+        Ok(()) => {
+            tracing::info!(
+                "Successfully typed {} characters via dictation",
+                request.text.len()
+            );
+            Ok(Json(DictationTypeResponse {
+                success: true,
+                characters_typed: request.text.len(),
+                message: "Text typed successfully on desktop".to_string(),
+                error: None,
+            }))
+        }
         Err(e) => {
-            tracing::error!("Failed to simulate keyboard input: {}", e);
+            tracing::error!("Failed to simulate keyboard input for dictation: {}", e);
             Ok(Json(DictationTypeResponse {
                 success: false,
                 characters_typed: 0,

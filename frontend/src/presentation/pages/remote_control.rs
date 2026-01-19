@@ -106,7 +106,30 @@ pub fn RemoteControl() -> impl IntoView {
 
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
-        set_dictation_status.set("Dictation cleared".to_string());
+        set_dictation_status.set(String::new());
+    };
+
+    let test_keyboard = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        wasm_bindgen_futures::spawn_local(async move {
+            set_dictation_status.set("Testing keyboard simulation...".to_string());
+            match api::ApiClient::new_default().test_keyboard().await {
+                Ok(_) => {
+                    set_dictation_status
+                        .set("Keyboard test completed - check if you saw text appear!".to_string());
+                }
+                Err(e) => {
+                    set_dictation_status.set(format!("Keyboard test failed: {}", e));
+                }
+            }
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::create_effect(move |_| {
+            leptos::spawn_local(async move {
+                set_dictation_status
+                    .set("Keyboard test not available in non-WASM environment".to_string());
+            });
+        });
     };
 
     let touch_commands = vec![
@@ -192,11 +215,14 @@ pub fn RemoteControl() -> impl IntoView {
                             }
                         />
                     </div>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn" on:click=type_dictation>
                             "Type Text"
                         </button>
-                        <button class="btn btn-secondary" on:click=clear_dictation>
+                        <button class="btn btn-secondary" on:click=test_keyboard>
+                            "Test Keyboard"
+                        </button>
+                        <button class="btn btn-outline" on:click=clear_dictation>
                             "Clear"
                         </button>
                     </div>
@@ -207,8 +233,17 @@ pub fn RemoteControl() -> impl IntoView {
                             <li><strong>"Switch to your target application"</strong>" (Gmail, VS Code, browser, etc.)"</li>
                             <li>"Click \"Type Text\" - text gets typed exactly like pressing keys!"</li>
                         </ol>
-                        <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
+                         <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
                             <strong>"Keyboard Simulation:"</strong>" Dictation types text globally like a real keyboard - it works in "<strong>"any application"</strong>" that has focus!"
+                        </div>
+                        <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
+                            <strong>"System Setup:"</strong>
+                            <ul style="margin: 5px 0; padding-left: 20px; font-size: 13px;">
+                                <li>"Test keyboard simulation with the 'Test Keyboard' button first"</li>
+                                <li>"uinput (preferred): Requires root or udev rules for /dev/uinput"</li>
+                                <li>"xdotool (fallback): Requires X11 display access (DISPLAY=:0)"</li>
+                                <li>"Switch to target app before clicking 'Type Text'"</li>
+                            </ul>
                         </div>
                     </div>
                 </Card>
