@@ -4,7 +4,7 @@ use crate::domain::entities::Command;
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{
     Badge, BadgeVariant, Button, ButtonVariant, DataTable, Header, Icon, IconType, Modal,
-    ModalFooter, NavBar, StatusBadge, TableCell, TableRow,
+    ModalFooter, NavBar, TableCell, TableRow,
 };
 use leptos::*;
 use wasm_bindgen_futures;
@@ -194,13 +194,11 @@ pub fn VoiceCommands() -> impl IntoView {
 
     view! {
         <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
-            <Header title="Vibespeak" subtitle="Voice Automation System">
-                <StatusBadge message=status status_type=status_type />
-            </Header>
+            <Header title="Vibespeak" subtitle="Voice Automation System" />
 
             <NavBar _active="commands" />
 
-            <main class="flex-1 px-4 sm:px-8 py-6 sm:py-10 overflow-y-auto">
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-10 overflow-y-auto">
                 <div class="max-w-6xl mx-auto">
                     // Page Header
                     <div class="mb-8 sm:mb-10">

@@ -23,6 +23,8 @@ pub use presentation::*;
 
 use leptos::*;
 use leptos_router::*;
+use presentation::components::ToastContainer;
+use presentation::components::ToastContext;
 use presentation::pages::*;
 
 #[component]
@@ -49,6 +51,9 @@ pub fn App() -> impl IntoView {
         });
     }
 
+    let toast_context = ToastContext::new();
+    provide_context(toast_context);
+
     view! {
         <Router>
             <main class="app">
@@ -60,6 +65,7 @@ pub fn App() -> impl IntoView {
                     <Route path="/scripts" view=Scripts />
                     <Route path="/settings" view=Settings />
                 </Routes>
+                <ToastContainer />
             </main>
         </Router>
     }

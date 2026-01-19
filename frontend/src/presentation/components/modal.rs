@@ -48,7 +48,7 @@ pub fn Modal(
                         size_class
                     )>
                         // Header
-                        <div class="flex items-start justify-between px-7 py-5 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/30">
+                        <div class="flex items-start justify-between px-4 sm:px-7 py-4 sm:py-5 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/30">
                             <div class="flex items-center gap-4">
                                 {icon.map(|i| view! {
                                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200/50">
@@ -71,7 +71,7 @@ pub fn Modal(
                         </div>
 
                         // Body
-                        <div class="px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
+                        <div class="px-4 sm:px-7 py-4 sm:py-6 bg-gradient-to-b from-white to-slate-50/30">
                             {children()}
                         </div>
                     </div>

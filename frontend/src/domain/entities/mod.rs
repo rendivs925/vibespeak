@@ -20,7 +20,7 @@ pub struct AppConfig {
 pub struct Command {
     pub id: String,
     pub text: String,
-    pub action: serde_json::Value,  // Backend sends this as JSON value
+    pub action: serde_json::Value, // Backend sends this as JSON value
     pub category: String,
     #[serde(default = "default_enabled")]
     pub enabled: bool,
@@ -67,7 +67,7 @@ pub struct Workflow {
 pub struct Script {
     pub id: String,
     pub name: String,
-    pub language: String,  // Backend sends as string like "Bash", "Python"
+    pub language: String, // Backend sends as string like "Bash", "Python"
     #[serde(default)]
     pub content: String,
     #[serde(default = "default_enabled")]

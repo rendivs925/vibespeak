@@ -112,11 +112,15 @@ impl ExecuteCommandUseCase {
             return Ok(format!("Executed shell command: {}", shell_cmd));
         }
         if let Some(workflow_id) = command.action.get("Workflow").and_then(|v| v.as_str()) {
-            self.workflow_service.execute_workflow(workflow_id.to_string()).await?;
+            self.workflow_service
+                .execute_workflow(workflow_id.to_string())
+                .await?;
             return Ok("Workflow executed successfully".to_string());
         }
         if let Some(script_id) = command.action.get("Script").and_then(|v| v.as_str()) {
-            self.script_service.execute_script(script_id.to_string()).await?;
+            self.script_service
+                .execute_script(script_id.to_string())
+                .await?;
             return Ok("Script executed successfully".to_string());
         }
 

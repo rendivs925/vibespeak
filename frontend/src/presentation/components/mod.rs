@@ -13,6 +13,7 @@ pub mod navbar;
 pub mod select;
 pub mod status_badge;
 pub mod textarea;
+pub mod toast;
 
 pub use badge::{Badge, BadgeVariant};
 pub use button::{Button, ButtonSize, ButtonVariant};
@@ -27,3 +28,4 @@ pub use navbar::NavBar;
 pub use select::Select;
 pub use status_badge::StatusBadge;
 pub use textarea::Textarea;
+pub use toast::{ToastContainer, ToastContext};

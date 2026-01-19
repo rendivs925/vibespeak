@@ -3,7 +3,7 @@
 use crate::domain::entities::{SystemSettings, TailscaleStatus};
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{
-    Button, ButtonVariant, Card, Header, Icon, IconType, NavBar, StatusBadge,
+    Button, ButtonVariant, Card, Header, Icon, IconType, NavBar,
 };
 use leptos::*;
 use wasm_bindgen_futures;
@@ -102,13 +102,11 @@ pub fn Settings() -> impl IntoView {
     view! {
         <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
             <div class="flex flex-col">
-                <Header title="Vibespeak" subtitle="Voice Automation System - Control your computer with your voice">
-                    <StatusBadge message=status status_type=status_type />
-                </Header>
+                <Header title="Vibespeak" subtitle="Voice Automation System - Control your computer with your voice" />
 
                 <NavBar _active="settings" />
 
-                <main class="flex-1 px-8 py-10 overflow-y-auto">
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-10 overflow-y-auto">
                     <div class="max-w-6xl mx-auto">
                         {/* Page Header */}
                         <div class="mb-10">

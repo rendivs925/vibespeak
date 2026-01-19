@@ -1,9 +1,7 @@
 //! Remote Control page component - Ultra Premium Design
 
 use crate::infrastructure::api_client as api;
-use crate::presentation::components::{
-    Button, ButtonVariant, Header, Icon, IconType, NavBar, StatusBadge,
-};
+use crate::presentation::components::{Button, ButtonVariant, Header, Icon, IconType, NavBar};
 use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -346,13 +344,11 @@ pub fn RemoteControl() -> impl IntoView {
     view! {
         <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
             <div class="flex flex-col">
-                <Header title="Vibespeak" subtitle="Voice Automation System">
-                    <StatusBadge message=status status_type=status_type />
-                </Header>
+                <Header title="Vibespeak" subtitle="Voice Automation System" />
 
                 <NavBar _active="remote" />
 
-                <main class="flex-1 px-4 sm:px-8 py-6 sm:py-10 overflow-y-auto">
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-10 overflow-y-auto">
                     <div class="max-w-6xl mx-auto">
                         // Page Header
                         <div class="mb-8 sm:mb-10">
@@ -375,28 +371,39 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200/50">
-                                                <Icon icon_type=IconType::Screen class="w-5 h-5 text-white" />
+                                                <Icon
+                                                    icon_type=IconType::Screen
+                                                    class="w-5 h-5 text-white"
+                                                />
                                             </div>
                                             <div>
-                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">"Screen Sharing"</h3>
-                                                <p class="text-xs text-slate-500">"Share your screen in real-time"</p>
+                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">
+                                                    "Screen Sharing"
+                                                </h3>
+                                                <p class="text-xs text-slate-500">
+                                                    "Share your screen in real-time"
+                                                </p>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            {move || if is_screen_sharing.get() {
-                                                view! {
-                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                        "Live"
-                                                    </span>
-                                                }.into_view()
-                                            } else {
-                                                view! {
-                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                                        "Inactive"
-                                                    </span>
-                                                }.into_view()
+                                            {move || {
+                                                if is_screen_sharing.get() {
+                                                    view! {
+                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                            "Live"
+                                                        </span>
+                                                    }
+                                                        .into_view()
+                                                } else {
+                                                    view! {
+                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                            "Inactive"
+                                                        </span>
+                                                    }
+                                                        .into_view()
+                                                }
                                             }}
                                         </div>
                                     </div>
@@ -410,19 +417,30 @@ pub fn RemoteControl() -> impl IntoView {
                                             playsinline
                                             muted
                                             class="w-full aspect-video object-contain"
-                                            style:display=move || if is_screen_sharing.get() { "block" } else { "none" }
+                                            style:display=move || {
+                                                if is_screen_sharing.get() { "block" } else { "none" }
+                                            }
                                         ></video>
                                         <div
                                             class="w-full aspect-video flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"
-                                            style:display=move || if is_screen_sharing.get() { "none" } else { "flex" }
+                                            style:display=move || {
+                                                if is_screen_sharing.get() { "none" } else { "flex" }
+                                            }
                                         >
                                             <div class="text-center space-y-4 p-8">
                                                 <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-700/50 flex items-center justify-center">
-                                                    <Icon icon_type=IconType::Screen class="w-8 h-8 text-slate-400" />
+                                                    <Icon
+                                                        icon_type=IconType::Screen
+                                                        class="w-8 h-8 text-slate-400"
+                                                    />
                                                 </div>
                                                 <div class="space-y-2">
-                                                    <p class="text-sm font-medium text-slate-300">"No screen shared"</p>
-                                                    <p class="text-xs text-slate-500">"Click the button below to share your screen"</p>
+                                                    <p class="text-sm font-medium text-slate-300">
+                                                        "No screen shared"
+                                                    </p>
+                                                    <p class="text-xs text-slate-500">
+                                                        "Click the button below to share your screen"
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -430,37 +448,54 @@ pub fn RemoteControl() -> impl IntoView {
 
                                     // Status
                                     <div class="mb-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
-                                        <p class="text-sm text-slate-600">{move || screen_status.get()}</p>
+                                        <p class="text-sm text-slate-600">
+                                            {move || screen_status.get()}
+                                        </p>
                                     </div>
 
-                                     // Controls
-                                     <div class="flex flex-wrap gap-3">
-                                         {
-                                             let start_screen_share = StoredValue::new(start_screen_share);
-                                             let stop_screen_share = StoredValue::new(stop_screen_share);
-                                             let enter_fullscreen = StoredValue::new(enter_fullscreen);
-                                             move || if !is_screen_sharing.get() {
-                                                 view! {
-                                                     <Button variant=ButtonVariant::Primary on:click=start_screen_share.get_value()>
-                                                         <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
-                                                         "Start Sharing"
-                                                     </Button>
-                                                 }.into_view()
-                                             } else {
-                                                 view! {
-                                                     <>
-                                                         <Button variant=ButtonVariant::Danger on:click=stop_screen_share.get_value()>
-                                                             <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                             "Stop"
-                                                         </Button>
-                                                         <Button variant=ButtonVariant::Secondary on:click=enter_fullscreen.get_value()>
-                                                             <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
-                                                             "Fullscreen"
-                                                         </Button>
-                                                     </>
-                                                 }.into_view()
-                                             }
-                                         }
+                                    // Controls
+                                    <div class="flex flex-wrap gap-3">
+                                        {
+                                            let start_screen_share = StoredValue::new(
+                                                start_screen_share,
+                                            );
+                                            let stop_screen_share = StoredValue::new(stop_screen_share);
+                                            let enter_fullscreen = StoredValue::new(enter_fullscreen);
+                                            move || {
+                                                if !is_screen_sharing.get() {
+                                                    view! {
+                                                        <Button
+                                                            variant=ButtonVariant::Primary
+                                                            on:click=start_screen_share.get_value()
+                                                        >
+                                                            <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
+                                                            "Start Sharing"
+                                                        </Button>
+                                                    }
+                                                        .into_view()
+                                                } else {
+                                                    view! {
+                                                        <>
+                                                            <Button
+                                                                variant=ButtonVariant::Danger
+                                                                on:click=stop_screen_share.get_value()
+                                                            >
+                                                                <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                                "Stop"
+                                                            </Button>
+                                                            <Button
+                                                                variant=ButtonVariant::Secondary
+                                                                on:click=enter_fullscreen.get_value()
+                                                            >
+                                                                <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
+                                                                "Fullscreen"
+                                                            </Button>
+                                                        </>
+                                                    }
+                                                        .into_view()
+                                                }
+                                            }
+                                        }
                                     </div>
                                 </div>
                             </section>
@@ -471,28 +506,39 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md shadow-rose-200/50">
-                                                <Icon icon_type=IconType::Microphone class="w-5 h-5 text-white" />
+                                                <Icon
+                                                    icon_type=IconType::Microphone
+                                                    class="w-5 h-5 text-white"
+                                                />
                                             </div>
                                             <div>
-                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">"Voice Dictation"</h3>
-                                                <p class="text-xs text-slate-500">"Speak and type anywhere"</p>
+                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">
+                                                    "Voice Dictation"
+                                                </h3>
+                                                <p class="text-xs text-slate-500">
+                                                    "Speak and type anywhere"
+                                                </p>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            {move || if is_dictating.get() {
-                                                view! {
-                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                                        "Recording"
-                                                    </span>
-                                                }.into_view()
-                                            } else {
-                                                view! {
-                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                                        "Ready"
-                                                    </span>
-                                                }.into_view()
+                                            {move || {
+                                                if is_dictating.get() {
+                                                    view! {
+                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                            "Recording"
+                                                        </span>
+                                                    }
+                                                        .into_view()
+                                                } else {
+                                                    view! {
+                                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                            "Ready"
+                                                        </span>
+                                                    }
+                                                        .into_view()
+                                                }
                                             }}
                                         </div>
                                     </div>
@@ -500,7 +546,9 @@ pub fn RemoteControl() -> impl IntoView {
                                 <div class="px-6 sm:px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
                                     // Status
                                     <div class="mb-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
-                                        <p class="text-sm text-slate-600">{move || dictation_status.get()}</p>
+                                        <p class="text-sm text-slate-600">
+                                            {move || dictation_status.get()}
+                                        </p>
                                     </div>
 
                                     // Text Area
@@ -515,41 +563,60 @@ pub fn RemoteControl() -> impl IntoView {
                                         ></textarea>
                                     </div>
 
-                                     // Controls
-                                     <div class="flex flex-wrap gap-3">
-                                         {
-                                             let start_dictation = StoredValue::new(start_dictation);
-                                             let stop_dictation = StoredValue::new(stop_dictation);
-                                             move || if !is_dictating.get() {
-                                                 view! {
-                                                     <Button variant=ButtonVariant::Primary on:click=start_dictation.get_value()>
-                                                         <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
-                                                         "Start Dictation"
-                                                     </Button>
-                                                 }.into_view()
-                                             } else {
-                                                 view! {
-                                                     <Button variant=ButtonVariant::Danger on:click=stop_dictation.get_value()>
-                                                         <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                         "Stop"
-                                                     </Button>
-                                                 }.into_view()
-                                             }
-                                         }
-                                         <Button variant=ButtonVariant::Secondary on:click=send_dictation>
-                                             <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
-                                             "Send to Desktop"
-                                         </Button>
-                                         <Button variant=ButtonVariant::Ghost on:click=clear_dictation>
-                                             <Icon icon_type=IconType::X class="w-4 h-4 mr-2" />
-                                             "Clear"
-                                         </Button>
-                                     </div>
+                                    // Controls
+                                    <div class="flex flex-wrap gap-3">
+                                        {
+                                            let start_dictation = StoredValue::new(start_dictation);
+                                            let stop_dictation = StoredValue::new(stop_dictation);
+                                            move || {
+                                                if !is_dictating.get() {
+                                                    view! {
+                                                        <Button
+                                                            variant=ButtonVariant::Primary
+                                                            on:click=start_dictation.get_value()
+                                                        >
+                                                            <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
+                                                            "Start Dictation"
+                                                        </Button>
+                                                    }
+                                                        .into_view()
+                                                } else {
+                                                    view! {
+                                                        <Button
+                                                            variant=ButtonVariant::Danger
+                                                            on:click=stop_dictation.get_value()
+                                                        >
+                                                            <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                            "Stop"
+                                                        </Button>
+                                                    }
+                                                        .into_view()
+                                                }
+                                            }
+                                        }
+                                        <Button
+                                            variant=ButtonVariant::Secondary
+                                            on:click=send_dictation
+                                        >
+                                            <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
+                                            "Send to Desktop"
+                                        </Button>
+                                        <Button
+                                            variant=ButtonVariant::Ghost
+                                            on:click=clear_dictation
+                                        >
+                                            <Icon icon_type=IconType::X class="w-4 h-4 mr-2" />
+                                            "Clear"
+                                        </Button>
+                                    </div>
 
                                     // Info Box
                                     <div class="mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
                                         <div class="flex gap-3">
-                                            <Icon icon_type=IconType::Microphone class="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                                            <Icon
+                                                icon_type=IconType::Microphone
+                                                class="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5"
+                                            />
                                             <p class="text-xs text-indigo-700 leading-relaxed">
                                                 "Speak naturally and your words will appear above. Click 'Send to Desktop' to type the text into your focused application."
                                             </p>
@@ -565,29 +632,40 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="px-6 sm:px-7 py-5 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/30">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-200/50">
-                                                <Icon icon_type=IconType::Commands class="w-5 h-5 text-white" />
+                                                <Icon
+                                                    icon_type=IconType::Commands
+                                                    class="w-5 h-5 text-white"
+                                                />
                                             </div>
                                             <div>
-                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">"Quick Actions"</h3>
+                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">
+                                                    "Quick Actions"
+                                                </h3>
                                                 <p class="text-xs text-slate-500">"One-tap controls"</p>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="px-6 sm:px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                            {touch_commands.into_iter().map(|(label, command, icon)| {
-                                                let cmd = command.to_string();
-                                                let exec = execute_command.clone();
-                                                view! {
-                                                    <button
-                                                        class="group relative flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200/60 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-2"
-                                                        on:click=move |_| exec(cmd.clone())
-                                                    >
-                                                        <Icon icon_type=icon class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
-                                                        <span class="text-xs">{label}</span>
-                                                    </button>
-                                                }
-                                            }).collect_view()}
+                                            {touch_commands
+                                                .into_iter()
+                                                .map(|(label, command, icon)| {
+                                                    let cmd = command.to_string();
+                                                    let exec = execute_command.clone();
+                                                    view! {
+                                                        <button
+                                                            class="group relative flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200/60 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-2"
+                                                            on:click=move |_| exec(cmd.clone())
+                                                        >
+                                                            <Icon
+                                                                icon_type=icon
+                                                                class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors"
+                                                            />
+                                                            <span class="text-xs">{label}</span>
+                                                        </button>
+                                                    }
+                                                })
+                                                .collect_view()}
                                         </div>
                                     </div>
                                 </section>
@@ -597,10 +675,15 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="px-6 sm:px-7 py-5 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50/30">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-200/50">
-                                                <Icon icon_type=IconType::Workflows class="w-5 h-5 text-white" />
+                                                <Icon
+                                                    icon_type=IconType::Workflows
+                                                    class="w-5 h-5 text-white"
+                                                />
                                             </div>
                                             <div>
-                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">"Recent Commands"</h3>
+                                                <h3 class="text-lg font-semibold text-gray-900 tracking-tight">
+                                                    "Recent Commands"
+                                                </h3>
                                                 <p class="text-xs text-slate-500">"Command history"</p>
                                             </div>
                                         </div>
@@ -613,25 +696,35 @@ pub fn RemoteControl() -> impl IntoView {
                                                     view! {
                                                         <div class="text-center py-8">
                                                             <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
-                                                                <Icon icon_type=IconType::Workflows class="w-6 h-6 text-slate-400" />
+                                                                <Icon
+                                                                    icon_type=IconType::Workflows
+                                                                    class="w-6 h-6 text-slate-400"
+                                                                />
                                                             </div>
                                                             <p class="text-sm text-slate-500">"No commands yet"</p>
-                                                            <p class="text-xs text-slate-400 mt-1">"Execute a command to see it here"</p>
+                                                            <p class="text-xs text-slate-400 mt-1">
+                                                                "Execute a command to see it here"
+                                                            </p>
                                                         </div>
-                                                    }.into_view()
+                                                    }
+                                                        .into_view()
                                                 } else {
                                                     view! {
                                                         <div class="space-y-2">
-                                                            {history.into_iter().map(|cmd| {
-                                                                view! {
-                                                                    <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50/50 border border-slate-100">
-                                                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                                                        <code class="text-xs font-mono text-slate-700">{cmd}</code>
-                                                                    </div>
-                                                                }
-                                                            }).collect_view()}
+                                                            {history
+                                                                .into_iter()
+                                                                .map(|cmd| {
+                                                                    view! {
+                                                                        <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50/50 border border-slate-100">
+                                                                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                                            <code class="text-xs font-mono text-slate-700">{cmd}</code>
+                                                                        </div>
+                                                                    }
+                                                                })
+                                                                .collect_view()}
                                                         </div>
-                                                    }.into_view()
+                                                    }
+                                                        .into_view()
                                                 }
                                             }}
                                         </div>
@@ -645,14 +738,24 @@ pub fn RemoteControl() -> impl IntoView {
                                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                         <div class="flex items-center gap-4">
                                             <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-                                                <Icon icon_type=IconType::Keyboard class="w-6 h-6 text-white" />
+                                                <Icon
+                                                    icon_type=IconType::Keyboard
+                                                    class="w-6 h-6 text-white"
+                                                />
                                             </div>
                                             <div>
-                                                <h3 class="text-lg font-semibold text-white">"Test Keyboard"</h3>
-                                                <p class="text-sm text-slate-400">"Verify keyboard simulation is working"</p>
+                                                <h3 class="text-lg font-semibold text-white">
+                                                    "Test Keyboard"
+                                                </h3>
+                                                <p class="text-sm text-slate-400">
+                                                    "Verify keyboard simulation is working"
+                                                </p>
                                             </div>
                                         </div>
-                                        <Button variant=ButtonVariant::Secondary on:click=test_keyboard>
+                                        <Button
+                                            variant=ButtonVariant::Secondary
+                                            on:click=test_keyboard
+                                        >
                                             <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
                                             "Run Test"
                                         </Button>

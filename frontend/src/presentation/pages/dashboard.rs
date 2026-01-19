@@ -2,15 +2,13 @@
 
 use crate::infrastructure::api_client;
 use crate::presentation::components::{
-    Button, ButtonVariant, Header, Icon, IconType, NavBar, StatusBadge,
+    Button, ButtonVariant, Header, Icon, IconType, NavBar, ToastContext,
 };
 use leptos::*;
 use wasm_bindgen_futures;
 
 #[component]
 pub fn Dashboard() -> impl IntoView {
-    let (status, set_status) = create_signal("Loading system status...".to_string());
-    let (status_type, set_status_type) = create_signal("info".to_string());
     let (loading, set_loading) = create_signal(true);
     let (commands_count, set_commands_count) = create_signal(0usize);
     let (workflows_count, set_workflows_count) = create_signal(0usize);
@@ -18,6 +16,7 @@ pub fn Dashboard() -> impl IntoView {
 
     // Load config on mount
     create_effect(move |_| {
+        let toast_context = expect_context::<ToastContext>();
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             match api_client::ApiClient::new_default().get_config().await {
@@ -25,13 +24,14 @@ pub fn Dashboard() -> impl IntoView {
                     set_commands_count.set(config.commands.len());
                     set_workflows_count.set(config.workflows.len());
                     set_scripts_count.set(config.scripts.len());
-                    set_status.set(format!("System ready - {} commands loaded", config.commands.len()));
-                    set_status_type.set("success".to_string());
+                    toast_context.show_success(format!(
+                        "System ready - {} commands loaded",
+                        config.commands.len()
+                    ));
                     set_loading.set(false);
                 }
                 Err(e) => {
-                    set_status.set(format!("Error: {}", e));
-                    set_status_type.set("error".to_string());
+                    toast_context.show_error(format!("Failed to load system config: {}", e));
                     set_loading.set(false);
                 }
             }
@@ -39,27 +39,23 @@ pub fn Dashboard() -> impl IntoView {
     });
 
     let test_voice = move |_| {
+        let toast_context = expect_context::<ToastContext>();
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
-            set_status.set("Generating voice...".to_string());
-            set_status_type.set("info".to_string());
             match api_client::ApiClient::new_default().test_voice().await {
                 Ok(_) => {
-                    set_status.set("Voice test completed successfully".to_string());
-                    set_status_type.set("success".to_string());
+                    toast_context.show_success("Voice test completed successfully".to_string());
                 }
                 Err(e) => {
-                    set_status.set(format!("Voice test failed: {}", e));
-                    set_status_type.set("error".to_string());
+                    toast_context.show_error(format!("Voice test failed: {}", e));
                 }
             }
         });
     };
 
-    let refresh_config = move |_| {
+    let refresh_config = move |_: web_sys::MouseEvent| {
+        let toast_context = expect_context::<ToastContext>();
         set_loading.set(true);
-        set_status.set("Refreshing...".to_string());
-        set_status_type.set("info".to_string());
 
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
@@ -68,13 +64,14 @@ pub fn Dashboard() -> impl IntoView {
                     set_commands_count.set(config.commands.len());
                     set_workflows_count.set(config.workflows.len());
                     set_scripts_count.set(config.scripts.len());
-                    set_status.set(format!("Refreshed - {} commands", config.commands.len()));
-                    set_status_type.set("success".to_string());
+                    toast_context.show_success(format!(
+                        "Refreshed - {} commands loaded",
+                        config.commands.len()
+                    ));
                     set_loading.set(false);
                 }
                 Err(e) => {
-                    set_status.set(format!("Refresh failed: {}", e));
-                    set_status_type.set("error".to_string());
+                    toast_context.show_error(format!("Refresh failed: {}", e));
                     set_loading.set(false);
                 }
             }
@@ -84,13 +81,11 @@ pub fn Dashboard() -> impl IntoView {
     view! {
         <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
             <div class="flex flex-col">
-                <Header title="Vibespeak" subtitle="Voice Automation System">
-                    <StatusBadge message=status status_type=status_type />
-                </Header>
+                <Header title="Vibespeak" subtitle="Voice Automation System" />
 
                 <NavBar _active="dashboard" />
 
-                <main class="flex-1 px-4 sm:px-8 py-6 sm:py-10 overflow-y-auto">
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-10 overflow-y-auto">
                     <div class="max-w-6xl mx-auto">
                         // Page Header
                         <div class="mb-8 sm:mb-10">
@@ -106,7 +101,7 @@ pub fn Dashboard() -> impl IntoView {
                         </div>
 
                         // Stats Grid
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+                        <div class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                             // Commands Stat
                             <div class="group relative bg-white rounded-2xl shadow-sm shadow-slate-100/50 border border-slate-200/60 p-5 sm:p-6 transition-all duration-300 hover:shadow-md hover:shadow-slate-100/60 hover:border-slate-200">
                                 <div class="flex items-start justify-between">
