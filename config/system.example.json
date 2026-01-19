@@ -1,0 +1,503 @@
+{
+  "commands": [
+    {
+      "id": "cmd-open-terminal",
+      "text": "open terminal",
+      "action": {"ShellCommand": "alacritty &"},
+      "category": "system",
+      "enabled": true,
+      "confidence_threshold": 0.7,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["quick-launch", "terminal"],
+        "description": "Opens a new Alacritty terminal window"
+      }
+    },
+    {
+      "id": "cmd-open-browser",
+      "text": "open browser",
+      "action": {"ShellCommand": "firefox &"},
+      "category": "system",
+      "enabled": true,
+      "confidence_threshold": 0.7,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["quick-launch", "browser"],
+        "description": "Opens Firefox browser"
+      }
+    },
+    {
+      "id": "cmd-new-tab",
+      "text": "new tab",
+      "action": {"ShellCommand": "xdotool key ctrl+t"},
+      "category": "browser",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["browser", "navigation"],
+        "description": "Opens a new tab in the current browser"
+      }
+    },
+    {
+      "id": "cmd-close-tab",
+      "text": "close tab",
+      "action": {"ShellCommand": "xdotool key ctrl+w"},
+      "category": "browser",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["browser", "navigation"],
+        "description": "Closes the current browser tab"
+      }
+    },
+    {
+      "id": "cmd-screenshot",
+      "text": "take screenshot",
+      "action": {"ShellCommand": "scrot -s ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png"},
+      "category": "system",
+      "enabled": true,
+      "confidence_threshold": 0.7,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["utility", "screenshot"],
+        "description": "Takes a screenshot with selection"
+      }
+    },
+    {
+      "id": "cmd-volume-up",
+      "text": "volume up",
+      "action": {"ShellCommand": "pactl set-sink-volume @DEFAULT_SINK@ +10%"},
+      "category": "audio",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["audio", "volume"],
+        "description": "Increases system volume by 10%"
+      }
+    },
+    {
+      "id": "cmd-volume-down",
+      "text": "volume down",
+      "action": {"ShellCommand": "pactl set-sink-volume @DEFAULT_SINK@ -10%"},
+      "category": "audio",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["audio", "volume"],
+        "description": "Decreases system volume by 10%"
+      }
+    },
+    {
+      "id": "cmd-mute",
+      "text": "mute audio",
+      "action": {"ShellCommand": "pactl set-sink-mute @DEFAULT_SINK@ toggle"},
+      "category": "audio",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["audio", "mute"],
+        "description": "Toggles audio mute"
+      }
+    },
+    {
+      "id": "cmd-workspace-next",
+      "text": "workspace next",
+      "action": {"ShellCommand": "i3-msg workspace next"},
+      "category": "window-management",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["i3", "workspace"],
+        "description": "Switch to next workspace (i3wm)"
+      }
+    },
+    {
+      "id": "cmd-workspace-previous",
+      "text": "workspace previous",
+      "action": {"ShellCommand": "i3-msg workspace prev"},
+      "category": "window-management",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["i3", "workspace"],
+        "description": "Switch to previous workspace (i3wm)"
+      }
+    },
+    {
+      "id": "cmd-window-close",
+      "text": "window close",
+      "action": {"ShellCommand": "i3-msg kill"},
+      "category": "window-management",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["i3", "window"],
+        "description": "Close the focused window (i3wm)"
+      }
+    },
+    {
+      "id": "cmd-copy",
+      "text": "copy that",
+      "action": {"ShellCommand": "xdotool key ctrl+c"},
+      "category": "editing",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["clipboard", "editing"],
+        "description": "Copy selected text"
+      }
+    },
+    {
+      "id": "cmd-paste",
+      "text": "paste that",
+      "action": {"ShellCommand": "xdotool key ctrl+v"},
+      "category": "editing",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["clipboard", "editing"],
+        "description": "Paste from clipboard"
+      }
+    },
+    {
+      "id": "cmd-undo",
+      "text": "undo",
+      "action": {"ShellCommand": "xdotool key ctrl+z"},
+      "category": "editing",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["editing", "undo"],
+        "description": "Undo last action"
+      }
+    },
+    {
+      "id": "cmd-redo",
+      "text": "redo",
+      "action": {"ShellCommand": "xdotool key ctrl+shift+z"},
+      "category": "editing",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["editing", "redo"],
+        "description": "Redo last undone action"
+      }
+    },
+    {
+      "id": "cmd-save-file",
+      "text": "save file",
+      "action": {"ShellCommand": "xdotool key ctrl+s"},
+      "category": "editing",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["file", "save"],
+        "description": "Save current file"
+      }
+    },
+    {
+      "id": "cmd-workflow-example",
+      "text": "run deployment",
+      "action": {"Workflow": "workflow-deploy-app"},
+      "category": "automation",
+      "enabled": true,
+      "confidence_threshold": 0.9,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["workflow", "deployment"],
+        "description": "Runs the app deployment workflow"
+      }
+    },
+    {
+      "id": "cmd-script-example",
+      "text": "run backup",
+      "action": {"Script": "script-backup"},
+      "category": "automation",
+      "enabled": true,
+      "confidence_threshold": 0.9,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["script", "backup"],
+        "description": "Runs the backup script"
+      }
+    },
+    {
+      "id": "cmd-lock-screen",
+      "text": "lock screen",
+      "action": {"ShellCommand": "i3lock -c 000000"},
+      "category": "system",
+      "enabled": true,
+      "confidence_threshold": 0.9,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["security", "lock"],
+        "description": "Locks the screen"
+      }
+    },
+    {
+      "id": "cmd-fullscreen",
+      "text": "fullscreen",
+      "action": {"ShellCommand": "i3-msg fullscreen toggle"},
+      "category": "window-management",
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": ["i3", "fullscreen"],
+        "description": "Toggle fullscreen mode"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "workflow-deploy-app",
+      "name": "Deploy Application",
+      "description": "Multi-step workflow to build and deploy the application",
+      "enabled": true,
+      "steps": [
+        {
+          "id": "step-1",
+          "name": "Run tests",
+          "action": {"ShellCommand": "cd ~/projects/myapp && npm test"},
+          "continue_on_error": false,
+          "timeout_ms": 60000
+        },
+        {
+          "id": "step-2",
+          "name": "Build application",
+          "action": {"ShellCommand": "cd ~/projects/myapp && npm run build"},
+          "continue_on_error": false,
+          "timeout_ms": 120000
+        },
+        {
+          "id": "step-3",
+          "name": "Deploy to server",
+          "action": {"ShellCommand": "cd ~/projects/myapp && npm run deploy"},
+          "continue_on_error": false,
+          "timeout_ms": 180000
+        },
+        {
+          "id": "step-4",
+          "name": "Notify completion",
+          "action": {"ShellCommand": "notify-send 'Deployment Complete' 'Application has been deployed successfully'"},
+          "continue_on_error": true,
+          "timeout_ms": 5000
+        }
+      ],
+      "variables": {
+        "APP_ENV": "production",
+        "DEPLOY_TARGET": "server1"
+      },
+      "on_error": "abort",
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "last_run": null,
+        "run_count": 0,
+        "tags": ["deployment", "ci-cd"]
+      }
+    },
+    {
+      "id": "workflow-morning-routine",
+      "name": "Morning Routine",
+      "description": "Opens all applications needed for morning work",
+      "enabled": true,
+      "steps": [
+        {
+          "id": "step-1",
+          "name": "Open email client",
+          "action": {"ShellCommand": "thunderbird &"},
+          "continue_on_error": true,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "step-2",
+          "name": "Open browser with work tabs",
+          "action": {"ShellCommand": "firefox --new-window https://github.com https://mail.google.com &"},
+          "continue_on_error": true,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "step-3",
+          "name": "Open IDE",
+          "action": {"ShellCommand": "code ~/projects &"},
+          "continue_on_error": true,
+          "timeout_ms": 5000
+        },
+        {
+          "id": "step-4",
+          "name": "Open terminal",
+          "action": {"ShellCommand": "alacritty &"},
+          "continue_on_error": true,
+          "timeout_ms": 5000
+        }
+      ],
+      "variables": {},
+      "on_error": "continue",
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "last_run": null,
+        "run_count": 0,
+        "tags": ["routine", "productivity"]
+      }
+    }
+  ],
+  "scripts": [
+    {
+      "id": "script-backup",
+      "name": "Backup Home Directory",
+      "description": "Creates a compressed backup of important directories",
+      "language": "bash",
+      "content": "#!/bin/bash\nset -e\n\nBACKUP_DIR=\"/backup\"\nDATE=$(date +%Y-%m-%d_%H%M%S)\nSOURCE_DIRS=\"$HOME/Documents $HOME/Projects $HOME/.config\"\n\necho \"Starting backup...\"\nmkdir -p \"$BACKUP_DIR\"\n\nfor dir in $SOURCE_DIRS; do\n    if [ -d \"$dir\" ]; then\n        echo \"Backing up $dir...\"\n        tar -czf \"$BACKUP_DIR/$(basename $dir)_$DATE.tar.gz\" -C \"$(dirname $dir)\" \"$(basename $dir)\"\n    fi\ndone\n\necho \"Backup completed successfully!\"",
+      "enabled": true,
+      "timeout_ms": 600000,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "last_run": null,
+        "run_count": 0,
+        "tags": ["backup", "system"]
+      }
+    },
+    {
+      "id": "script-cleanup",
+      "name": "System Cleanup",
+      "description": "Cleans temporary files and cache",
+      "language": "bash",
+      "content": "#!/bin/bash\nset -e\n\necho \"Cleaning temporary files...\"\nrm -rf /tmp/*\nrm -rf ~/.cache/thumbnails/*\n\necho \"Cleaning package cache...\"\nsudo pacman -Sc --noconfirm 2>/dev/null || apt-get clean 2>/dev/null || true\n\necho \"Cleanup completed!\"",
+      "enabled": true,
+      "timeout_ms": 120000,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "last_run": null,
+        "run_count": 0,
+        "tags": ["cleanup", "maintenance"]
+      }
+    },
+    {
+      "id": "script-system-info",
+      "name": "System Information",
+      "description": "Displays system information",
+      "language": "python",
+      "content": "#!/usr/bin/env python3\nimport platform\nimport psutil\nimport os\n\nprint(\"=\" * 50)\nprint(\"SYSTEM INFORMATION\")\nprint(\"=\" * 50)\nprint(f\"OS: {platform.system()} {platform.release()}\")\nprint(f\"Architecture: {platform.machine()}\")\nprint(f\"Hostname: {platform.node()}\")\nprint(f\"Python: {platform.python_version()}\")\nprint()\nprint(\"CPU:\")\nprint(f\"  Cores: {psutil.cpu_count(logical=False)} physical, {psutil.cpu_count()} logical\")\nprint(f\"  Usage: {psutil.cpu_percent()}%\")\nprint()\nmem = psutil.virtual_memory()\nprint(\"Memory:\")\nprint(f\"  Total: {mem.total / (1024**3):.1f} GB\")\nprint(f\"  Used: {mem.used / (1024**3):.1f} GB ({mem.percent}%)\")\nprint(f\"  Free: {mem.available / (1024**3):.1f} GB\")\nprint()\ndisk = psutil.disk_usage('/')\nprint(\"Disk (/):\")\nprint(f\"  Total: {disk.total / (1024**3):.1f} GB\")\nprint(f\"  Used: {disk.used / (1024**3):.1f} GB ({disk.percent}%)\")\nprint(f\"  Free: {disk.free / (1024**3):.1f} GB\")\nprint(\"=\" * 50)",
+      "enabled": true,
+      "timeout_ms": 30000,
+      "metadata": {
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "last_run": null,
+        "run_count": 0,
+        "tags": ["system", "info", "python"]
+      }
+    }
+  ],
+  "settings": {
+    "vosk_model_path": "model/vosk-model-en-us-0.22-lgraph",
+    "sample_rate": 16000.0,
+    "audio_device": null,
+    "web_server_port": 8080,
+    "web_server_bind": "127.0.0.1:8080",
+    "enable_tts": true,
+    "tts_voice": "en_US-lessac-medium",
+    "tts_rate": 1.0,
+    "enable_webrtc": true,
+    "security_level": "Trusted",
+    "tailscale_enabled": false,
+    "tailscale_hostname": "vibespeak",
+    "tailscale_auth_key": null,
+    "log_level": "info",
+    "command_history_size": 100,
+    "confidence_threshold_default": 0.7,
+    "keyboard_simulation_method": "uinput",
+    "keyboard_fallback_method": "xdotool",
+    "audio_input_device": "default",
+    "audio_output_device": "default",
+    "enable_sound_feedback": true,
+    "sound_feedback_volume": 0.5,
+    "auto_start_listening": false,
+    "wake_word": null,
+    "wake_word_sensitivity": 0.5,
+    "max_command_duration_ms": 10000,
+    "silence_timeout_ms": 2000,
+    "enable_continuous_listening": false,
+    "language": "en-US",
+    "theme": "system",
+    "enable_notifications": true,
+    "enable_analytics": false
+  }
+}

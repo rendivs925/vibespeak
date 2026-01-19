@@ -22,7 +22,7 @@ pub use form_field::FormField;
 pub use header::Header;
 pub use icon::{Icon, IconType};
 pub use input::{Input, InputType};
-pub use modal::Modal;
+pub use modal::{Modal, ModalFooter};
 pub use navbar::NavBar;
 pub use select::Select;
 pub use status_badge::StatusBadge;
