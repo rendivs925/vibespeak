@@ -126,60 +126,59 @@ pub fn RemoteControl() -> impl IntoView {
                                 .expect("Failed to create SpeechRecognition")
                                 .unchecked_into();
 
-                        // Configure recognition - NO interim results for cleaner output
+                        // Configure recognition - interim results for real-time feedback
                         recognition.set_continuous(true);
-                        recognition.set_interim_results(false);
+                        recognition.set_interim_results(true);
                         recognition.set_lang("en-US");
 
-                        // Set up result handler - SIMPLE: just type each final result
+                        // Set up result handler - real-time display, type only finals
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
                         let last_idx = last_idx_for_start.clone();
                         let on_result = Closure::wrap(Box::new(
                             move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
-                                    // Get the current result using result_index
-                                    let result_index = event.result_index() as i32;
+                                    let result_index = event.result_index();
 
-                                    // Skip if we already processed this index (synchronous check)
-                                    {
-                                        let current = *last_idx.borrow();
-                                        if result_index <= current {
-                                            return;
-                                        }
-                                        // Mark as processed IMMEDIATELY to prevent duplicates
-                                        *last_idx.borrow_mut() = result_index;
-                                    }
-
-                                    if let Some(result) = results.get(result_index as u32) {
-                                        // Only process final results
-                                        if !result.is_final() {
-                                            return;
-                                        }
-
+                                    if let Some(result) = results.get(result_index) {
                                         let alternative = result.item(0);
-                                        let confidence = alternative.confidence();
                                         let text = alternative.transcript();
+                                        let confidence = alternative.confidence();
 
-                                        // Update display
+                                        // Always show current text for real-time feedback
                                         set_text.set(text.clone());
 
-                                        // Reject low confidence
+                                        if !result.is_final() {
+                                            // Show interim result status
+                                            set_status_inner.set(format!("Hearing: \"{}\"", text.trim()));
+                                            return;
+                                        }
+
+                                        // FINAL result - check if already typed
+                                        let idx = result_index as i32;
+                                        {
+                                            let current = *last_idx.borrow();
+                                            if idx <= current {
+                                                return; // Already typed this
+                                            }
+                                            *last_idx.borrow_mut() = idx;
+                                        }
+
+                                        // Skip low confidence
                                         if confidence < 0.5 {
                                             set_status_inner.set(format!(
-                                                "Low confidence ({:.0}%) - ignored: \"{}\"",
-                                                confidence * 100.0,
-                                                text
+                                                "Low confidence ({:.0}%): \"{}\"",
+                                                confidence * 100.0, text.trim()
                                             ));
                                             return;
                                         }
 
-                                        // Reject empty text
+                                        // Skip empty
                                         if text.trim().is_empty() {
                                             return;
                                         }
 
-                                        // Type the text with a trailing space
+                                        // Type the final text
                                         let text_to_type = format!("{} ", text);
                                         let set_status = set_status_inner.clone();
                                         wasm_bindgen_futures::spawn_local(async move {
@@ -190,9 +189,8 @@ pub fn RemoteControl() -> impl IntoView {
                                                 Ok(response) => {
                                                     if response.success {
                                                         set_status.set(format!(
-                                                            "Typed: \"{}\" ({:.0}%)",
-                                                            text.trim(),
-                                                            confidence * 100.0
+                                                            "Typed: \"{}\"",
+                                                            text.trim()
                                                         ));
                                                     } else {
                                                         set_status.set("Typing failed".to_string());
