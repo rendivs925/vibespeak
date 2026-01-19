@@ -24,6 +24,7 @@ pub fn Settings() -> impl IntoView {
 
     // Load settings on mount
     create_effect(move |_| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
@@ -36,9 +37,18 @@ pub fn Settings() -> impl IntoView {
                 }
             }
         });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            // In non-WASM environment, simulate loading
+            set_error.set(Some(
+                "Configuration loading not available in non-WASM environment".to_string(),
+            ));
+            set_loading.set(false);
+        });
     });
 
     let load_tailscale_status = move |_: web_sys::Event| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_tailscale_status().await {
                 Ok(ts_status) => {
@@ -49,14 +59,31 @@ pub fn Settings() -> impl IntoView {
                 }
             }
         });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            // In non-WASM environment, simulate loading
+            set_tailscale_status.set(Some(crate::domain::entities::TailscaleStatus {
+                enabled: false,
+                connected: false,
+                hostname: None,
+                port: 0,
+                error: Some("Not available in non-WASM environment".to_string()),
+            }));
+        });
     };
 
     let save_settings = move |_| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_status.set("Saving settings...".to_string());
             // TODO: Implement save
             set_status.set("Settings saved".to_string());
             set_status_type.set("success".to_string());
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_status.set("Settings save not available in non-WASM environment".to_string());
+            set_status_type.set("warning".to_string());
         });
     };
 

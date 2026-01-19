@@ -35,9 +35,17 @@ pub fn App() -> impl IntoView {
 
     // Load initial data
     let state = presentation::state::PresentationState::get();
+    #[cfg(target_arch = "wasm32")]
     wasm_bindgen_futures::spawn_local(async move {
         state.load_initial_data().await;
     });
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // In non-WASM environments (like development), use leptos spawn_local
+        leptos::spawn_local(async move {
+            state.load_initial_data().await;
+        });
+    }
 
     view! {
         <Router>

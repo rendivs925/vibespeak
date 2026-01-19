@@ -13,6 +13,7 @@ pub fn VoiceCommands() -> impl IntoView {
     let (commands, set_commands) = create_signal::<Vec<Command>>(vec![]);
 
     create_effect(move |_| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
@@ -25,6 +26,11 @@ pub fn VoiceCommands() -> impl IntoView {
                     set_status_type.set("error".to_string());
                 }
             }
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_status.set("Command loading not available in non-WASM environment".to_string());
+            set_status_type.set("warning".to_string());
         });
     });
 

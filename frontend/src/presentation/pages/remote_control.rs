@@ -15,6 +15,7 @@ pub fn RemoteControl() -> impl IntoView {
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
 
     let execute_command = move |command: String| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_status.set(format!("Processing: \"{}\"", command));
             set_status_type.set("info".to_string());
@@ -53,6 +54,14 @@ pub fn RemoteControl() -> impl IntoView {
                 }
             }
         });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_status.set(format!(
+                "Command execution not available in non-WASM environment: {}",
+                command
+            ));
+            set_status_type.set("warning".to_string());
+        });
     };
 
     let type_dictation = move |_| {
@@ -63,6 +72,7 @@ pub fn RemoteControl() -> impl IntoView {
             return;
         }
 
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_dictation_status.set("Sending text to desktop...".to_string());
 
@@ -83,6 +93,11 @@ pub fn RemoteControl() -> impl IntoView {
                     set_dictation_status.set(format!("Error: {}", e));
                 }
             }
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_dictation_status
+                .set("Text typing not available in non-WASM environment".to_string());
         });
     };
 

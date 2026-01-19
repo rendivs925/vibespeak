@@ -14,7 +14,40 @@ pub fn Dashboard() -> impl IntoView {
 
     // Load config on mount
     create_effect(move |_| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
+            // Use presentation state hooks
+            let config_signal = use_app_config();
+            let loading_signal = use_loading();
+            let error_signal = use_error();
+            let status_signal = use_status_message();
+
+            // Initial data is loaded by the presentation state on app init
+            // Just react to the signals
+            create_effect(move |_| {
+                if let Some(config) = config_signal.get() {
+                    set_status.set(format!(
+                        "System ready - {} commands loaded",
+                        config.commands.len()
+                    ));
+                    set_status_type.set("success".to_string());
+                    set_loading.set(false);
+                }
+
+                if let Some(error) = error_signal.get() {
+                    set_status.set(format!("Error: {}", error));
+                    set_status_type.set("error".to_string());
+                    set_loading.set(false);
+                }
+
+                if !loading_signal.get() {
+                    set_status.set(status_signal.get());
+                    set_status_type.set("info".to_string());
+                }
+            });
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
             // Use presentation state hooks
             let config_signal = use_app_config();
             let loading_signal = use_loading();
@@ -49,6 +82,7 @@ pub fn Dashboard() -> impl IntoView {
 
     let test_voice = move |_| {
         let text = "Hello world. This is a voice test.".to_string();
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_status.set("Generating voice...".to_string());
             let remote_control_service = use_remote_control();
@@ -63,9 +97,15 @@ pub fn Dashboard() -> impl IntoView {
                 }
             }
         });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_status.set("Voice test not available in non-WASM environment".to_string());
+            set_status_type.set("warning".to_string());
+        });
     };
 
     let refresh_config = move |_| {
+        #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_loading.set(true);
             // Trigger a reload of initial data
@@ -73,6 +113,15 @@ pub fn Dashboard() -> impl IntoView {
             state.load_initial_data().await;
 
             // The presentation state will update the signals automatically
+            set_loading.set(false);
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        leptos::spawn_local(async move {
+            set_loading.set(true);
+            // In non-WASM, simulate config refresh
+            set_status
+                .set("Configuration refresh not available in non-WASM environment".to_string());
+            set_status_type.set("warning".to_string());
             set_loading.set(false);
         });
     };
