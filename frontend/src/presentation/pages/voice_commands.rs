@@ -3,7 +3,7 @@
 use crate::domain::entities::Command;
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{
-    Badge, BadgeVariant, Button, ButtonSize, ButtonVariant, DataTable, Header,
+    Badge, BadgeVariant, Button, ButtonVariant, DataTable, Header,
     Icon, IconType, Modal, ModalFooter, NavBar, StatusBadge, TableCell, TableRow,
 };
 use leptos::*;
@@ -349,7 +349,7 @@ pub fn VoiceCommands() -> impl IntoView {
                                             let cmd_clone_for_edit = cmd.clone();
 
                                             view! {
-                                                <TableRow class="group hover:bg-slate-50/50 transition-colors duration-200">
+                                                <TableRow>
                                                     <TableCell>
                                                         <div class="flex items-center gap-3">
                                                             <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -406,8 +406,8 @@ pub fn VoiceCommands() -> impl IntoView {
             <Modal
                 is_open=show_create_modal.into()
                 on_close=close_create_modal
-                title="Create New Command".to_string()
-                subtitle=Some("Add a new voice command to your library".to_string())
+                title="Create New Command"
+                subtitle=Some("Add a new voice command to your library")
                 icon=Some(IconType::Plus)
                 size="lg".to_string()
             >
@@ -481,8 +481,8 @@ pub fn VoiceCommands() -> impl IntoView {
             <Modal
                 is_open=show_edit_modal.into()
                 on_close=close_edit_modal
-                title="Edit Command".to_string()
-                subtitle=Some("Update your voice command configuration".to_string())
+                title="Edit Command"
+                subtitle=Some("Update your voice command configuration")
                 icon=Some(IconType::Edit)
                 size="lg".to_string()
             >

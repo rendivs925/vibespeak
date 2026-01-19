@@ -7,11 +7,11 @@ use leptos::*;
 pub fn Modal(
     #[prop(into)] is_open: Signal<bool>,
     #[prop(into)] on_close: Callback<()>,
-    #[prop(into)] title: String,
-    #[prop(optional, into)] subtitle: Option<String>,
+    title: &'static str,
+    #[prop(optional)] subtitle: Option<&'static str>,
     #[prop(optional, into)] size: String,
-    #[prop(optional, into)] icon: Option<IconType>,
-    children: Children,
+    #[prop(optional)] icon: Option<IconType>,
+    children: ChildrenFn,
 ) -> impl IntoView {
     let size_class = match size.as_str() {
         "sm" => "sm:max-w-md",
@@ -44,7 +44,7 @@ pub fn Modal(
                 // Modal Container
                 <div class="flex min-h-screen items-center justify-center p-4">
                     <div class=format!(
-                        "relative w-full {} transform overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/20 transition-all duration-300 animate-in fade-in zoom-in-95",
+                        "relative w-full {} transform overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/20 transition-all duration-300",
                         size_class
                     )>
                         // Header

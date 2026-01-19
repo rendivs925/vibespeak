@@ -232,7 +232,8 @@ pub fn Workflows() -> impl IntoView {
 
                 // Create Workflow Modal
                 <Modal
-                    is_open=show_create_modal
+                    is_open=show_create_modal.into()
+                    on_close=Callback::new(move |_: ()| set_show_create_modal.set(false))
                     title="Create New Workflow"
                 >
                     <form class="space-y-6">
@@ -281,7 +282,8 @@ pub fn Workflows() -> impl IntoView {
 
                 // Edit Workflow Modal
                 <Modal
-                    is_open=show_edit_modal
+                    is_open=show_edit_modal.into()
+                    on_close=Callback::new(move |_: ()| set_show_edit_modal.set(false))
                     title="Edit Workflow"
                 >
                     <form class="space-y-6">

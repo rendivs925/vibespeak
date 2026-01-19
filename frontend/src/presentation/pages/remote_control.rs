@@ -2,7 +2,7 @@
 
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{
-    Button, ButtonVariant, Card, Header, Icon, IconType, NavBar, StatusBadge,
+    Button, ButtonVariant, Header, Icon, IconType, NavBar, StatusBadge,
 };
 use leptos::*;
 use std::cell::RefCell;
@@ -10,10 +10,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures;
-use web_sys::{
-    MediaStream, MediaStreamConstraints, SpeechRecognition, SpeechRecognitionEvent,
-    SpeechRecognitionErrorEvent,
-};
+use web_sys::{MediaStream, SpeechRecognition, SpeechRecognitionEvent};
 
 #[component]
 pub fn RemoteControl() -> impl IntoView {
@@ -159,15 +156,13 @@ pub fn RemoteControl() -> impl IntoView {
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
                         let on_result = Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
-                            let results = event.results();
-                            if let Some(results) = results {
+                            if let Some(results) = event.results() {
                                 let mut transcript = String::new();
                                 for i in 0..results.length() {
                                     if let Some(result) = results.get(i) {
-                                        if let Some(alternative) = result.item(0) {
-                                            transcript.push_str(&alternative.transcript());
-                                            transcript.push(' ');
-                                        }
+                                        let alternative = result.item(0);
+                                        transcript.push_str(&alternative.transcript());
+                                        transcript.push(' ');
                                     }
                                 }
                                 set_text.set(transcript.trim().to_string());
@@ -181,9 +176,8 @@ pub fn RemoteControl() -> impl IntoView {
                         // Set up error handler
                         let set_status_err = set_dictation_status.clone();
                         let set_is_dict = set_is_dictating.clone();
-                        let on_error = Closure::wrap(Box::new(move |event: SpeechRecognitionErrorEvent| {
-                            let error = event.error();
-                            set_status_err.set(format!("Speech error: {:?}", error));
+                        let on_error = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+                            set_status_err.set("Speech recognition error occurred".to_string());
                             set_is_dict.set(false);
                         }) as Box<dyn FnMut(_)>);
 
@@ -240,14 +234,16 @@ pub fn RemoteControl() -> impl IntoView {
                 wasm_bindgen_futures::spawn_local(async move {
                     let window = web_sys::window().expect("no global window");
                     let navigator = window.navigator();
-                    let media_devices = navigator.media_devices().expect("no media devices");
+                    let media_devices = match navigator.media_devices() {
+                        Ok(md) => md,
+                        Err(e) => {
+                            set_screen_status.set(format!("No media devices: {:?}", e));
+                            return;
+                        }
+                    };
 
-                    // Create constraints for screen capture
-                    let mut constraints = MediaStreamConstraints::new();
-                    constraints.video(&JsValue::from_bool(true));
-                    constraints.audio(&JsValue::from_bool(false));
-
-                    match media_devices.get_display_media_with_constraints(&constraints) {
+                    // Use get_display_media without constraints
+                    match media_devices.get_display_media() {
                         Ok(promise) => {
                             let future = wasm_bindgen_futures::JsFuture::from(promise);
                             match future.await {
@@ -293,12 +289,14 @@ pub fn RemoteControl() -> impl IntoView {
         {
             // Stop all tracks
             if let Some(stream) = screen_stream_for_stop.borrow_mut().take() {
-                let tracks = stream.get_tracks();
-                for i in 0..tracks.length() {
-                    if let Some(track) = tracks.get(i) {
-                        let track: web_sys::MediaStreamTrack = track.unchecked_into();
-                        track.stop();
-                    }
+                let video_tracks = stream.get_video_tracks();
+                for i in 0..video_tracks.length() {
+                    let track = video_tracks.get(i);
+                    let _ = js_sys::Reflect::apply(
+                        &js_sys::Reflect::get(&track, &"stop".into()).unwrap().unchecked_into(),
+                        &track,
+                        &js_sys::Array::new(),
+                    );
                 }
             }
 
@@ -378,20 +376,21 @@ pub fn RemoteControl() -> impl IntoView {
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <Show
-                                                when=move || is_screen_sharing.get()
-                                                fallback=|| view! {
+                                            {move || if is_screen_sharing.get() {
+                                                view! {
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                        "Live"
+                                                    </span>
+                                                }.into_view()
+                                            } else {
+                                                view! {
                                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                                         "Inactive"
                                                     </span>
-                                                }
-                                            >
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                    "Live"
-                                                </span>
-                                            </Show>
+                                                }.into_view()
+                                            }}
                                         </div>
                                     </div>
                                 </div>
@@ -429,28 +428,27 @@ pub fn RemoteControl() -> impl IntoView {
 
                                     // Controls
                                     <div class="flex flex-wrap gap-3">
-                                        <Show
-                                            when=move || !is_screen_sharing.get()
-                                            fallback=|| view! { <></> }
-                                        >
-                                            <Button variant=ButtonVariant::Primary on:click=start_screen_share>
-                                                <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
-                                                "Start Sharing"
-                                            </Button>
-                                        </Show>
-                                        <Show
-                                            when=move || is_screen_sharing.get()
-                                            fallback=|| view! { <></> }
-                                        >
-                                            <Button variant=ButtonVariant::Danger on:click=stop_screen_share>
-                                                <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                "Stop"
-                                            </Button>
-                                            <Button variant=ButtonVariant::Secondary on:click=enter_fullscreen>
-                                                <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
-                                                "Fullscreen"
-                                            </Button>
-                                        </Show>
+                                        {move || if !is_screen_sharing.get() {
+                                            view! {
+                                                <Button variant=ButtonVariant::Primary on:click=start_screen_share>
+                                                    <Icon icon_type=IconType::Screen class="w-4 h-4 mr-2" />
+                                                    "Start Sharing"
+                                                </Button>
+                                            }.into_view()
+                                        } else {
+                                            view! {
+                                                <>
+                                                    <Button variant=ButtonVariant::Danger on:click=stop_screen_share>
+                                                        <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                        "Stop"
+                                                    </Button>
+                                                    <Button variant=ButtonVariant::Secondary on:click=enter_fullscreen>
+                                                        <Icon icon_type=IconType::Fullscreen class="w-4 h-4 mr-2" />
+                                                        "Fullscreen"
+                                                    </Button>
+                                                </>
+                                            }.into_view()
+                                        }}
                                     </div>
                                 </div>
                             </section>
@@ -469,20 +467,21 @@ pub fn RemoteControl() -> impl IntoView {
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <Show
-                                                when=move || is_dictating.get()
-                                                fallback=|| view! {
+                                            {move || if is_dictating.get() {
+                                                view! {
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                        "Recording"
+                                                    </span>
+                                                }.into_view()
+                                            } else {
+                                                view! {
                                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                                         "Ready"
                                                     </span>
-                                                }
-                                            >
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                                    "Recording"
-                                                </span>
-                                            </Show>
+                                                }.into_view()
+                                            }}
                                         </div>
                                     </div>
                                 </div>
@@ -506,24 +505,21 @@ pub fn RemoteControl() -> impl IntoView {
 
                                     // Controls
                                     <div class="flex flex-wrap gap-3">
-                                        <Show
-                                            when=move || !is_dictating.get()
-                                            fallback=|| view! { <></> }
-                                        >
-                                            <Button variant=ButtonVariant::Primary on:click=start_dictation>
-                                                <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
-                                                "Start Dictation"
-                                            </Button>
-                                        </Show>
-                                        <Show
-                                            when=move || is_dictating.get()
-                                            fallback=|| view! { <></> }
-                                        >
-                                            <Button variant=ButtonVariant::Danger on:click=stop_dictation>
-                                                <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
-                                                "Stop"
-                                            </Button>
-                                        </Show>
+                                        {move || if !is_dictating.get() {
+                                            view! {
+                                                <Button variant=ButtonVariant::Primary on:click=start_dictation>
+                                                    <Icon icon_type=IconType::Microphone class="w-4 h-4 mr-2" />
+                                                    "Start Dictation"
+                                                </Button>
+                                            }.into_view()
+                                        } else {
+                                            view! {
+                                                <Button variant=ButtonVariant::Danger on:click=stop_dictation>
+                                                    <Icon icon_type=IconType::Stop class="w-4 h-4 mr-2" />
+                                                    "Stop"
+                                                </Button>
+                                            }.into_view()
+                                        }}
                                         <Button variant=ButtonVariant::Secondary on:click=send_dictation>
                                             <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
                                             "Send to Desktop"
@@ -563,23 +559,19 @@ pub fn RemoteControl() -> impl IntoView {
                                     </div>
                                     <div class="px-6 sm:px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                            <For
-                                                each=move || touch_commands.clone()
-                                                key=|(label, _, _)| label.to_string()
-                                                children=move |(label, command, icon)| {
-                                                    let cmd = command.to_string();
-                                                    let exec = execute_command.clone();
-                                                    view! {
-                                                        <button
-                                                            class="group relative flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200/60 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-2"
-                                                            on:click=move |_| exec(cmd.clone())
-                                                        >
-                                                            <Icon icon_type=icon class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
-                                                            <span class="text-xs">{label}</span>
-                                                        </button>
-                                                    }
+                                            {touch_commands.into_iter().map(|(label, command, icon)| {
+                                                let cmd = command.to_string();
+                                                let exec = execute_command.clone();
+                                                view! {
+                                                    <button
+                                                        class="group relative flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200/60 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-2"
+                                                        on:click=move |_| exec(cmd.clone())
+                                                    >
+                                                        <Icon icon_type=icon class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                                                        <span class="text-xs">{label}</span>
+                                                    </button>
                                                 }
-                                            />
+                                            }).collect_view()}
                                         </div>
                                     </div>
                                 </section>
@@ -599,31 +591,33 @@ pub fn RemoteControl() -> impl IntoView {
                                     </div>
                                     <div class="px-6 sm:px-7 py-6 bg-gradient-to-b from-white to-slate-50/30">
                                         <div class="max-h-48 overflow-y-auto">
-                                            <Show
-                                                when=move || !commands_history.get().is_empty()
-                                                fallback=|| view! {
-                                                    <div class="text-center py-8">
-                                                        <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
-                                                            <Icon icon_type=IconType::Workflows class="w-6 h-6 text-slate-400" />
-                                                        </div>
-                                                        <p class="text-sm text-slate-500">"No commands yet"</p>
-                                                        <p class="text-xs text-slate-400 mt-1">"Execute a command to see it here"</p>
-                                                    </div>
-                                                }
-                                            >
-                                                <div class="space-y-2">
-                                                    <For
-                                                        each=move || commands_history.get().into_iter().enumerate().collect::<Vec<_>>()
-                                                        key=|(i, cmd)| format!("{}-{}", i, cmd)
-                                                        children=move |(_, cmd)| view! {
-                                                            <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50/50 border border-slate-100">
-                                                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                                                <code class="text-xs font-mono text-slate-700">{cmd}</code>
+                                            {move || {
+                                                let history = commands_history.get();
+                                                if history.is_empty() {
+                                                    view! {
+                                                        <div class="text-center py-8">
+                                                            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+                                                                <Icon icon_type=IconType::Workflows class="w-6 h-6 text-slate-400" />
                                                             </div>
-                                                        }
-                                                    />
-                                                </div>
-                                            </Show>
+                                                            <p class="text-sm text-slate-500">"No commands yet"</p>
+                                                            <p class="text-xs text-slate-400 mt-1">"Execute a command to see it here"</p>
+                                                        </div>
+                                                    }.into_view()
+                                                } else {
+                                                    view! {
+                                                        <div class="space-y-2">
+                                                            {history.into_iter().map(|cmd| {
+                                                                view! {
+                                                                    <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50/50 border border-slate-100">
+                                                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                                        <code class="text-xs font-mono text-slate-700">{cmd}</code>
+                                                                    </div>
+                                                                }
+                                                            }).collect_view()}
+                                                        </div>
+                                                    }.into_view()
+                                                }
+                                            }}
                                         </div>
                                     </div>
                                 </section>
@@ -642,7 +636,7 @@ pub fn RemoteControl() -> impl IntoView {
                                                 <p class="text-sm text-slate-400">"Verify keyboard simulation is working"</p>
                                             </div>
                                         </div>
-                                        <Button variant=ButtonVariant::Secondary on:click=test_keyboard class="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                                        <Button variant=ButtonVariant::Secondary on:click=test_keyboard>
                                             <Icon icon_type=IconType::Keyboard class="w-4 h-4 mr-2" />
                                             "Run Test"
                                         </Button>
