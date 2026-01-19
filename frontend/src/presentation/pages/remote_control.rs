@@ -349,6 +349,8 @@ pub fn RemoteControl() -> impl IntoView {
                         let set_text = set_text.clone();
                         let set_status = set_status.clone();
                         let execute_command = execute_command.clone();
+                        let is_voice_listening_for_result = is_voice_listening.clone();
+                        let recognition_ref_for_result = recognition_ref.clone();
                         let on_result =
                             Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
@@ -362,9 +364,8 @@ pub fn RemoteControl() -> impl IntoView {
                                             // Process the voice command
                                             let set_text = set_text.clone();
                                             let set_status = set_status.clone();
-                                            let set_is_voice_listening =
-                                                set_is_voice_listening.clone();
-                                            let start_voice_commands = start_voice_commands.clone();
+                                            let is_voice_listening = is_voice_listening_for_result.clone();
+                                            let recognition_ref = recognition_ref_for_result.clone();
                                             wasm_bindgen_futures::spawn_local(async move {
                                                 set_status.set(format!(
                                                     "Processing: \"{}\"",
@@ -429,8 +430,10 @@ pub fn RemoteControl() -> impl IntoView {
                                                 TimeoutFuture::new(1_000).await;
 
                                                 // Only restart if not already listening
-                                                if !set_is_voice_listening.get() {
-                                                    start_voice_commands(());
+                                                if !is_voice_listening.get() {
+                                                    if let Some(recognition) = &*recognition_ref.borrow() {
+                                                        let _ = recognition.start();
+                                                    }
                                                 }
                                             });
                                         }
