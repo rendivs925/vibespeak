@@ -65,46 +65,6 @@ pub fn RemoteControl() -> impl IntoView {
         });
     };
 
-    let type_dictation = move |_| {
-        let text = dictation_text.get();
-        if text.trim().is_empty() {
-            set_dictation_status
-                .set("No text to insert. Please dictate some text first.".to_string());
-            return;
-        }
-
-        #[cfg(target_arch = "wasm32")]
-        wasm_bindgen_futures::spawn_local(async move {
-            set_dictation_status.set("Sending text to desktop...".to_string());
-
-            match api::ApiClient::new_default().type_dictation(&text).await {
-                Ok(response) => {
-                    if response.success {
-                        set_dictation_status.set("Text typed into active application!".to_string());
-                    } else {
-                        set_dictation_status.set(format!(
-                            "Typing failed: {}",
-                            response
-                                .error
-                                .unwrap_or_else(|| "Unknown error".to_string())
-                        ));
-                    }
-                }
-                Err(e) => {
-                    set_dictation_status.set(format!("Error: {}", e));
-                }
-            }
-        });
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                set_status
-                    .set("Command execution not available in non-WASM environment".to_string());
-                set_status_type.set("warning".to_string());
-            });
-        });
-    };
-
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
         set_dictation_status.set(String::new());
@@ -322,9 +282,6 @@ pub fn RemoteControl() -> impl IntoView {
                             </button>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn" on:click=type_dictation>
-                                "Type Text"
-                            </button>
                             <button class="btn btn-secondary" on:click=test_keyboard>
                                 "Test Keyboard"
                             </button>
@@ -339,10 +296,9 @@ pub fn RemoteControl() -> impl IntoView {
                             <li><strong>"Switch to your target application first"</strong>" (Gmail, VS Code, browser, etc.)"</li>
                             <li>"Click \"🎤 Start Dictation\" and speak clearly"</li>
                             <li>"Text will be typed automatically as you speak!"</li>
-                            <li>"Or use \"Type Text\" button for manual text entry"</li>
                         </ol>
                          <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
-                            <strong>"Real-Time Dictation:"</strong>" As you speak, text is automatically typed into "<strong>"any application"</strong>" that has focus - just like pressing keys on a real keyboard!"
+                            <strong>"Real-Time Dictation:"</strong>" As you speak, text is automatically typed into "<strong>"any application"</strong>" that has focus - true hands-free voice typing!"
                         </div>
                         <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
                             <strong>"System Setup:"</strong>
