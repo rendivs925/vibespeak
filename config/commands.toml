@@ -1,107 +1,241 @@
 [commands]
 
-# --- Tmux Control (pane/window) ---
-"split pane"       = "xdotool key ctrl+a bar"
-"split vertical"   = "xdotool key ctrl+a minus"
-"new window"       = "xdotool key ctrl+a c"
-"reload tmux"      = "xdotool key ctrl+a r"
-"next window"      = "xdotool key ctrl+a n"
-"previous window"  = "xdotool key ctrl+a p"
-"pane zero"        = "xdotool key ctrl+a 0"
-"pane one"         = "xdotool key ctrl+a 1"
-"pane two"         = "xdotool key ctrl+a 2"
-"pane three"       = "xdotool key ctrl+a 3"
-"pane four"        = "xdotool key ctrl+a 4"
-"pane five"        = "xdotool key ctrl+a 5"
-"pane six"         = "xdotool key ctrl+a 6"
-"pane seven"       = "xdotool key ctrl+a 7"
-"pane eight"       = "xdotool key ctrl+a 8"
-"pane nine"        = "xdotool key ctrl+a 9"
-"maximize pane"    = "xdotool key ctrl+a m"
-"copy mode"        = "xdotool key ctrl+a i"
-"move left"        = "xdotool key ctrl+a h"
-"move down"        = "xdotool key ctrl+a j"
-"move up"          = "xdotool key ctrl+a k"
-"move right"       = "xdotool key ctrl+a l"
-"resize left"      = "xdotool key ctrl+a H"
-"resize down"      = "xdotool key ctrl+a J"
-"resize up"        = "xdotool key ctrl+a K"
-"resize right"     = "xdotool key ctrl+a L"
-"split horizontal" = "xdotool key ctrl+a quotedbl"
-"split percent"    = "xdotool key ctrl+a percent"
+# ============================================================
+# ULTIMATE DAILY DRIVER COMMAND MAP (i3 + tmux + terminal + nvim)
+# Consistent naming:
+#   tmux ...   -> tmux actions
+#   dev ...    -> project workflows
+#   term ...   -> shell actions (typed into focused terminal)
+#   nvim ...   -> neovim actions
+#   i3 ...     -> window manager actions
+#   nav ...    -> browser navigation keys
+#   app ...    -> launch apps
+#   scroll ... -> page/line scrolling
+# ============================================================
 
-# --- Dev/terminal commands ---
-"start dev"        = "tmux send-keys -t 1 'cargo leptos watch' C-m"
-"check code"       = "tmux send-keys -t 1 'cargo check' C-m"
-"style"      = "tmux send-keys -t 2 'yarn dev' C-m"
 
-# --- Shell ---
-"clear screen"     = "xdotool type 'clear'; xdotool key Return"
-"list files"       = "xdotool type 'ls'; xdotool key Return"
-"show history"     = "xdotool type 'history'; xdotool key Return"
-"show processes"         = "xdotool type 'htop'; xdotool key Return"
-"open editor"      = "xdotool type 'nvim'; xdotool key Return"
-"show info"        = "xdotool type 'fastfetch'; xdotool key Return"
+# ============================================================
+# TMUX CONTROL (pane/window)
+# Prefix assumed: Ctrl+a (as in your current setup)
+# ============================================================
 
-# --- Alacritty Font Zoom ---
-"zoom in"          = "xdotool key ctrl+KP_Add"
-"zoom out"         = "xdotool key ctrl+minus"
-"reset zoom"       = "xdotool key ctrl+0"
+# --- Pane splits ---
+"tmux split right"      = "xdotool key ctrl+a bar"
+"tmux split down"       = "xdotool key ctrl+a minus"
 
-# --- i3 Window Manager ---
-"desk one"    = "i3-msg workspace 1"
-"desk two"    = "i3-msg workspace 2"
-"desk three"  = "i3-msg workspace 3"
-"desk four"   = "i3-msg workspace 4"
-"focus left"       = "i3-msg focus left"
-"focus right"      = "i3-msg focus right"
-"focus up"         = "i3-msg focus up"
-"focus down"       = "i3-msg focus down"
-"full screen"      = "i3-msg fullscreen toggle"
-"float window"     = "i3-msg floating toggle, resize set 1720 1020, move position center"
-"close window"     = "i3-msg kill"
-"move to one"      = "i3-msg move container to workspace 1"
-"move to two"      = "i3-msg move container to workspace 2"
-"reload windows"   = "i3-msg reload"
+# --- Pane focus (vim-style) ---
+"tmux focus left"       = "xdotool key ctrl+a h"
+"tmux focus down"       = "xdotool key ctrl+a j"
+"tmux focus up"         = "xdotool key ctrl+a k"
+"tmux focus right"      = "xdotool key ctrl+a l"
 
-# --- Browser ---
-"new tab"          = "xdotool key ctrl+t"
-"close tab"        = "xdotool key ctrl+w"
-"next tab"         = "xdotool key ctrl+Tab"
-"previous tab"     = "xdotool key ctrl+shift+Tab"
+# --- Pane resize (Shift+vim-style) ---
+"tmux resize left"      = "xdotool key ctrl+a H"
+"tmux resize down"      = "xdotool key ctrl+a J"
+"tmux resize up"        = "xdotool key ctrl+a K"
+"tmux resize right"     = "xdotool key ctrl+a L"
 
-# --- Scrolling ---
-"scroll down"      = "for i in {1..10}; do xdotool key Down; done"
-"scroll up"        = "for i in {1..10}; do xdotool key Up; done"
-"page down"        = "xdotool key space"
-"page up"          = "xdotool key shift+space"
+# --- Pane utilities ---
+"tmux toggle zoom"      = "xdotool key ctrl+a m"
+"tmux copy mode"        = "xdotool key ctrl+a i"
 
-# --- Neovim ---
-"save file"        = "xdotool key Escape colon w Return"
-"save all"         = "xdotool key Escape colon w a Return"
-"quit file"        = "xdotool key Escape colon q Return"
-"quit all"         = "xdotool key Escape colon q a Return"
-"open file"        = "xdotool key space f f"
-"next buffer"      = "xdotool key Escape colon b n Return"
-"previous buffer"  = "xdotool key Escape colon b p Return"
-"close buffer"     = "xdotool key Escape colon b d Return"
-"normal mode"      = "xdotool key Escape"
-"insert mode"      = "xdotool key i"
-"visual mode"      = "xdotool key v"
-"find text"        = "xdotool key Escape slash"
-"restore window"   = "xdotool key space w r"
-"page down file"   = "xdotool key ctrl+d"
-"page up file"     = "xdotool key ctrl+u"
+# --- Pane jump (keep only if you use it often) ---
+"tmux pane 0"           = "xdotool key ctrl+a 0"
+"tmux pane 1"           = "xdotool key ctrl+a 1"
+"tmux pane 2"           = "xdotool key ctrl+a 2"
+"tmux pane 3"           = "xdotool key ctrl+a 3"
+"tmux pane 4"           = "xdotool key ctrl+a 4"
+"tmux pane 5"           = "xdotool key ctrl+a 5"
+"tmux pane 6"           = "xdotool key ctrl+a 6"
+"tmux pane 7"           = "xdotool key ctrl+a 7"
+"tmux pane 8"           = "xdotool key ctrl+a 8"
+"tmux pane 9"           = "xdotool key ctrl+a 9"
 
-# --- General Shortcuts ---
-"lock screen"      = "i3lock"
-"open terminal"    = "alacritty"
-"open browser"     = "google-chrome-stable"
-"browser"          = "google-chrome-stable"
-"chrome"           = "google-chrome-stable"
-"web browser"      = "google-chrome-stable"
-"show menu"        = "dmenu_run"
-"open files"       = "ranger"
-"files"            = "ranger"
-"go to end"        = "xdotool key End"
-"go to home"       = "xdotool key Home"
+# --- Window controls ---
+"tmux new window"       = "xdotool key ctrl+a c"
+"tmux next window"      = "xdotool key ctrl+a n"
+"tmux prev window"      = "xdotool key ctrl+a p"
+"tmux reload config"    = "xdotool key ctrl+a r"
+
+
+# ============================================================
+# DEV WORKFLOWS (tmux send-keys into target panes/windows)
+# Adjust -t targets to match your tmux layout
+# ============================================================
+
+# Rust/Leptos
+"dev leptos watch"      = "tmux send-keys -t 1 'cargo leptos watch' C-m"
+"dev cargo check"       = "tmux send-keys -t 1 'cargo check' C-m"
+"dev cargo test"        = "tmux send-keys -t 1 'cargo test' C-m"
+"dev cargo fmt"         = "tmux send-keys -t 1 'cargo fmt' C-m"
+"dev cargo clippy"      = "tmux send-keys -t 1 'cargo clippy' C-m"
+
+# Frontend
+"dev web dev"           = "tmux send-keys -t 2 'yarn dev' C-m"
+"dev web build"         = "tmux send-keys -t 2 'yarn build' C-m"
+"dev web test"          = "tmux send-keys -t 2 'yarn test' C-m"
+
+# Stop running processes
+"dev stop pane 1"       = "tmux send-keys -t 1 C-c"
+"dev stop pane 2"       = "tmux send-keys -t 2 C-c"
+
+
+# ============================================================
+# SHELL (typed into currently focused terminal window)
+# ============================================================
+
+# --- Basics ---
+"term clear"            = "xdotool type 'clear'; xdotool key Return"
+"term ls"               = "xdotool type 'ls -la'; xdotool key Return"
+"term tree"             = "xdotool type 'tree -L 2'; xdotool key Return"
+"term history"          = "xdotool type 'history | tail -n 50'; xdotool key Return"
+"term top"              = "xdotool type 'htop'; xdotool key Return"
+"term sysinfo"          = "xdotool type 'fastfetch'; xdotool key Return"
+
+# --- Git daily ---
+"git status"            = "xdotool type 'git status'; xdotool key Return"
+"git diff"              = "xdotool type 'git diff'; xdotool key Return"
+"git log"               = "xdotool type 'git log --oneline --decorate -n 20'; xdotool key Return"
+"git pull"              = "xdotool type 'git pull'; xdotool key Return"
+"git push"              = "xdotool type 'git push'; xdotool key Return"
+"git commit"            = "xdotool type 'git commit -m \"\"'; xdotool key Left"
+
+
+# ============================================================
+# ALACRITTY FONT ZOOM
+# ============================================================
+
+"term zoom in"          = "xdotool key ctrl+KP_Add"
+"term zoom out"         = "xdotool key ctrl+minus"
+"term zoom reset"       = "xdotool key ctrl+0"
+
+
+# ============================================================
+# i3 WINDOW MANAGER (COMPREHENSIVE 1-9 and 0 + next/prev)
+# ============================================================
+
+# --- Workspaces: focus (1..9, 0) ---
+"i3 ws 1"               = "i3-msg workspace 1"
+"i3 ws 2"               = "i3-msg workspace 2"
+"i3 ws 3"               = "i3-msg workspace 3"
+"i3 ws 4"               = "i3-msg workspace 4"
+"i3 ws 5"               = "i3-msg workspace 5"
+"i3 ws 6"               = "i3-msg workspace 6"
+"i3 ws 7"               = "i3-msg workspace 7"
+"i3 ws 8"               = "i3-msg workspace 8"
+"i3 ws 9"               = "i3-msg workspace 9"
+"i3 ws 0"               = "i3-msg workspace 10"
+
+# --- Workspaces: next/prev ---
+"i3 ws next"            = "i3-msg workspace next"
+"i3 ws prev"            = "i3-msg workspace prev"
+
+# --- Move focused container to workspace (1..9, 0) ---
+"i3 move to ws 1"       = "i3-msg move container to workspace 1"
+"i3 move to ws 2"       = "i3-msg move container to workspace 2"
+"i3 move to ws 3"       = "i3-msg move container to workspace 3"
+"i3 move to ws 4"       = "i3-msg move container to workspace 4"
+"i3 move to ws 5"       = "i3-msg move container to workspace 5"
+"i3 move to ws 6"       = "i3-msg move container to workspace 6"
+"i3 move to ws 7"       = "i3-msg move container to workspace 7"
+"i3 move to ws 8"       = "i3-msg move container to workspace 8"
+"i3 move to ws 9"       = "i3-msg move container to workspace 9"
+"i3 move to ws 0"       = "i3-msg move container to workspace 10"
+
+# --- Focus directions ---
+"i3 focus left"         = "i3-msg focus left"
+"i3 focus right"        = "i3-msg focus right"
+"i3 focus up"           = "i3-msg focus up"
+"i3 focus down"         = "i3-msg focus down"
+
+# --- Move container directions ---
+"i3 move left"          = "i3-msg move left"
+"i3 move right"         = "i3-msg move right"
+"i3 move up"            = "i3-msg move up"
+"i3 move down"          = "i3-msg move down"
+
+# --- Layout / window state ---
+"i3 fullscreen"         = "i3-msg fullscreen toggle"
+"i3 floating toggle"    = "i3-msg floating toggle"
+"i3 float center 1720x1020" = "i3-msg floating enable, resize set 1720 1020, move position center"
+"i3 split h"            = "i3-msg split h"
+"i3 split v"            = "i3-msg split v"
+"i3 tabbed"             = "i3-msg layout tabbed"
+"i3 stacking"           = "i3-msg layout stacking"
+"i3 toggle split"       = "i3-msg layout toggle split"
+
+# --- Kill / reload / restart ---
+"i3 kill window"        = "i3-msg kill"
+"i3 reload"             = "i3-msg reload"
+"i3 restart"            = "i3-msg restart"
+
+# --- Gaps (requires i3-gaps; harmless if unsupported) ---
+"i3 gaps inner +"       = "i3-msg gaps inner current plus 5"
+"i3 gaps inner -"       = "i3-msg gaps inner current minus 5"
+"i3 gaps outer +"       = "i3-msg gaps outer current plus 5"
+"i3 gaps outer -"       = "i3-msg gaps outer current minus 5"
+
+# --- System ---
+"i3 lock"               = "i3lock"
+
+
+# ============================================================
+# BROWSER NAVIGATION (works in most browsers)
+# ============================================================
+
+"nav new tab"           = "xdotool key ctrl+t"
+"nav close tab"         = "xdotool key ctrl+w"
+"nav next tab"          = "xdotool key ctrl+Tab"
+"nav prev tab"          = "xdotool key ctrl+shift+Tab"
+"nav address"           = "xdotool key ctrl+l"
+"nav refresh"           = "xdotool key ctrl+r"
+"nav back"              = "xdotool key alt+Left"
+"nav forward"           = "xdotool key alt+Right"
+
+
+# ============================================================
+# SCROLLING (generic, works almost everywhere)
+# ============================================================
+
+"scroll down"           = "for i in {1..10}; do xdotool key Down; done"
+"scroll up"             = "for i in {1..10}; do xdotool key Up; done"
+"scroll page down"      = "xdotool key space"
+"scroll page up"        = "xdotool key shift+space"
+"scroll end"            = "xdotool key End"
+"scroll home"           = "xdotool key Home"
+
+
+# ============================================================
+# NEOVIM
+# ============================================================
+
+"nvim open"             = "xdotool type 'nvim'; xdotool key Return"
+
+"nvim save"             = "xdotool key Escape colon w Return"
+"nvim save all"         = "xdotool key Escape colon wa Return"
+"nvim quit"             = "xdotool key Escape colon q Return"
+"nvim quit all"         = "xdotool key Escape colon qa Return"
+
+"nvim find file"        = "xdotool key space f f"
+"nvim search"           = "xdotool key Escape slash"
+
+"nvim normal"           = "xdotool key Escape"
+"nvim insert"           = "xdotool key i"
+"nvim visual"           = "xdotool key v"
+
+"nvim page down"        = "xdotool key ctrl+d"
+"nvim page up"          = "xdotool key ctrl+u"
+
+"nvim next buffer"      = "xdotool key Escape colon b n Return"
+"nvim prev buffer"      = "xdotool key Escape colon b p Return"
+"nvim close buffer"     = "xdotool key Escape colon b d Return"
+
+
+# ============================================================
+# APPS / LAUNCHERS
+# ============================================================
+
+"app terminal"          = "alacritty"
+"app browser"           = "google-chrome-stable"
+"app menu"              = "dmenu_run"
+"app files"             = "ranger"
