@@ -8,12 +8,10 @@ description = "Leptos CSR frontend for Vibespeak voice automation system"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Leptos CSR with Axum integration
+# Leptos CSR frontend
 leptos = { version = "0.6", features = ["csr"] }
 leptos_meta = { version = "0.6", features = ["csr"] }
 leptos_router = { version = "0.6", features = ["csr"] }
-leptos_axum = { version = "0.6" }
-axum = "0.7"
 
 # Additional dependencies
 chrono = { version = "0.4", features = ["serde"] }

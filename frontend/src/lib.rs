@@ -21,9 +21,7 @@ pub use infrastructure::*;
 // Re-export presentation components
 pub use presentation::*;
 
-use axum::Router;
 use leptos::*;
-use leptos_axum::{generate_route_list, LeptosRoutes};
 use leptos_router::*;
 use presentation::pages::*;
 
@@ -67,26 +65,46 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Create the Leptos CSR router - serves the CSR app instead of static files
-pub fn create_leptos_router() -> Router {
-    let leptos_options = LeptosOptions::builder()
-        .output_name("vibespeak-frontend")
-        .site_root(".")
-        .build();
+/// Get the HTML content for the CSR app
+/// This is used by the backend to serve the initial HTML page
+pub fn get_html_content() -> &'static str {
+    r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibespeak - Voice Automation System</title>
+    <link rel="stylesheet" href="/pkg/vibespeak_frontend.css">
+</head>
+<body>
+    <div id="leptos"></div>
+    <script type="module">
+        import init, { run_app } from '/pkg/vibespeak_frontend.js';
+        await init();
+        run_app();
+    </script>
+</body>
+</html>"#
+}
 
-    let routes = generate_route_list(App);
+/// Create a simple HTML response for CSR
+/// The backend uses this to serve the initial page that loads the WASM
+pub fn create_html_response() -> String {
+    get_html_content().to_string()
+}
 
-    Router::new()
-        .leptos_routes(&leptos_options, routes, App)
-        .with_state(leptos_options)
+// Export the app runner for the HTML to call
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn run_app() {
+    console_error_panic_hook::set_once();
+    console_log::init_with_level(log::Level::Debug).expect("error initializing logger");
+
+    mount_to_body(|| view! { <App /> });
 }
 
 // Keep the CSR main function for development
 #[cfg(feature = "csr")]
 #[wasm_bindgen::prelude::wasm_bindgen(start)]
 pub fn main() {
-    console_error_panic_hook::set_once();
-    console_log::init_with_level(log::Level::Debug).expect("error initializing logger");
-
-    mount_to_body(|| view! { <App /> });
+    run_app();
 }

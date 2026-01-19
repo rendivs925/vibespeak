@@ -37,7 +37,7 @@ pub fn create_router(state: AppState) -> Router {
 
     Router::new()
         .nest("/api", api_routes)
-        .fallback_service(vibespeak_frontend::create_leptos_router().into_service()) // Leptos handles all non-API routes
+        .fallback(|| async { axum::response::Html(vibespeak_frontend::create_html_response()) }) // Serve the HTML for all non-API routes
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
