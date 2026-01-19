@@ -1604,20 +1604,8 @@
           });
 
           if (response.ok) {
-            // Start typing countdown
-            updateDictationStatus("🔄 Switch to target application... typing in 3 seconds", "info");
-
-            // Add countdown with visual feedback
-            for (let i = 3; i >= 1; i--) {
-              updateDictationStatus(`🔄 Switch to target application... typing in ${i} seconds`, "warning");
-              // Add a pulsing effect to draw attention
-              document.getElementById('insert-text').style.animation = 'pulse 1s infinite';
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-
-            // Remove animation and show typing
-            document.getElementById('insert-text').style.animation = '';
-            updateDictationStatus("⌨️ Typing text now...", "info");
+            console.log("📡 API response OK, starting desktop typing...");
+            updateDictationStatus("⌨️ Sending text to desktop...", "info");
 
             // Send text to server to simulate keystrokes globally
             const typingResult = await simulateTypingOnDesktop(dictatedText);
@@ -1628,8 +1616,9 @@
               updateDictationStatus("⚠️ Text sent to server but desktop typing may have failed", "warning");
             }
 
-            console.log('Desktop typing requested:', dictatedText);
+            console.log('Desktop typing result:', typingResult, 'for text:', dictatedText);
           } else {
+            console.error('❌ API response not OK:', response.status);
             throw new Error('Failed to insert text');
           }
         } catch (error) {
@@ -1652,7 +1641,7 @@
       async function simulateTypingOnDesktop(text) {
         try {
           console.log('🔤 Sending text to desktop for typing:', text);
-          console.log('📡 API endpoint: /api/dictation/type');
+          console.log('📡 Making API call to /api/dictation/type');
 
           // Send the text to the server to simulate typing on the desktop
           const response = await fetch('/api/dictation/type', {
@@ -1668,13 +1657,18 @@
 
           if (response.ok) {
             const result = await response.json();
-            console.log('✅ Desktop typing result:', result);
+            console.log('✅ Desktop typing API result:', result);
             return result.success !== false; // Default to true if not specified
           } else {
             const errorText = await response.text();
-            console.error('❌ Desktop typing failed:', response.status, errorText);
+            console.error('❌ Desktop typing API failed:', response.status, errorText);
             return false;
           }
+        } catch (error) {
+          console.error('💥 Error in simulateTypingOnDesktop:', error);
+          return false;
+        }
+      }
         } catch (error) {
           console.error('💥 Error simulating desktop typing:', error);
           return false;
@@ -1825,6 +1819,7 @@
           console.log("✅ insert-text button found");
           insertBtn.addEventListener('click', function(e) {
             console.log("🎯 Insert Text button clicked!");
+            console.log("📝 Current dictated text:", dictatedText);
             insertDictationText();
           });
         }
