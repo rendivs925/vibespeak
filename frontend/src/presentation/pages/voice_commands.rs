@@ -178,10 +178,21 @@ pub fn VoiceCommands() -> impl IntoView {
 
             <NavBar _active="commands" />
 
-            <main class="max-w-7xl mx-auto px-8 py-6">
-                <h2>"Voice Commands"</h2>
+            <main class="flex-1 px-8 py-10 overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    {/* Page Header */}
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-semibold text-gray-900 tracking-tight mb-3">
+                            "Voice Commands"
+                        </h1>
+                        <p class="text-base text-gray-600 leading-relaxed max-w-2xl">
+                            "Manage and create custom voice commands to control your applications."
+                        </p>
+                    </div>
 
-                <Card title="Available Commands">
+                    {/* Content Grid */}
+                    <div class="space-y-6">
+                        <Card title="Available Commands">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <p class="text-gray-600 mb-0">
                             "These voice commands are recognized by the system. Say the voice text to trigger the action."
@@ -411,7 +422,9 @@ pub fn VoiceCommands() -> impl IntoView {
                             </div>
                         </div>
                     </div>
-                </Show>
+                        </Show>
+                    </div>
+                </div>
             </main>
         </div>
     }

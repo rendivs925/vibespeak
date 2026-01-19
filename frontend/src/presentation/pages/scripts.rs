@@ -149,10 +149,21 @@ pub fn Scripts() -> impl IntoView {
 
             <NavBar _active="scripts" />
 
-            <main class="max-w-7xl mx-auto px-8 py-6">
-                <h2>"Scripts"</h2>
+            <main class="flex-1 px-8 py-10 overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    {/* Page Header */}
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-semibold text-gray-900 tracking-tight mb-3">
+                            "Scripts"
+                        </h1>
+                        <p class="text-base text-gray-600 leading-relaxed max-w-2xl">
+                            "Execute custom scripts and automation routines via voice commands."
+                        </p>
+                    </div>
 
-                <Card title="Script Management">
+                    {/* Content Grid */}
+                    <div class="space-y-6">
+                        <Card title="Script Management">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <p class="text-gray-600 mb-0">"Execute bash, Python, and JavaScript scripts via voice commands."</p>
                         <Button
@@ -379,7 +390,9 @@ pub fn Scripts() -> impl IntoView {
                             "Update Script"
                         </Button>
                     </div>
-                </Modal>
+                        </Modal>
+                    </div>
+                </div>
             </main>
         </div>
     }

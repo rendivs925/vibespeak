@@ -145,10 +145,21 @@ pub fn Workflows() -> impl IntoView {
 
             <NavBar _active="workflows" />
 
-            <main class="max-w-7xl mx-auto px-8 py-6">
-                <h2>"Workflows"</h2>
+            <main class="flex-1 px-8 py-10 overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    {/* Page Header */}
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-semibold text-gray-900 tracking-tight mb-3">
+                            "Workflows"
+                        </h1>
+                        <p class="text-base text-gray-600 leading-relaxed max-w-2xl">
+                            "Create and manage automated sequences of voice commands."
+                        </p>
+                    </div>
 
-                <Card title="Automation Workflows">
+                    {/* Content Grid */}
+                    <div class="space-y-6">
+                        <Card title="Automation Workflows">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <p style="margin: 0;">"Build complex automation sequences triggered by voice commands."</p>
                         <Button
@@ -311,7 +322,9 @@ pub fn Workflows() -> impl IntoView {
                             "Update Workflow"
                         </Button>
                     </div>
-                </Modal>
+                        </Modal>
+                    </div>
+                </div>
             </main>
         </div>
     }
