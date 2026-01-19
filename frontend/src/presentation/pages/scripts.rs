@@ -2,7 +2,10 @@
 
 use crate::domain::entities::Script;
 use crate::infrastructure::api_client as api;
-use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
+use crate::presentation::components::{
+    Badge, BadgeVariant, Button, ButtonSize, ButtonVariant, Card, DataTable, FormField, Header,
+    Input, InputType, Modal, NavBar, Select, StatusBadge, TableCell, TableRow, Textarea,
+};
 use leptos::*;
 use wasm_bindgen_futures;
 
@@ -139,21 +142,22 @@ pub fn Scripts() -> impl IntoView {
     });
 
     view! {
-        <div class="container">
+        <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
             <Header title="Vibespeak" subtitle="Voice Automation System - Control your computer with your voice">
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
             <NavBar active="scripts" />
 
-            <div class="content">
+            <main class="max-w-7xl mx-auto px-8 py-6">
                 <h2>"Scripts"</h2>
 
                 <Card title="Script Management">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <p style="margin: 0;">"Execute bash, Python, and JavaScript scripts via voice commands."</p>
-                        <button
-                            class="btn btn-primary"
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <p class="text-gray-600 mb-0">"Execute bash, Python, and JavaScript scripts via voice commands."</p>
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
                             on:click=move |_| {
                                 set_form_name.set("".to_string());
                                 set_form_language.set("bash".to_string());
@@ -163,195 +167,206 @@ pub fn Scripts() -> impl IntoView {
                             }
                         >
                             "Add Script"
-                        </button>
+                        </Button>
                     </div>
 
-                    <Show
-                        when=move || !scripts.get().is_empty()
-                        fallback=|| view! {
-                            <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 4px; text-align: center;">
-                                <p style="color: #6c757d;">"No scripts configured yet."</p>
-                                <p style="font-size: 14px; color: #868e96; margin-top: 10px;">
-                                    "Scripts allow you to run custom automation code."
-                                </p>
-                            </div>
-                        }
-                    >
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                            <thead>
-                                <tr>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Name"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Language"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Status"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Actions"</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <DataTable headers=vec!["Name".to_string(), "Language".to_string(), "Status".to_string(), "Actions".to_string()]>
+                            <Show
+                                when=move || !scripts.get().is_empty()
+                                fallback=|| view! {
+                                    <TableRow>
+                                        <TableCell class="text-center text-gray-500 py-8" attr:colspan="4">
+                                            "No scripts configured yet."
+                                        </TableCell>
+                                    </TableRow>
+                                }
+                            >
                                 <For
                                     each=move || scripts.get()
                                     key=|s| s.id.clone()
-                                     children=move |s| {
-                                         let s_clone1 = s.clone();
-                                         let s_clone2 = s.clone();
-                                         view! {
-                                             <tr>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{s.name.clone()}</td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{s.language.clone()}</td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                                     {if s.enabled { "Enabled" } else { "Disabled" }}
-                                                 </td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                                     <button
-                                                         class="btn btn-sm btn-secondary"
-                                                         style="margin-right: 5px;"
-                                                         on:click=move |_| start_edit(s_clone1.clone())
-                                                     >
-                                                         "Edit"
-                                                     </button>
-                                                     <button
-                                                         class="btn btn-sm btn-danger"
-                                                         on:click=move |_| delete_script(s_clone2.id.clone())
-                                                     >
-                                                         "Delete"
-                                                     </button>
-                                                 </td>
-                                             </tr>
-                                         }
-                                     }
+                                    children=move |s| {
+                                        let s_clone1 = s.clone();
+                                        let s_clone2 = s.clone();
+                                        view! {
+                                            <TableRow>
+                                                <TableCell class="font-medium text-gray-900">{s.name.clone()}</TableCell>
+                                                <TableCell class="text-gray-600">{s.language.clone()}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant=if s.enabled { BadgeVariant::Success } else { BadgeVariant::Neutral }
+                                                        text=if s.enabled { "Enabled" } else { "Disabled" }
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div class="flex gap-2">
+                                                        <Button
+                                                            variant=ButtonVariant::Secondary
+                                                            size=ButtonSize::Small
+                                                            on:click=move |_| start_edit(s_clone1.clone())
+                                                        >
+                                                            "Edit"
+                                                        </Button>
+                                                        <Button
+                                                            variant=ButtonVariant::Danger
+                                                            size=ButtonSize::Small
+                                                            on:click=move |_| delete_script(s_clone2.id.clone())
+                                                        >
+                                                            "Delete"
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        }
+                                    }
                                 />
-                            </tbody>
-                        </table>
-                    </Show>
+                            </Show>
+                        </DataTable>
                 </Card>
 
                 // Create Script Modal
-                <Show when=move || show_create_modal.get()>
-                    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
-                        <div class="modal-dialog" style="max-width: 600px; margin: 50px auto;">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">"Create New Script"</h5>
-                                    <button type="button" class="btn-close" on:click=move |_| set_show_create_modal.set(false)></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Script Name"</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                prop:value=form_name
-                                                on:input=move |e| set_form_name.set(event_target_value(&e))
-                                                placeholder="Enter script name"
-                                            />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Language"</label>
-                                            <select
-                                                class="form-control"
-                                                prop:value=form_language
-                                                on:change=move |e| set_form_language.set(event_target_value(&e))
-                                            >
-                                                <option value="bash">"Bash"</option>
-                                                <option value="python">"Python"</option>
-                                                <option value="javascript">"JavaScript"</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Description"</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                prop:value=form_description
-                                                on:input=move |e| set_form_description.set(event_target_value(&e))
-                                                placeholder="Optional description"
-                                            />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Script Content"</label>
-                                            <textarea
-                                                class="form-control"
-                                                prop:value=form_content
-                                                on:input=move |e| set_form_content.set(event_target_value(&e))
-                                                placeholder="Enter your script code here"
-                                                rows="10"
-                                            ></textarea>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" on:click=move |_| set_show_create_modal.set(false)>"Cancel"</button>
-                                    <button type="button" class="btn btn-primary" on:click=move |_| create_script()>"Create Script"</button>
-                                </div>
-                            </div>
-                        </div>
+                <Modal
+                    is_open=show_create_modal
+                    on_close=StoredValue::new(Box::new(move || set_show_create_modal.set(false)))
+                    title="Create New Script"
+                    size="lg"
+                >
+                    <form class="space-y-6">
+                        <FormField label="Script Name">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_name.get()
+                                on:input=move |e| set_form_name.set(event_target_value(&e))
+                                placeholder="Enter script name"
+                            />
+                        </FormField>
+                        <FormField label="Language">
+                            <Select
+                                value=form_language.get()
+                                on:change=move |e| set_form_language.set(event_target_value(&e))
+                            >
+                                <option value="bash">"Bash"</option>
+                                <option value="python">"Python"</option>
+                                <option value="javascript">"JavaScript"</option>
+                            </Select>
+                        </FormField>
+                        <FormField label="Description" help_text="Optional description of what this script does">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_description.get()
+                                on:input=move |e| set_form_description.set(event_target_value(&e))
+                                placeholder="Describe what this script does"
+                            />
+                        </FormField>
+                        <FormField label="Script Content">
+                            <Textarea
+                                value=form_content.get()
+                                on:input=move |e| set_form_content.set(event_target_value(&e))
+                                placeholder="Enter your script code here"
+                                rows=10
+                            />
+                        </FormField>
+                        <FormField label="Language">
+                            <Select
+                                value=form_language
+                                on:change=move |e| set_form_language.set(event_target_value(&e))
+                            >
+                                <option value="bash">"Bash"</option>
+                                <option value="python">"Python"</option>
+                                <option value="javascript">"JavaScript"</option>
+                            </Select>
+                        </FormField>
+                        <FormField label="Description" help_text="Optional description of what this script does">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_description.get()
+                                on:input=move |e| set_form_description.set(event_target_value(&e))
+                                placeholder="Describe what this script does"
+                            />
+                        </FormField>
+                        <FormField label="Script Content">
+                            <Textarea
+                                value=form_content.get()
+                                on:input=move |e| set_form_content.set(event_target_value(&e))
+                                placeholder="Enter your script code here"
+                                rows=10
+                            />
+                        </FormField>
+                    </form>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <Button
+                            variant=ButtonVariant::Secondary
+                            size=ButtonSize::Medium
+                            on:click=move |_| set_show_create_modal.set(false)
+                        >
+                            "Cancel"
+                        </Button>
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
+                            on:click=move |_| create_script()
+                        >
+                            "Create Script"
+                        </Button>
                     </div>
-                </Show>
+                </Modal>
 
                 // Edit Script Modal
-                <Show when=move || show_edit_modal.get()>
-                    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
-                        <div class="modal-dialog" style="max-width: 600px; margin: 50px auto;">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">"Edit Script"</h5>
-                                    <button type="button" class="btn-close" on:click=move |_| set_show_edit_modal.set(false)></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Script Name"</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                prop:value=form_name
-                                                on:input=move |e| set_form_name.set(event_target_value(&e))
-                                                placeholder="Enter script name"
-                                            />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Language"</label>
-                                            <select
-                                                class="form-control"
-                                                prop:value=form_language
-                                                on:change=move |e| set_form_language.set(event_target_value(&e))
-                                            >
-                                                <option value="bash">"Bash"</option>
-                                                <option value="python">"Python"</option>
-                                                <option value="javascript">"JavaScript"</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Script Content"</label>
-                                            <textarea
-                                                class="form-control"
-                                                prop:value=form_content
-                                                on:input=move |e| set_form_content.set(event_target_value(&e))
-                                                placeholder="Enter your script code here"
-                                                rows="10"
-                                            ></textarea>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" on:click=move |_| set_show_edit_modal.set(false)>"Cancel"</button>
-                                    <button
-                                        type="button"
-                                        class="btn btn-primary"
-                                        on:click=move |_| {
-                                            if let Some(s) = editing_script.get() {
-                                                update_script(s.id);
-                                            }
-                                        }
-                                    >
-                                        "Update Script"
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                <Modal
+                    is_open=show_edit_modal
+                    on_close=StoredValue::new(Box::new(move || set_show_edit_modal.set(false)))
+                    title="Edit Script"
+                    size="lg"
+                >
+                    <form class="space-y-6">
+                        <FormField label="Script Name">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_name
+                                on:input=move |e| set_form_name.set(event_target_value(&e))
+                                placeholder="Enter script name"
+                            />
+                        </FormField>
+                        <FormField label="Language">
+                            <Select
+                                value=form_language
+                                on:change=move |e| set_form_language.set(event_target_value(&e))
+                            >
+                                <option value="bash">"Bash"</option>
+                                <option value="python">"Python"</option>
+                                <option value="javascript">"JavaScript"</option>
+                            </Select>
+                        </FormField>
+                        <FormField label="Script Content">
+                            <Textarea
+                                value=form_content
+                                on:input=move |e| set_form_content.set(event_target_value(&e))
+                                placeholder="Enter your script code here"
+                                rows=10
+                            />
+                        </FormField>
+                    </form>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <Button
+                            variant=ButtonVariant::Secondary
+                            size=ButtonSize::Medium
+                            on:click=move |_| set_show_edit_modal.set(false)
+                        >
+                            "Cancel"
+                        </Button>
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
+                            on:click=move |_| {
+                                if let Some(s) = editing_script.get() {
+                                    update_script(s.id);
+                                }
+                            }
+                        >
+                            "Update Script"
+                        </Button>
                     </div>
-                </Show>
-            </div>
+                </Modal>
+            </main>
         </div>
     }
 }

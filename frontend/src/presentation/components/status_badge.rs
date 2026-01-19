@@ -6,19 +6,16 @@ use leptos::*;
 pub fn StatusBadge(message: ReadSignal<String>, status_type: ReadSignal<String>) -> impl IntoView {
     view! {
         <div
-            class="status-badge"
-            style=move || {
+            class=move || {
                 let stype = status_type.get();
-                let (bg, color, border) = match stype.as_str() {
-                    "success" => ("#d4edda", "#155724", "#c3e6cb"),
-                    "error" => ("#f8d7da", "#721c24", "#f5c6cb"),
-                    "warning" => ("#fff3cd", "#856404", "#ffeeba"),
-                    _ => ("#d1ecf1", "#0c5460", "#bee5eb"),
+                let base_classes = "px-4 py-3 rounded-xl text-sm font-medium shadow-sm";
+                let color_classes = match stype.as_str() {
+                    "success" => "bg-emerald-50 border border-emerald-200 text-emerald-700 shadow-emerald-100/50",
+                    "error" => "bg-red-50 border border-red-200 text-red-700 shadow-red-100/50",
+                    "warning" => "bg-amber-50 border border-amber-200 text-amber-600 shadow-amber-100/50",
+                    _ => "bg-blue-50 border border-blue-200 text-blue-700 shadow-blue-100/50",
                 };
-                format!(
-                    "padding: 10px; margin: 10px 0; border-radius: 4px; background: {}; color: {}; border: 1px solid {};",
-                    bg, color, border
-                )
+                format!("{} {}", base_classes, color_classes)
             }
         >
             {move || message.get()}

@@ -12,6 +12,8 @@ model/
 piper/
 !piper/README.md
 
+docs/design_system.md
+
 # Temporary audio files
 *.wav
 *.mp3

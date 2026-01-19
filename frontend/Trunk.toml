@@ -1,0 +1,13 @@
+[build]
+dist = "dist"
+public_url = "/"
+
+[[hooks]]
+stage = "pre_build"
+command = "tailwindcss"
+command_arguments = ["-i", "input.css", "-o", "styles.css", "--watch"]
+
+[[hooks]]
+stage = "build"
+command = "tailwindcss"
+command_arguments = ["-i", "input.css", "-o", "styles.css", "--minify"]

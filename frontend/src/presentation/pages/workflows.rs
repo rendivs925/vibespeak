@@ -2,7 +2,10 @@
 
 use crate::domain::entities::Workflow;
 use crate::infrastructure::api_client as api;
-use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
+use crate::presentation::components::{
+    Badge, BadgeVariant, Button, ButtonSize, ButtonVariant, Card, DataTable, FormField, Header,
+    Input, InputType, Modal, NavBar, StatusBadge, TableCell, TableRow, Textarea,
+};
 use leptos::*;
 use wasm_bindgen_futures;
 
@@ -135,21 +138,22 @@ pub fn Workflows() -> impl IntoView {
     });
 
     view! {
-        <div class="container">
+        <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30">
             <Header title="Vibespeak" subtitle="Voice Automation System - Control your computer with your voice">
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
             <NavBar active="workflows" />
 
-            <div class="content">
+            <main class="max-w-7xl mx-auto px-8 py-6">
                 <h2>"Workflows"</h2>
 
                 <Card title="Automation Workflows">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <p style="margin: 0;">"Build complex automation sequences triggered by voice commands."</p>
-                        <button
-                            class="btn btn-primary"
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
                             on:click=move |_| {
                                 set_form_name.set("".to_string());
                                 set_form_description.set("".to_string());
@@ -157,7 +161,7 @@ pub fn Workflows() -> impl IntoView {
                             }
                         >
                             "Add Workflow"
-                        </button>
+                        </Button>
                     </div>
 
                     <Show
@@ -171,149 +175,138 @@ pub fn Workflows() -> impl IntoView {
                             </div>
                         }
                     >
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                            <thead>
-                                <tr>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Name"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Description"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Steps"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Status"</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Actions"</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <For
-                                    each=move || workflows.get()
-                                    key=|wf| wf.id.clone()
-                                     children=move |wf| {
-                                         let wf_clone1 = wf.clone();
-                                         let wf_clone2 = wf.clone();
-                                         view! {
-                                             <tr>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{wf.name.clone()}</td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{wf.description.clone()}</td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{wf.steps.len()}" steps"</td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                                     {if wf.enabled { "Enabled" } else { "Disabled" }}
-                                                 </td>
-                                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                                     <button
-                                                         class="btn btn-sm btn-secondary"
-                                                         style="margin-right: 5px;"
-                                                         on:click=move |_| start_edit(wf_clone1.clone())
-                                                     >
-                                                         "Edit"
-                                                     </button>
-                                                     <button
-                                                         class="btn btn-sm btn-danger"
-                                                         on:click=move |_| delete_workflow(wf_clone2.id.clone())
-                                                     >
-                                                         "Delete"
-                                                     </button>
-                                                 </td>
-                                             </tr>
-                                         }
-                                     }
-                                />
-                            </tbody>
-                        </table>
+                        <DataTable headers=vec!["Name".to_string(), "Description".to_string(), "Steps".to_string(), "Status".to_string(), "Actions".to_string()]>
+                            <For
+                                each=move || workflows.get()
+                                key=|wf| wf.id.clone()
+                                children=move |wf| {
+                                    let wf_clone1 = wf.clone();
+                                    let wf_clone2 = wf.clone();
+                                    view! {
+                                        <TableRow>
+                                            <TableCell class="font-medium text-gray-900">{wf.name.clone()}</TableCell>
+                                            <TableCell class="text-gray-600">{wf.description.clone()}</TableCell>
+                                            <TableCell class="text-gray-600">{wf.steps.len()}" steps"</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant=if wf.enabled { BadgeVariant::Success } else { BadgeVariant::Neutral }
+                                                    text=if wf.enabled { "Enabled" } else { "Disabled" }
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div class="flex gap-2">
+                                                    <Button
+                                                        variant=ButtonVariant::Secondary
+                                                        size=ButtonSize::Small
+                                                        on:click=move |_| start_edit(wf_clone1.clone())
+                                                    >
+                                                        "Edit"
+                                                    </Button>
+                                                    <Button
+                                                        variant=ButtonVariant::Danger
+                                                        size=ButtonSize::Small
+                                                        on:click=move |_| delete_workflow(wf_clone2.id.clone())
+                                                    >
+                                                        "Delete"
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    }
+                                }
+                            />
+                        </DataTable>
                     </Show>
                 </Card>
 
                 // Create Workflow Modal
-                <Show when=move || show_create_modal.get()>
-                    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
-                        <div class="modal-dialog" style="max-width: 500px; margin: 50px auto;">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">"Create New Workflow"</h5>
-                                    <button type="button" class="btn-close" on:click=move |_| set_show_create_modal.set(false)></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Workflow Name"</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                prop:value=form_name
-                                                on:input=move |e| set_form_name.set(event_target_value(&e))
-                                                placeholder="Enter workflow name"
-                                            />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Description"</label>
-                                            <textarea
-                                                class="form-control"
-                                                prop:value=form_description
-                                                on:input=move |e| set_form_description.set(event_target_value(&e))
-                                                placeholder="Describe what this workflow does"
-                                                rows="3"
-                                            ></textarea>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" on:click=move |_| set_show_create_modal.set(false)>"Cancel"</button>
-                                    <button type="button" class="btn btn-primary" on:click=move |_| create_workflow()>"Create Workflow"</button>
-                                </div>
-                            </div>
-                        </div>
+                <Modal
+                    is_open=show_create_modal
+                    on_close=StoredValue::new(Box::new(move || set_show_create_modal.set(false)))
+                    title="Create New Workflow"
+                >
+                    <form class="space-y-6">
+                        <FormField label="Workflow Name">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_name.get()
+                                on:input=move |e| set_form_name.set(event_target_value(&e))
+                                placeholder="Enter workflow name"
+                            />
+                        </FormField>
+                        <FormField label="Description" help_text="Describe what this workflow does">
+                            <Textarea
+                                value=form_description.get()
+                                on:input=move |e| set_form_description.set(event_target_value(&e))
+                                placeholder="Describe what this workflow does"
+                                rows=3
+                            />
+                        </FormField>
+                    </form>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <Button
+                            variant=ButtonVariant::Secondary
+                            size=ButtonSize::Medium
+                            on:click=move |_| set_show_create_modal.set(false)
+                        >
+                            "Cancel"
+                        </Button>
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
+                            on:click=move |_| create_workflow()
+                        >
+                            "Create Workflow"
+                        </Button>
                     </div>
-                </Show>
+                </Modal>
 
                 // Edit Workflow Modal
-                <Show when=move || show_edit_modal.get()>
-                    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
-                        <div class="modal-dialog" style="max-width: 500px; margin: 50px auto;">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">"Edit Workflow"</h5>
-                                    <button type="button" class="btn-close" on:click=move |_| set_show_edit_modal.set(false)></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Workflow Name"</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                prop:value=form_name
-                                                on:input=move |e| set_form_name.set(event_target_value(&e))
-                                                placeholder="Enter workflow name"
-                                            />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">"Description"</label>
-                                            <textarea
-                                                class="form-control"
-                                                prop:value=form_description
-                                                on:input=move |e| set_form_description.set(event_target_value(&e))
-                                                placeholder="Describe what this workflow does"
-                                                rows="3"
-                                            ></textarea>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" on:click=move |_| set_show_edit_modal.set(false)>"Cancel"</button>
-                                    <button
-                                        type="button"
-                                        class="btn btn-primary"
-                                        on:click=move |_| {
-                                            if let Some(wf) = editing_workflow.get() {
-                                                update_workflow(wf.id);
-                                            }
-                                        }
-                                    >
-                                        "Update Workflow"
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                <Modal
+                    is_open=show_edit_modal
+                    on_close=StoredValue::new(Box::new(move || set_show_edit_modal.set(false)))
+                    title="Edit Workflow"
+                >
+                    <form class="space-y-6">
+                        <FormField label="Workflow Name">
+                            <Input
+                                input_type=InputType::Text
+                                value=form_name
+                                on:input=move |e| set_form_name.set(event_target_value(&e))
+                                placeholder="Enter workflow name"
+                            />
+                        </FormField>
+                        <FormField label="Description" help_text="Describe what this workflow does">
+                            <Textarea
+                                value=form_description
+                                on:input=move |e| set_form_description.set(event_target_value(&e))
+                                placeholder="Describe what this workflow does"
+                                rows=3
+                            />
+                        </FormField>
+                    </form>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <Button
+                            variant=ButtonVariant::Secondary
+                            size=ButtonSize::Medium
+                            on:click=move |_| set_show_edit_modal.set(false)
+                        >
+                            "Cancel"
+                        </Button>
+                        <Button
+                            variant=ButtonVariant::Primary
+                            size=ButtonSize::Medium
+                            on:click=move |_| {
+                                if let Some(wf) = editing_workflow.get() {
+                                    update_workflow(wf.id);
+                                }
+                            }
+                        >
+                            "Update Workflow"
+                        </Button>
                     </div>
-                </Show>
-            </div>
+                </Modal>
+            </main>
         </div>
     }
 }

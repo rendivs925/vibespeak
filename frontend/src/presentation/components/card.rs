@@ -5,8 +5,8 @@ use leptos::*;
 #[component]
 pub fn Card(title: &'static str, children: Children) -> impl IntoView {
     view! {
-        <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-            <h3 style="margin-top: 0; margin-bottom: 15px;">{title}</h3>
+        <div class="bg-white rounded-2xl shadow-sm shadow-slate-100/50 border border-slate-200/60 p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 tracking-tight mb-4">{title}</h3>
             {children()}
         </div>
     }
