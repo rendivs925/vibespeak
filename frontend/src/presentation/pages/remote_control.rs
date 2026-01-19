@@ -17,6 +17,11 @@ pub fn RemoteControl() -> impl IntoView {
     let (is_dictating, set_is_dictating) = create_signal(false);
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
 
+    // Screen sharing state
+    let (screen_status, set_screen_status) = create_signal("Screen sharing not started".to_string());
+    let (is_screen_sharing, set_is_screen_sharing) = create_signal(false);
+    let screen_stream_ref: Rc<RefCell<Option<web_sys::MediaStream>>> = Rc::new(RefCell::new(None));
+
     // Store reference to SpeechRecognition instance
     let recognition_ref: Rc<RefCell<Option<web_sys::SpeechRecognition>>> = Rc::new(RefCell::new(None));
 
@@ -222,6 +227,111 @@ pub fn RemoteControl() -> impl IntoView {
         set_dictation_status.set("⏹️ Dictation stopped".to_string());
     };
 
+    // Screen sharing functions using JavaScript interop
+    let screen_stream_ref_start = screen_stream_ref.clone();
+    let start_screen_share = move |_| {
+        let screen_stream_ref_inner = screen_stream_ref_start.clone();
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+
+            set_screen_status.set("Requesting screen access...".to_string());
+
+            wasm_bindgen_futures::spawn_local(async move {
+                let window = web_sys::window().unwrap();
+                let navigator = window.navigator();
+
+                // Get media devices
+                let media_devices = match navigator.media_devices() {
+                    Ok(md) => md,
+                    Err(_) => {
+                        set_screen_status.set("Media devices not available".to_string());
+                        return;
+                    }
+                };
+
+                // Use get_display_media (no constraints version)
+                let promise = match media_devices.get_display_media() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        set_screen_status.set(format!("Failed to request screen: {:?}", e));
+                        return;
+                    }
+                };
+
+                match wasm_bindgen_futures::JsFuture::from(promise).await {
+                    Ok(stream) => {
+                        let stream: web_sys::MediaStream = stream.unchecked_into();
+
+                        // Get video element and set stream
+                        let document = window.document().unwrap();
+                        if let Some(video) = document.get_element_by_id("screen-video") {
+                            let video: web_sys::HtmlVideoElement = video.unchecked_into();
+                            video.set_src_object(Some(&stream));
+                            let _ = video.play();
+                        }
+
+                        // Store stream reference
+                        *screen_stream_ref_inner.borrow_mut() = Some(stream);
+                        set_is_screen_sharing.set(true);
+                        set_screen_status.set("Screen sharing active".to_string());
+                    }
+                    Err(e) => {
+                        let msg = format!("{:?}", e);
+                        set_screen_status.set(format!("Screen sharing failed: {}", msg));
+                    }
+                }
+            });
+        }
+    };
+
+    let screen_stream_ref_stop = screen_stream_ref.clone();
+    let stop_screen_share = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+
+            if let Some(stream) = screen_stream_ref_stop.borrow_mut().take() {
+                // Stop all tracks using get_video_tracks
+                let video_tracks = stream.get_video_tracks();
+                for i in 0..video_tracks.length() {
+                    let track = video_tracks.get(i);
+                    // Call stop() method via js_sys
+                    if let Ok(stop_fn) = js_sys::Reflect::get(&track, &"stop".into()) {
+                        if let Some(func) = stop_fn.dyn_ref::<js_sys::Function>() {
+                            let _ = func.call0(&track);
+                        }
+                    }
+                }
+            }
+
+            // Clear video element
+            let window = web_sys::window().unwrap();
+            let document = window.document().unwrap();
+            if let Some(video) = document.get_element_by_id("screen-video") {
+                let video: web_sys::HtmlVideoElement = video.unchecked_into();
+                video.set_src_object(None);
+            }
+
+            set_is_screen_sharing.set(false);
+            set_screen_status.set("Screen sharing stopped".to_string());
+        }
+    };
+
+    let fullscreen_screen = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+
+            let window = web_sys::window().unwrap();
+            let document = window.document().unwrap();
+            if let Some(video) = document.get_element_by_id("screen-video") {
+                let video: web_sys::HtmlVideoElement = video.unchecked_into();
+                let _ = video.request_fullscreen();
+            }
+        }
+    };
+
     let touch_commands = vec![
         ("Terminal", "open terminal"),
         ("Browser", "open browser"),
@@ -243,6 +353,57 @@ pub fn RemoteControl() -> impl IntoView {
 
             <div class="content">
                 <h2>"Remote Control"</h2>
+
+                <Card title="Screen Sharing">
+                    <p>"View and control your desktop from anywhere"</p>
+                    <div id="screen-container" style="margin: 20px 0;">
+                        <video
+                            id="screen-video"
+                            controls
+                            autoplay
+                            playsinline
+                            style="width: 100%; max-width: 100%; border: 1px solid #ddd; display: none; background: #000;"
+                            style:display=move || if is_screen_sharing.get() { "block" } else { "none" }
+                        ></video>
+                        <div
+                            id="screen-placeholder"
+                            style="width: 100%; height: 300px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #6c757d; border-radius: 8px;"
+                            style:display=move || if is_screen_sharing.get() { "none" } else { "flex" }
+                        >
+                            <div style="text-align: center;">
+                                <div style="font-size: 48px; margin-bottom: 10px;">"📺"</div>
+                                <div>"Screen sharing not started"</div>
+                                <div style="font-size: 14px; margin-top: 5px;">"Click \"Start Screen Share\" to begin"</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status info" style="margin-bottom: 15px;">
+                        {move || screen_status.get()}
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button
+                            class="btn btn-success"
+                            on:click=start_screen_share
+                            style:display=move || if is_screen_sharing.get() { "none" } else { "inline-block" }
+                        >
+                            "📺 Start Screen Share"
+                        </button>
+                        <button
+                            class="btn btn-danger"
+                            on:click=stop_screen_share
+                            style:display=move || if is_screen_sharing.get() { "inline-block" } else { "none" }
+                        >
+                            "⏹️ Stop Screen Share"
+                        </button>
+                        <button
+                            class="btn btn-secondary"
+                            on:click=fullscreen_screen
+                            style:display=move || if is_screen_sharing.get() { "inline-block" } else { "none" }
+                        >
+                            "⛶ Fullscreen"
+                        </button>
+                    </div>
+                </Card>
 
                 <Card title="Voice Control">
                     <p>"Control your desktop with voice commands from mobile"</p>

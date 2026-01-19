@@ -177,6 +177,20 @@ impl ApiClient {
     }
 }
 
+/// Screen sharing operations
+impl ApiClient {
+    /// Create screen sharing offer
+    pub async fn create_screen_offer(&self) -> Result<ScreenOfferResponse, String> {
+        self.post("/screen/offer", &serde_json::json!({})).await
+    }
+
+    /// Handle screen sharing answer
+    pub async fn handle_screen_answer(&self, answer: &ScreenAnswerRequest) -> Result<(), String> {
+        let _: serde_json::Value = self.post("/screen/answer", answer).await?;
+        Ok(())
+    }
+}
+
 /// Health check operations
 impl ApiClient {
     /// Health check
@@ -244,4 +258,16 @@ pub struct HealthStatus {
     pub status: String,
     pub timestamp: String,
     pub version: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ScreenOfferResponse {
+    pub session_id: String,
+    pub offer: String,
+}
+
+#[derive(Serialize)]
+pub struct ScreenAnswerRequest {
+    pub session_id: String,
+    pub answer: String,
 }
