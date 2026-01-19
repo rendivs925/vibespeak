@@ -1644,11 +1644,6 @@
           } else {
             throw new Error('Failed to insert text');
           }
-
-            console.log('Desktop typing requested:', dictatedText);
-          } else {
-            throw new Error('Failed to insert text');
-          }
         } catch (error) {
           console.error('Text insertion failed:', error);
           updateDictationStatus(`Text insertion failed: ${error.message}`, "error");
