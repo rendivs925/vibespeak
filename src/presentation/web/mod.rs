@@ -46,11 +46,23 @@ impl WebServer {
         // Service worker and PWA files
         let sw_js = warp::path("sw.js")
             .and(warp::get())
-            .map(|| warp::reply::html(include_str!("../../../web/sw.js")));
+            .map(|| {
+                warp::reply::with_header(
+                    include_str!("../../../web/sw.js"),
+                    "content-type",
+                    "application/javascript"
+                )
+            });
 
         let manifest_json = warp::path("manifest.json")
             .and(warp::get())
-            .map(|| warp::reply::html(include_str!("../../../web/manifest.json")));
+            .map(|| {
+                warp::reply::with_header(
+                    include_str!("../../../web/manifest.json"),
+                    "content-type",
+                    "application/json"
+                )
+            });
 
         // API routes
         let api = self.api_routes();
@@ -728,7 +740,6 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
                        output.status, stdout.trim(), stderr.trim());
         Err(Error::CommandExecution(format!("xdotool failed: {} (stdout: {})", stderr, stdout)))
     }
-}
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {
