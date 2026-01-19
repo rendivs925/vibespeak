@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 
 use super::{handlers, state::AppState};
 
@@ -36,8 +36,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/dictation/test-keyboard", get(handlers::test_keyboard));
 
     Router::new()
-        .nest("/api", api_routes)
-        .fallback(|| async { axum::response::Html(vibespeak_frontend::create_html_response()) }) // Serve the HTML for all non-API routes
+        .nest("/api", api_routes) // API routes have priority
+        .fallback_service(ServeDir::new("frontend/dist")) // Serve static files including index.html
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

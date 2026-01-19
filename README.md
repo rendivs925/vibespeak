@@ -516,7 +516,7 @@ vibespeak/
 │   │   ├── api.rs        # Backend API client
 │   │   └── state.rs      # Application state
 │   └── Cargo.toml        # Frontend dependencies
-├── web/                  # Legacy web assets
+├── frontend/             # Leptos WASM frontend
 ├── config/               # Configuration files
 ├── model/                # Voice recognition models
 ├── docs/                 # Documentation

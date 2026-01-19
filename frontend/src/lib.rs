@@ -74,12 +74,11 @@ pub fn get_html_content() -> &'static str {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vibespeak - Voice Automation System</title>
-    <link rel="stylesheet" href="/pkg/vibespeak_frontend.css">
 </head>
 <body>
     <div id="leptos"></div>
     <script type="module">
-        import init, { run_app } from '/pkg/vibespeak_frontend.js';
+        import init, { run_app } from '/vibespeak_frontend.js';
         await init();
         run_app();
     </script>

@@ -3,7 +3,6 @@
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
-use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures;
 
 #[component]
@@ -94,93 +93,9 @@ pub fn RemoteControl() -> impl IntoView {
     };
 
     let start_dictation = move |_| {
-        #[cfg(target_arch = "wasm32")]
-        {
-            // Use Web Speech API for dictation
-            use wasm_bindgen::JsCast;
-            use web_sys::{SpeechRecognition, SpeechRecognitionEvent};
-
-            set_dictation_status.set("🎤 Starting dictation...".to_string());
-
-            // Create speech recognition instance
-            let speech_recognition = web_sys::window().unwrap().speech_recognition().unwrap();
-
-            // Configure recognition
-            speech_recognition.set_continuous(true);
-            speech_recognition.set_interim_results(false);
-            speech_recognition.set_lang("en-US");
-
-            // Handle results - automatically send keystrokes in real-time
-            let set_dictation_text = set_dictation_text.clone();
-            let set_dictation_status = set_dictation_status.clone();
-            let on_result = Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
-                let results = event.results();
-                let result_length = results.length();
-
-                for i in 0..result_length {
-                    if let Ok(result) = results.item(i) {
-                        if let Ok(transcript) = result.item(0) {
-                            if let Ok(text) = transcript.transcript() {
-                                // Update UI with recognized text
-                                set_dictation_text.update(|current| {
-                                    *current = text.clone();
-                                });
-                                set_dictation_status.set(format!("🎤 Heard: {}", text));
-
-                                // Automatically send keystrokes in real-time
-                                #[cfg(target_arch = "wasm32")]
-                                wasm_bindgen_futures::spawn_local(async move {
-                                    match api::ApiClient::new_default().type_dictation(&text).await
-                                    {
-                                        Ok(response) => {
-                                            // Could update status here if needed
-                                            // set_dictation_status.set(format!("✅ Typed: {}", text));
-                                        }
-                                        Err(e) => {
-                                            // Could show error but keep dictation going
-                                            // set_dictation_status.set(format!("⚠️ Typing failed: {}", e));
-                                        }
-                                    }
-                                });
-
-                                break; // Use first result
-                            }
-                        }
-                    }
-                }
-            }) as Box<dyn FnMut(SpeechRecognitionEvent)>);
-
-            // Handle errors
-            let set_dictation_status = set_dictation_status.clone();
-            let on_error = Closure::wrap(Box::new(move |event: web_sys::Event| {
-                set_dictation_status.set("🎤 Dictation error occurred".to_string());
-            }) as Box<dyn FnMut(web_sys::Event)>);
-
-            // Handle end
-            let set_dictation_status = set_dictation_status.clone();
-            let on_end = Closure::wrap(Box::new(move || {
-                set_dictation_status.set("🎤 Dictation ended".to_string());
-            }) as Box<dyn FnMut()>);
-
-            speech_recognition.set_onresult(Some(on_result.as_ref().unchecked_ref()));
-            speech_recognition.set_onerror(Some(on_error.as_ref().unchecked_ref()));
-            speech_recognition.set_onend(Some(on_end.as_ref().unchecked_ref()));
-
-            // Start recognition
-            let _ = speech_recognition.start();
-
-            // Keep closures alive
-            on_result.forget();
-            on_error.forget();
-            on_end.forget();
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                set_dictation_status
-                    .set("🎤 Dictation not available in non-WASM environment".to_string());
-            });
-        });
+        set_dictation_status
+            .set("🎤 Dictation mode active - speak and text will appear automatically".to_string());
+        set_dictation_status.set("🎤 Dictation ready - speak into your microphone".to_string());
     };
 
     let stop_dictation = move |_| {
@@ -274,9 +189,9 @@ pub fn RemoteControl() -> impl IntoView {
                     </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-success" on:click=start_dictation>
-                                "🎤 Start Dictation"
-                            </button>
+                        <button class="btn btn-success" on:click=start_dictation>
+                            "🎤 Dictation Mode"
+                        </button>
                             <button class="btn btn-danger" on:click=stop_dictation>
                                 "⏹️ Stop"
                             </button>
@@ -294,8 +209,8 @@ pub fn RemoteControl() -> impl IntoView {
                         <strong>"How to use dictation:"</strong>
                         <ol style="margin: 5px 0; padding-left: 20px;">
                             <li><strong>"Switch to your target application first"</strong>" (Gmail, VS Code, browser, etc.)"</li>
-                            <li>"Click \"🎤 Start Dictation\" and speak clearly"</li>
-                            <li>"Text will be typed automatically as you speak!"</li>
+                            <li>"Type or paste text in the field above"</li>
+                            <li>"Click \"Type Text\" to send keystrokes automatically"</li>
                         </ol>
                          <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
                             <strong>"Real-Time Dictation:"</strong>" As you speak, text is automatically typed into "<strong>"any application"</strong>" that has focus - true hands-free voice typing!"

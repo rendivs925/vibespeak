@@ -30,7 +30,7 @@ vibespeak/
 │   ├── infrastructure/   # External adapters & persistence
 │   ├── presentation/     # Web & CLI interfaces
 │   └── shared/           # Common utilities & types
-├── web/                  # Frontend assets
+├── frontend/             # Leptos WASM frontend
 ├── config/               # Configuration files
 ├── model/                # Speech recognition models
 ├── piper/                # TTS binary & voice models

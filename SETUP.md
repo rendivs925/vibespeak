@@ -234,8 +234,8 @@ make docker-run
 cargo install cargo-watch  # For auto-rebuilding
 cargo install cargo-tarpaulin  # For test coverage
 
-# Web development (optional)
-npm install  # In web/ directory
+# Frontend development (automatic)
+# No manual setup required - the Rust backend integrates the Leptos frontend automatically
 ```
 
 ## Post-Setup Configuration
@@ -286,10 +286,12 @@ trunk build --release
 # The output will be in frontend/dist/
 ```
 
-### Deploy the Frontend
+### Deploy the Application
 ```bash
-# Copy built files to where Axum serves them
-cp -r frontend/dist/* web/dist/
+# Build and run the complete application (frontend + backend)
+cargo build --release
+./target/release/vibespeak --mode web
+# Frontend is automatically served by the backend
 ```
 
 ### Development with Hot Reload

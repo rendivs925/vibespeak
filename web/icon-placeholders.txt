@@ -1,9 +1,0 @@
-# PWA Icon Placeholders
-# These should be replaced with actual PNG icon files:
-# - icon-192.png (192x192 pixels)
-# - icon-512.png (512x512 pixels)
-# - icon-96.png (96x96 pixels for shortcuts)
-#
-# Recommended: Use a microphone icon or Vibespeak logo
-# Background: Transparent or theme color (#667eea)
-# Format: PNG with proper transparency

@@ -1,4 +1,0 @@
-# Vibespeak Dictation Icon (16x16)
-# This should be replaced with actual icon files
-# Recommended: PNG format, transparent background
-# Use a microphone or speech bubble icon
