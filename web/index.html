@@ -1329,9 +1329,25 @@
       // Dictation functionality
       let isDictationActive = false;
       let dictatedText = '';
+      let speechRecognition = null;
+      let remoteVoiceConnection = null;
 
       async function startDictation() {
         try {
+          updateDictationStatus("🎤 Requesting microphone permission...", "info");
+
+          // Request microphone permission first
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 16000
+            }
+          });
+
+          // Stop the stream immediately - we just needed permission
+          stream.getTracks().forEach(track => track.stop());
+
           updateDictationStatus("🎤 Starting dictation...", "info");
 
           const response = await fetch('/api/dictation/start', {
@@ -1351,33 +1367,135 @@
             dictatedText = '';
             updateDictationText();
 
-            // Start listening for dictation input (in a real implementation, this would connect to speech recognition)
+            // Start listening for dictation input
             startDictationListening();
           } else {
             throw new Error('Failed to start dictation');
           }
         } catch (error) {
           console.error('Dictation failed:', error);
-          updateDictationStatus(`Dictation failed: ${error.message}`, "error");
+
+          if (error.name === 'NotAllowedError') {
+            updateDictationStatus("❌ Microphone permission denied. Please allow microphone access and try again.", "error");
+          } else if (error.name === 'NotFoundError') {
+            updateDictationStatus("❌ No microphone found. Please connect a microphone and try again.", "error");
+          } else {
+            updateDictationStatus(`❌ Dictation failed: ${error.message}`, "error");
+          }
         }
       }
 
       function startDictationListening() {
-        // In a real implementation, this would connect to WebRTC audio streaming
-        // and speech recognition. For demo purposes, we'll simulate dictation.
-        console.log('Dictation listening started - WebRTC audio streaming would connect here');
+        console.log('Starting real dictation with Web Speech API...');
 
-        // Simulate receiving dictated text (replace with real speech recognition)
-        setTimeout(() => {
-          if (isDictationActive) {
-            dictatedText = 'This is a sample of dictated text that would be recognized from your speech.';
-            updateDictationText();
+        // Try Web Speech API first (works locally in browser)
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          startWebSpeechRecognition();
+        } else {
+          // Fallback to remote voice processing (would require WebRTC setup)
+          updateDictationStatus("⚠️ Web Speech API not supported - remote dictation not yet implemented", "warning");
+
+          // For now, show a message about what would happen
+          setTimeout(() => {
+            if (isDictationActive) {
+              dictatedText = 'Web Speech API is not available in this browser. In a full implementation, this would connect to remote voice processing via WebRTC.';
+              updateDictationText();
+            }
+          }, 2000);
+        }
+      }
+
+      function startWebSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+          updateDictationStatus("❌ Speech recognition not supported", "error");
+          return;
+        }
+
+        speechRecognition = new SpeechRecognition();
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = true;
+        speechRecognition.lang = 'en-US';
+
+        speechRecognition.onstart = () => {
+          console.log('Speech recognition started');
+          updateDictationStatus("🎤 Listening... Speak clearly into your microphone", "success");
+        };
+
+        speechRecognition.onresult = (event) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
           }
-        }, 2000);
+
+          if (finalTranscript) {
+            // Add final transcript to dictated text
+            dictatedText += (dictatedText ? ' ' : '') + finalTranscript.trim();
+            updateDictationText();
+            console.log('Final transcript:', finalTranscript);
+
+            // Visual feedback
+            updateDictationStatus(`✅ Heard: "${finalTranscript.trim()}"`, "success");
+            setTimeout(() => {
+              if (isDictationActive) {
+                updateDictationStatus("🎤 Listening... Speak clearly into your microphone", "success");
+              }
+            }, 2000);
+          } else if (interimTranscript) {
+            // Show interim results
+            const displayText = dictatedText + (dictatedText ? ' ' : '') + interimTranscript;
+            document.getElementById('dictation-text').value = displayText;
+            updateDictationStatus(`🎤 "${interimTranscript}"`, "info");
+          }
+        };
+
+        speechRecognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          updateDictationStatus(`❌ Speech recognition error: ${event.error}`, "error");
+        };
+
+        speechRecognition.onend = () => {
+          console.log('Speech recognition ended');
+          if (isDictationActive) {
+            // Restart if still active (continuous mode might stop occasionally)
+            setTimeout(() => {
+              if (isDictationActive && speechRecognition) {
+                speechRecognition.start();
+              }
+            }, 100);
+          }
+        };
+
+        try {
+          speechRecognition.start();
+        } catch (error) {
+          console.error('Failed to start speech recognition:', error);
+          updateDictationStatus("❌ Failed to access microphone. Please check permissions.", "error");
+        }
       }
 
       async function stopDictation() {
         try {
+          // Stop speech recognition
+          if (speechRecognition) {
+            speechRecognition.stop();
+            speechRecognition = null;
+          }
+
+          // Close any remote voice connections
+          if (remoteVoiceConnection) {
+            remoteVoiceConnection.close();
+            remoteVoiceConnection = null;
+          }
+
           const response = await fetch('/api/dictation/stop', {
             method: 'POST'
           });
