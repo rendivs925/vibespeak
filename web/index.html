@@ -1420,20 +1420,7 @@
 
       async function startDictation() {
         try {
-          updateDictationStatus("🎤 Requesting microphone permission...", "info");
-
-          // Request microphone permission first
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              sampleRate: 16000
-            }
-          });
-
-          // Stop the stream immediately - we just needed permission
-          stream.getTracks().forEach(track => track.stop());
-
+          console.log("🎤 startDictation() called");
           updateDictationStatus("🎤 Starting dictation...", "info");
 
           const response = await fetch('/api/dictation/start', {
@@ -1600,6 +1587,7 @@
       }
 
       async function insertDictationText() {
+        console.log("🎯 insertDictationText() called with text:", dictatedText);
         if (!dictatedText.trim()) {
           alert('No text to insert. Please dictate some text first.');
           return;
@@ -1815,10 +1803,35 @@
         document.getElementById('stop-voice-control').addEventListener('click', stopVoiceControl);
 
         // Dictation buttons
-        document.getElementById('start-dictation').addEventListener('click', startDictation);
+        console.log("🎤 Setting up dictation event listeners");
+
+        // Test button clicks
+        const startBtn = document.getElementById('start-dictation');
+        const insertBtn = document.getElementById('insert-text');
+
+        if (!startBtn) {
+          console.error("❌ start-dictation button not found!");
+        } else {
+          console.log("✅ start-dictation button found");
+          startBtn.addEventListener('click', function(e) {
+            console.log("🎤 Start Dictation button clicked!");
+            startDictation();
+          });
+        }
+
+        if (!insertBtn) {
+          console.error("❌ insert-text button not found!");
+        } else {
+          console.log("✅ insert-text button found");
+          insertBtn.addEventListener('click', function(e) {
+            console.log("🎯 Insert Text button clicked!");
+            insertDictationText();
+          });
+        }
+
         document.getElementById('stop-dictation').addEventListener('click', stopDictation);
-        document.getElementById('insert-text').addEventListener('click', insertDictationText);
         document.getElementById('clear-dictation').addEventListener('click', clearDictation);
+        console.log("✅ Dictation event listeners set up");
 
         // Initialize touch controls
         initTouchControls();
