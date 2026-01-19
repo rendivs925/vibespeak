@@ -327,7 +327,7 @@
         <h1>🎤 Vibespeak</h1>
         <p>Voice Automation System - Control your computer with your voice</p>
         <div id="system-status" class="status info">
-          System Status: Initializing...
+          Loading system status...
         </div>
       </div>
 
@@ -638,21 +638,44 @@
       }
 
       // Initialize everything when DOM is ready
-      document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("DOMContentLoaded", async function () {
+        console.log("DOM loaded, initializing...");
         initNavigation();
-        loadConfig();
-        checkTailscaleStatus();
-        updateStatus("System ready");
+        console.log("Navigation initialized");
+
+        // Update status to show we're starting
+        updateStatus("Loading configuration...");
+
+        try {
+          await loadConfig();
+          await checkTailscaleStatus();
+          // Only set "ready" status if loadConfig succeeded
+          if (document.getElementById("system-status").textContent.includes("Loading")) {
+            updateStatus("System ready");
+          }
+        } catch (error) {
+          console.error("Initialization error:", error);
+          updateStatus("System initialization failed", "error");
+        }
       });
 
       async function loadConfig() {
         try {
+          console.log("Loading config from /api/config...");
           const response = await fetch("/api/config");
+          console.log("Config response status:", response.status);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
           const config = await response.json();
+          console.log("Loaded config:", config);
           updateUI(config);
+          updateStatus("System ready - configuration loaded", "success");
         } catch (error) {
           console.error("Failed to load config:", error);
-          updateStatus("Error loading configuration", "error");
+          updateStatus(`Error loading configuration: ${error.message}`, "error");
         }
       }
 
