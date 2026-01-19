@@ -3,7 +3,10 @@
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[component]
 pub fn RemoteControl() -> impl IntoView {
@@ -13,6 +16,9 @@ pub fn RemoteControl() -> impl IntoView {
     let (dictation_status, set_dictation_status) = create_signal("Dictation ready".to_string());
     let (is_dictating, set_is_dictating) = create_signal(false);
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
+
+    // Store reference to SpeechRecognition instance
+    let recognition_ref: Rc<RefCell<Option<web_sys::SpeechRecognition>>> = Rc::new(RefCell::new(None));
 
     let execute_command = move |command: String| {
         #[cfg(target_arch = "wasm32")]
@@ -66,7 +72,7 @@ pub fn RemoteControl() -> impl IntoView {
 
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
-        set_dictation_status.set(String::new());
+        set_dictation_status.set("Dictation ready".to_string());
     };
 
     let test_keyboard = move |_| {
@@ -92,16 +98,128 @@ pub fn RemoteControl() -> impl IntoView {
         });
     };
 
+    // Real-time dictation with Web Speech API
+    let recognition_ref_start = recognition_ref.clone();
     let start_dictation = move |_| {
-        set_dictation_status
-            .set("🎤 Dictation mode active - speak and text will appear automatically".to_string());
-        set_dictation_status.set("🎤 Dictation ready - speak into your microphone".to_string());
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+
+            // Create SpeechRecognition instance
+            let recognition = web_sys::SpeechRecognition::new();
+
+            match recognition {
+                Ok(recognition) => {
+                    // Configure for continuous real-time dictation
+                    recognition.set_continuous(true);
+                    recognition.set_interim_results(true);
+                    recognition.set_lang("en-US");
+
+                    // Clone signals for closures
+                    let set_dictation_status_result = set_dictation_status.clone();
+                    let set_dictation_text_result = set_dictation_text.clone();
+                    let set_is_dictating_result = set_is_dictating.clone();
+
+                    // Handle speech recognition results
+                    let onresult = Closure::wrap(Box::new(move |event: web_sys::SpeechRecognitionEvent| {
+                        let results = event.results();
+                        if let Some(results) = results {
+                            // Get the latest result
+                            let result_index = event.result_index();
+                            if let Some(result) = results.get(result_index) {
+                                if let Some(alternative) = result.get(0) {
+                                    let transcript = alternative.transcript();
+                                    let is_final = result.is_final();
+
+                                    // Update display
+                                    set_dictation_text_result.set(transcript.clone());
+
+                                    if is_final && !transcript.trim().is_empty() {
+                                        // Final result - send to backend to type
+                                        let text = transcript.clone();
+                                        set_dictation_status_result.set(format!("⌨️ Typing: \"{}\"", text));
+
+                                        wasm_bindgen_futures::spawn_local(async move {
+                                            match api::ApiClient::new_default().type_dictation(&text).await {
+                                                Ok(response) => {
+                                                    if response.success {
+                                                        web_sys::console::log_1(&format!("Typed {} chars", response.characters_typed).into());
+                                                    } else {
+                                                        web_sys::console::error_1(&format!("Type failed: {:?}", response.error).into());
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    web_sys::console::error_1(&format!("API error: {}", e).into());
+                                                }
+                                            }
+                                        });
+
+                                        // Clear for next phrase
+                                        set_dictation_text_result.set(String::new());
+                                    } else if !is_final {
+                                        set_dictation_status_result.set(format!("🎤 Listening: \"{}\"...", transcript));
+                                    }
+                                }
+                            }
+                        }
+                    }) as Box<dyn FnMut(_)>);
+
+                    recognition.set_onresult(Some(onresult.as_ref().unchecked_ref()));
+                    onresult.forget();
+
+                    // Handle errors
+                    let set_dictation_status_error = set_dictation_status.clone();
+                    let set_is_dictating_error = set_is_dictating.clone();
+                    let onerror = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                        set_dictation_status_error.set("❌ Speech recognition error - try again".to_string());
+                        set_is_dictating_error.set(false);
+                        web_sys::console::error_1(&format!("Speech error: {:?}", event).into());
+                    }) as Box<dyn FnMut(_)>);
+
+                    recognition.set_onerror(Some(onerror.as_ref().unchecked_ref()));
+                    onerror.forget();
+
+                    // Handle end (auto-restart for continuous mode)
+                    let recognition_clone = recognition.clone();
+                    let set_dictation_status_end = set_dictation_status.clone();
+                    let is_dictating_end = is_dictating.clone();
+                    let onend = Closure::wrap(Box::new(move |_: web_sys::Event| {
+                        // Auto-restart if still in dictation mode
+                        if is_dictating_end.get_untracked() {
+                            set_dictation_status_end.set("🎤 Restarting...".to_string());
+                            let _ = recognition_clone.start();
+                        }
+                    }) as Box<dyn FnMut(_)>);
+
+                    recognition.set_onend(Some(onend.as_ref().unchecked_ref()));
+                    onend.forget();
+
+                    // Start recognition
+                    match recognition.start() {
+                        Ok(_) => {
+                            set_dictation_status.set("🎤 Listening... speak now (auto-typing enabled)".to_string());
+                            set_is_dictating.set(true);
+                            *recognition_ref_start.borrow_mut() = Some(recognition);
+                        }
+                        Err(e) => {
+                            set_dictation_status.set(format!("Failed to start: {:?}", e));
+                        }
+                    }
+                }
+                Err(e) => {
+                    set_dictation_status.set(format!("Speech recognition not supported: {:?}", e));
+                }
+            }
+        }
     };
 
+    let recognition_ref_stop = recognition_ref.clone();
     let stop_dictation = move |_| {
-        set_dictation_status.set("🎤 Dictation stopped".to_string());
-        // Note: In a real implementation, we'd need to keep a reference
-        // to the SpeechRecognition instance to call stop() on it
+        set_is_dictating.set(false);
+        if let Some(recognition) = recognition_ref_stop.borrow_mut().take() {
+            let _ = recognition.stop();
+        }
+        set_dictation_status.set("⏹️ Dictation stopped".to_string());
     };
 
     let touch_commands = vec![
