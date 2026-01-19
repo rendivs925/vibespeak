@@ -1,7 +1,7 @@
 //! Route definitions for the Axum server
 
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use tower_http::{cors::CorsLayer, services::{ServeDir, ServeFile}, trace::TraceLayer};
@@ -16,6 +16,18 @@ pub fn create_router(state: AppState) -> Router {
         // Config endpoints
         .route("/config", get(handlers::get_config))
         .route("/config", post(handlers::update_config))
+        // Command CRUD endpoints
+        .route("/commands", post(handlers::create_command))
+        .route("/commands/:id", put(handlers::update_command))
+        .route("/commands/:id", delete(handlers::delete_command))
+        // Workflow CRUD endpoints
+        .route("/workflows", post(handlers::create_workflow))
+        .route("/workflows/:id", put(handlers::update_workflow))
+        .route("/workflows/:id", delete(handlers::delete_workflow))
+        // Script CRUD endpoints
+        .route("/scripts", post(handlers::create_script))
+        .route("/scripts/:id", put(handlers::update_script))
+        .route("/scripts/:id", delete(handlers::delete_script))
         // Tailscale endpoints
         .route("/tailscale/status", get(handlers::get_tailscale_status))
         .route("/tailscale/config", post(handlers::update_tailscale_config))

@@ -55,6 +55,39 @@ impl ApiClient {
             .map_err(|e| format!("Parse error: {}", e))
     }
 
+    /// Generic PUT request
+    pub async fn put<T: Serialize, R: DeserializeOwned>(
+        &self,
+        endpoint: &str,
+        body: &T,
+    ) -> Result<R, String> {
+        let url = format!("{}{}", self.base_url, endpoint);
+
+        Request::put(&url)
+            .header("Content-Type", "application/json")
+            .json(body)
+            .map_err(|e| format!("Serialization error: {}", e))?
+            .send()
+            .await
+            .map_err(|e| format!("Network error: {}", e))?
+            .json::<R>()
+            .await
+            .map_err(|e| format!("Parse error: {}", e))
+    }
+
+    /// Generic DELETE request
+    pub async fn delete<R: DeserializeOwned>(&self, endpoint: &str) -> Result<R, String> {
+        let url = format!("{}{}", self.base_url, endpoint);
+
+        Request::delete(&url)
+            .send()
+            .await
+            .map_err(|e| format!("Network error: {}", e))?
+            .json::<R>()
+            .await
+            .map_err(|e| format!("Parse error: {}", e))
+    }
+
     /// Get application configuration
     pub async fn get_config(&self) -> Result<AppConfig, String> {
         self.get("/config").await
@@ -191,6 +224,60 @@ impl ApiClient {
     }
 }
 
+/// Command CRUD operations
+impl ApiClient {
+    /// Create a new command
+    pub async fn create_command(&self, request: &CreateCommandRequest) -> Result<CrudResponse, String> {
+        self.post("/commands", request).await
+    }
+
+    /// Update an existing command
+    pub async fn update_command(&self, id: &str, request: &UpdateCommandRequest) -> Result<CrudResponse, String> {
+        self.put(&format!("/commands/{}", id), request).await
+    }
+
+    /// Delete a command
+    pub async fn delete_command(&self, id: &str) -> Result<CrudResponse, String> {
+        self.delete(&format!("/commands/{}", id)).await
+    }
+}
+
+/// Workflow CRUD operations
+impl ApiClient {
+    /// Create a new workflow
+    pub async fn create_workflow(&self, request: &CreateWorkflowRequest) -> Result<CrudResponse, String> {
+        self.post("/workflows", request).await
+    }
+
+    /// Update an existing workflow
+    pub async fn update_workflow(&self, id: &str, request: &UpdateWorkflowRequest) -> Result<CrudResponse, String> {
+        self.put(&format!("/workflows/{}", id), request).await
+    }
+
+    /// Delete a workflow
+    pub async fn delete_workflow(&self, id: &str) -> Result<CrudResponse, String> {
+        self.delete(&format!("/workflows/{}", id)).await
+    }
+}
+
+/// Script CRUD operations
+impl ApiClient {
+    /// Create a new script
+    pub async fn create_script(&self, request: &CreateScriptRequest) -> Result<CrudResponse, String> {
+        self.post("/scripts", request).await
+    }
+
+    /// Update an existing script
+    pub async fn update_script(&self, id: &str, request: &UpdateScriptRequest) -> Result<CrudResponse, String> {
+        self.put(&format!("/scripts/{}", id), request).await
+    }
+
+    /// Delete a script
+    pub async fn delete_script(&self, id: &str) -> Result<CrudResponse, String> {
+        self.delete(&format!("/scripts/{}", id)).await
+    }
+}
+
 /// Health check operations
 impl ApiClient {
     /// Health check
@@ -270,4 +357,68 @@ pub struct ScreenOfferResponse {
 pub struct ScreenAnswerRequest {
     pub session_id: String,
     pub answer: String,
+}
+
+// ============= CRUD DTOs =============
+
+#[derive(serde::Deserialize)]
+pub struct CrudResponse {
+    pub status: String,
+    #[serde(default)]
+    pub id: Option<String>,
+    pub message: String,
+}
+
+#[derive(Serialize)]
+pub struct CreateCommandRequest {
+    pub text: String,
+    pub action: serde_json::Value,
+    pub category: String,
+}
+
+#[derive(Serialize, Default)]
+pub struct UpdateCommandRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+
+#[derive(Serialize)]
+pub struct CreateWorkflowRequest {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Serialize, Default)]
+pub struct UpdateWorkflowRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+
+#[derive(Serialize)]
+pub struct CreateScriptRequest {
+    pub name: String,
+    pub language: String,
+    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+#[derive(Serialize, Default)]
+pub struct UpdateScriptRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
 }

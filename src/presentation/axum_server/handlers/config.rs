@@ -193,3 +193,313 @@ pub async fn update_tailscale_config(
         "message": "Tailscale configuration updated"
     })))
 }
+
+// ============= COMMAND CRUD =============
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCommandRequest {
+    pub text: String,
+    pub action: Value,
+    pub category: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCommandRequest {
+    pub text: Option<String>,
+    pub action: Option<Value>,
+    pub category: Option<String>,
+    pub enabled: Option<bool>,
+}
+
+pub async fn create_command(
+    State(state): State<AppState>,
+    Json(request): Json<CreateCommandRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    // Parse the action from JSON
+    let action: crate::domain::entities::CommandAction = serde_json::from_value(request.action.clone())
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let command = crate::domain::entities::VoiceCommand {
+        id: uuid::Uuid::new_v4().to_string(),
+        text: request.text,
+        action,
+        category: request.category,
+        enabled: true,
+        confidence: 0.0,
+        metadata: crate::domain::entities::CommandMetadata::default(),
+    };
+
+    let id = command.id.clone();
+    config.commands.push(command);
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "id": id,
+        "message": "Command created successfully"
+    })))
+}
+
+pub async fn update_command(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(request): Json<UpdateCommandRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let command = config.commands.iter_mut()
+        .find(|c| c.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if let Some(text) = request.text {
+        command.text = text;
+    }
+    if let Some(action) = request.action {
+        command.action = serde_json::from_value(action)
+            .map_err(|_| StatusCode::BAD_REQUEST)?;
+    }
+    if let Some(category) = request.category {
+        command.category = category;
+    }
+    if let Some(enabled) = request.enabled {
+        command.enabled = enabled;
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Command updated successfully"
+    })))
+}
+
+pub async fn delete_command(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let initial_len = config.commands.len();
+    config.commands.retain(|c| c.id != id);
+
+    if config.commands.len() == initial_len {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Command deleted successfully"
+    })))
+}
+
+// ============= WORKFLOW CRUD =============
+
+#[derive(Debug, Deserialize)]
+pub struct CreateWorkflowRequest {
+    pub name: String,
+    pub description: String,
+    pub trigger: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateWorkflowRequest {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub enabled: Option<bool>,
+}
+
+pub async fn create_workflow(
+    State(state): State<AppState>,
+    Json(request): Json<CreateWorkflowRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let workflow = crate::domain::entities::Workflow {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: request.name,
+        description: request.description,
+        trigger: crate::domain::entities::WorkflowTrigger::Manual,
+        steps: Vec::new(),
+        variables: std::collections::HashMap::new(),
+        error_handling: crate::domain::entities::ErrorStrategy::Stop,
+        enabled: true,
+    };
+
+    let id = workflow.id.clone();
+    config.workflows.push(workflow);
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "id": id,
+        "message": "Workflow created successfully"
+    })))
+}
+
+pub async fn update_workflow(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(request): Json<UpdateWorkflowRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let workflow = config.workflows.iter_mut()
+        .find(|w| w.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if let Some(name) = request.name {
+        workflow.name = name;
+    }
+    if let Some(description) = request.description {
+        workflow.description = description;
+    }
+    if let Some(enabled) = request.enabled {
+        workflow.enabled = enabled;
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Workflow updated successfully"
+    })))
+}
+
+pub async fn delete_workflow(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let initial_len = config.workflows.len();
+    config.workflows.retain(|w| w.id != id);
+
+    if config.workflows.len() == initial_len {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Workflow deleted successfully"
+    })))
+}
+
+// ============= SCRIPT CRUD =============
+
+#[derive(Debug, Deserialize)]
+pub struct CreateScriptRequest {
+    pub name: String,
+    pub language: String,
+    pub content: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateScriptRequest {
+    pub name: Option<String>,
+    pub content: Option<String>,
+    pub enabled: Option<bool>,
+}
+
+pub async fn create_script(
+    State(state): State<AppState>,
+    Json(request): Json<CreateScriptRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let script_type = match request.language.to_lowercase().as_str() {
+        "bash" | "shell" => crate::shared::ScriptType::Bash,
+        "python" | "py" => crate::shared::ScriptType::Python,
+        "javascript" | "js" => crate::shared::ScriptType::JavaScript,
+        "ruby" | "rb" => crate::shared::ScriptType::Ruby,
+        "powershell" | "ps" => crate::shared::ScriptType::PowerShell,
+        _ => crate::shared::ScriptType::Bash,
+    };
+
+    let script = crate::infrastructure::config::ScriptConfig {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: request.name,
+        script_type,
+        content: request.content,
+        description: request.description.unwrap_or_default(),
+        enabled: true,
+    };
+
+    let id = script.id.clone();
+    config.scripts.push(script);
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "id": id,
+        "message": "Script created successfully"
+    })))
+}
+
+pub async fn update_script(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(request): Json<UpdateScriptRequest>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let script = config.scripts.iter_mut()
+        .find(|s| s.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if let Some(name) = request.name {
+        script.name = name;
+    }
+    if let Some(content) = request.content {
+        script.content = content;
+    }
+    if let Some(enabled) = request.enabled {
+        script.enabled = enabled;
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Script updated successfully"
+    })))
+}
+
+pub async fn delete_script(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let mut config = state.config.write().await;
+
+    let initial_len = config.scripts.len();
+    config.scripts.retain(|s| s.id != id);
+
+    if config.scripts.len() == initial_len {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    // Save to file
+    let _ = config.save_to_file("config/system.json");
+
+    Ok(Json(json!({
+        "status": "ok",
+        "message": "Script deleted successfully"
+    })))
+}
