@@ -226,13 +226,30 @@ impl ApiClient {
 
 /// Command CRUD operations
 impl ApiClient {
+    /// List all commands
+    pub async fn list_commands(&self) -> Result<ListCommandsResponse, String> {
+        self.get("/commands").await
+    }
+
+    /// Get a specific command by ID
+    pub async fn get_command(&self, id: &str) -> Result<GetCommandResponse, String> {
+        self.get(&format!("/commands/{}", id)).await
+    }
+
     /// Create a new command
-    pub async fn create_command(&self, request: &CreateCommandRequest) -> Result<CrudResponse, String> {
+    pub async fn create_command(
+        &self,
+        request: &CreateCommandRequest,
+    ) -> Result<CrudResponse, String> {
         self.post("/commands", request).await
     }
 
     /// Update an existing command
-    pub async fn update_command(&self, id: &str, request: &UpdateCommandRequest) -> Result<CrudResponse, String> {
+    pub async fn update_command(
+        &self,
+        id: &str,
+        request: &UpdateCommandRequest,
+    ) -> Result<CrudResponse, String> {
         self.put(&format!("/commands/{}", id), request).await
     }
 
@@ -241,16 +258,32 @@ impl ApiClient {
         self.delete(&format!("/commands/{}", id)).await
     }
 }
-
 /// Workflow CRUD operations
 impl ApiClient {
+    /// List all workflows
+    pub async fn list_workflows(&self) -> Result<ListWorkflowsResponse, String> {
+        self.get("/workflows").await
+    }
+
+    /// Get a specific workflow by ID
+    pub async fn get_workflow(&self, id: &str) -> Result<GetWorkflowResponse, String> {
+        self.get(&format!("/workflows/{}", id)).await
+    }
+
     /// Create a new workflow
-    pub async fn create_workflow(&self, request: &CreateWorkflowRequest) -> Result<CrudResponse, String> {
+    pub async fn create_workflow(
+        &self,
+        request: &CreateWorkflowRequest,
+    ) -> Result<CrudResponse, String> {
         self.post("/workflows", request).await
     }
 
     /// Update an existing workflow
-    pub async fn update_workflow(&self, id: &str, request: &UpdateWorkflowRequest) -> Result<CrudResponse, String> {
+    pub async fn update_workflow(
+        &self,
+        id: &str,
+        request: &UpdateWorkflowRequest,
+    ) -> Result<CrudResponse, String> {
         self.put(&format!("/workflows/{}", id), request).await
     }
 
@@ -262,13 +295,30 @@ impl ApiClient {
 
 /// Script CRUD operations
 impl ApiClient {
+    /// List all scripts
+    pub async fn list_scripts(&self) -> Result<ListScriptsResponse, String> {
+        self.get("/scripts").await
+    }
+
+    /// Get a specific script by ID
+    pub async fn get_script(&self, id: &str) -> Result<GetScriptResponse, String> {
+        self.get(&format!("/scripts/{}", id)).await
+    }
+
     /// Create a new script
-    pub async fn create_script(&self, request: &CreateScriptRequest) -> Result<CrudResponse, String> {
+    pub async fn create_script(
+        &self,
+        request: &CreateScriptRequest,
+    ) -> Result<CrudResponse, String> {
         self.post("/scripts", request).await
     }
 
     /// Update an existing script
-    pub async fn update_script(&self, id: &str, request: &UpdateScriptRequest) -> Result<CrudResponse, String> {
+    pub async fn update_script(
+        &self,
+        id: &str,
+        request: &UpdateScriptRequest,
+    ) -> Result<CrudResponse, String> {
         self.put(&format!("/scripts/{}", id), request).await
     }
 
@@ -277,7 +327,6 @@ impl ApiClient {
         self.delete(&format!("/scripts/{}", id)).await
     }
 }
-
 /// Health check operations
 impl ApiClient {
     /// Health check
@@ -421,4 +470,42 @@ pub struct UpdateScriptRequest {
     pub content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+
+// ============= CRUD Response DTOs =============
+
+#[derive(serde::Deserialize)]
+pub struct ListCommandsResponse {
+    pub status: String,
+    pub commands: Vec<crate::domain::entities::Command>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetCommandResponse {
+    pub status: String,
+    pub command: crate::domain::entities::Command,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ListWorkflowsResponse {
+    pub status: String,
+    pub workflows: Vec<crate::domain::entities::Workflow>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetWorkflowResponse {
+    pub status: String,
+    pub workflow: crate::domain::entities::Workflow,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ListScriptsResponse {
+    pub status: String,
+    pub scripts: Vec<crate::domain::entities::Script>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GetScriptResponse {
+    pub status: String,
+    pub script: crate::domain::entities::Script,
 }

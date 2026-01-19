@@ -77,7 +77,9 @@ pub async fn get_config(State(state): State<AppState>) -> Json<ConfigResponse> {
             id: wf.id.clone(),
             name: wf.name.clone(),
             description: wf.description.clone(),
-            steps: wf.steps.iter()
+            steps: wf
+                .steps
+                .iter()
                 .map(|s| serde_json::to_value(s).unwrap_or(Value::Null))
                 .collect(),
             enabled: wf.enabled,
@@ -107,7 +109,12 @@ pub async fn get_config(State(state): State<AppState>) -> Json<ConfigResponse> {
         tailscale_enabled: config.settings.tailscale_enabled,
     };
 
-    Json(ConfigResponse { commands, workflows, scripts, settings })
+    Json(ConfigResponse {
+        commands,
+        workflows,
+        scripts,
+        settings,
+    })
 }
 
 #[derive(Debug, Deserialize)]
@@ -218,8 +225,8 @@ pub async fn create_command(
     let mut config = state.config.write().await;
 
     // Parse the action from JSON
-    let action: crate::domain::entities::CommandAction = serde_json::from_value(request.action.clone())
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let action: crate::domain::entities::CommandAction =
+        serde_json::from_value(request.action.clone()).map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let command = crate::domain::entities::VoiceCommand {
         id: uuid::Uuid::new_v4().to_string(),
@@ -251,7 +258,9 @@ pub async fn update_command(
 ) -> Result<Json<Value>, StatusCode> {
     let mut config = state.config.write().await;
 
-    let command = config.commands.iter_mut()
+    let command = config
+        .commands
+        .iter_mut()
         .find(|c| c.id == id)
         .ok_or(StatusCode::NOT_FOUND)?;
 
@@ -259,8 +268,7 @@ pub async fn update_command(
         command.text = text;
     }
     if let Some(action) = request.action {
-        command.action = serde_json::from_value(action)
-            .map_err(|_| StatusCode::BAD_REQUEST)?;
+        command.action = serde_json::from_value(action).map_err(|_| StatusCode::BAD_REQUEST)?;
     }
     if let Some(category) = request.category {
         command.category = category;
@@ -297,6 +305,33 @@ pub async fn delete_command(
     Ok(Json(json!({
         "status": "ok",
         "message": "Command deleted successfully"
+    })))
+}
+
+pub async fn list_commands(State(state): State<AppState>) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "commands": config.commands
+    })))
+}
+
+pub async fn get_command(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    let command = config
+        .commands
+        .iter()
+        .find(|c| c.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "command": command
     })))
 }
 
@@ -353,7 +388,9 @@ pub async fn update_workflow(
 ) -> Result<Json<Value>, StatusCode> {
     let mut config = state.config.write().await;
 
-    let workflow = config.workflows.iter_mut()
+    let workflow = config
+        .workflows
+        .iter_mut()
         .find(|w| w.id == id)
         .ok_or(StatusCode::NOT_FOUND)?;
 
@@ -395,6 +432,33 @@ pub async fn delete_workflow(
     Ok(Json(json!({
         "status": "ok",
         "message": "Workflow deleted successfully"
+    })))
+}
+
+pub async fn list_workflows(State(state): State<AppState>) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "workflows": config.workflows
+    })))
+}
+
+pub async fn get_workflow(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    let workflow = config
+        .workflows
+        .iter()
+        .find(|w| w.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "workflow": workflow
     })))
 }
 
@@ -459,7 +523,9 @@ pub async fn update_script(
 ) -> Result<Json<Value>, StatusCode> {
     let mut config = state.config.write().await;
 
-    let script = config.scripts.iter_mut()
+    let script = config
+        .scripts
+        .iter_mut()
         .find(|s| s.id == id)
         .ok_or(StatusCode::NOT_FOUND)?;
 
@@ -501,5 +567,32 @@ pub async fn delete_script(
     Ok(Json(json!({
         "status": "ok",
         "message": "Script deleted successfully"
+    })))
+}
+
+pub async fn list_scripts(State(state): State<AppState>) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "scripts": config.scripts
+    })))
+}
+
+pub async fn get_script(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<Value>, StatusCode> {
+    let config = state.config.read().await;
+
+    let script = config
+        .scripts
+        .iter()
+        .find(|s| s.id == id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "script": script
     })))
 }

@@ -4,7 +4,11 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use tower_http::{cors::CorsLayer, services::{ServeDir, ServeFile}, trace::TraceLayer};
+use tower_http::{
+    cors::CorsLayer,
+    services::{ServeDir, ServeFile},
+    trace::TraceLayer,
+};
 
 use super::{handlers, state::AppState};
 
@@ -17,15 +21,21 @@ pub fn create_router(state: AppState) -> Router {
         .route("/config", get(handlers::get_config))
         .route("/config", post(handlers::update_config))
         // Command CRUD endpoints
+        .route("/commands", get(handlers::list_commands))
         .route("/commands", post(handlers::create_command))
+        .route("/commands/:id", get(handlers::get_command))
         .route("/commands/:id", put(handlers::update_command))
         .route("/commands/:id", delete(handlers::delete_command))
         // Workflow CRUD endpoints
+        .route("/workflows", get(handlers::list_workflows))
         .route("/workflows", post(handlers::create_workflow))
+        .route("/workflows/:id", get(handlers::get_workflow))
         .route("/workflows/:id", put(handlers::update_workflow))
         .route("/workflows/:id", delete(handlers::delete_workflow))
         // Script CRUD endpoints
+        .route("/scripts", get(handlers::list_scripts))
         .route("/scripts", post(handlers::create_script))
+        .route("/scripts/:id", get(handlers::get_script))
         .route("/scripts/:id", put(handlers::update_script))
         .route("/scripts/:id", delete(handlers::delete_script))
         // Tailscale endpoints
