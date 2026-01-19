@@ -150,7 +150,7 @@ pub fn RemoteControl() -> impl IntoView {
             speech_recognition.set_interim_results(false);
             speech_recognition.set_lang("en-US");
 
-            // Handle results
+            // Handle results - automatically send keystrokes in real-time
             let set_dictation_text = set_dictation_text.clone();
             let set_dictation_status = set_dictation_status.clone();
             let on_result = Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
@@ -161,10 +161,28 @@ pub fn RemoteControl() -> impl IntoView {
                     if let Ok(result) = results.item(i) {
                         if let Ok(transcript) = result.item(0) {
                             if let Ok(text) = transcript.transcript() {
+                                // Update UI with recognized text
                                 set_dictation_text.update(|current| {
                                     *current = text.clone();
                                 });
                                 set_dictation_status.set(format!("🎤 Heard: {}", text));
+
+                                // Automatically send keystrokes in real-time
+                                #[cfg(target_arch = "wasm32")]
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    match api::ApiClient::new_default().type_dictation(&text).await
+                                    {
+                                        Ok(response) => {
+                                            // Could update status here if needed
+                                            // set_dictation_status.set(format!("✅ Typed: {}", text));
+                                        }
+                                        Err(e) => {
+                                            // Could show error but keep dictation going
+                                            // set_dictation_status.set(format!("⚠️ Typing failed: {}", e));
+                                        }
+                                    }
+                                });
+
                                 break; // Use first result
                             }
                         }
@@ -295,32 +313,36 @@ pub fn RemoteControl() -> impl IntoView {
                         />
                     </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button class="btn btn-success" on:click=start_dictation>
-                            "🎤 Start Dictation"
-                        </button>
-                        <button class="btn btn-danger" on:click=stop_dictation>
-                            "⏹️ Stop Dictation"
-                        </button>
-                        <button class="btn" on:click=type_dictation>
-                            "Type Text"
-                        </button>
-                        <button class="btn btn-secondary" on:click=test_keyboard>
-                            "Test Keyboard"
-                        </button>
-                        <button class="btn btn-outline" on:click=clear_dictation>
-                            "Clear"
-                        </button>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-success" on:click=start_dictation>
+                                "🎤 Start Dictation"
+                            </button>
+                            <button class="btn btn-danger" on:click=stop_dictation>
+                                "⏹️ Stop"
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" on:click=type_dictation>
+                                "Type Text"
+                            </button>
+                            <button class="btn btn-secondary" on:click=test_keyboard>
+                                "Test Keyboard"
+                            </button>
+                            <button class="btn btn-outline" on:click=clear_dictation>
+                                "Clear"
+                            </button>
+                        </div>
                     </div>
                     <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-size: 14px;">
                         <strong>"How to use dictation:"</strong>
                         <ol style="margin: 5px 0; padding-left: 20px;">
+                            <li><strong>"Switch to your target application first"</strong>" (Gmail, VS Code, browser, etc.)"</li>
                             <li>"Click \"🎤 Start Dictation\" and speak clearly"</li>
-                            <li>"Your speech will appear in the text field above"</li>
-                            <li><strong>"Switch to your target application"</strong>" (Gmail, VS Code, browser, etc.)"</li>
-                            <li>"Click \"Type Text\" - text gets typed exactly like pressing keys!"</li>
+                            <li>"Text will be typed automatically as you speak!"</li>
+                            <li>"Or use \"Type Text\" button for manual text entry"</li>
                         </ol>
                          <div style="margin-top: 10px; padding: 8px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 3px;">
-                            <strong>"Keyboard Simulation:"</strong>" Dictation types text globally like a real keyboard - it works in "<strong>"any application"</strong>" that has focus!"
+                            <strong>"Real-Time Dictation:"</strong>" As you speak, text is automatically typed into "<strong>"any application"</strong>" that has focus - just like pressing keys on a real keyboard!"
                         </div>
                         <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
                             <strong>"System Setup:"</strong>
