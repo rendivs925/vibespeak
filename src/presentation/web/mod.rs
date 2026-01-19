@@ -491,6 +491,7 @@ async fn handle_screen_offer(
 // Dictation handlers
 #[derive(serde::Deserialize)]
 struct DictationStartRequest {
+    #[serde(rename = "inputType")]
     input_type: String,
     url: Option<String>,
     element_info: Option<serde_json::Value>,
@@ -526,6 +527,7 @@ async fn handle_dictation_stop(
 #[derive(serde::Deserialize)]
 struct DictationInsertRequest {
     text: String,
+    #[serde(rename = "inputType")]
     input_type: Option<String>,
 }
 
