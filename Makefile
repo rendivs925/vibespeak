@@ -5,12 +5,12 @@
 # testing, and deployment of the Vibespeak voice automation system.
 #
 # Quick Start:
-#   make setup    # Initial setup and dependency installation
-#   make run      # Build and run the application
-#   make dev      # Run in development mode with auto-restart
+#   make setup         # Initial setup and dependency installation
+#   make dev-fullstack # Run full-stack application
+#   make dev           # Interactive development mode
 #
 
-.PHONY: help setup build run dev dev-web dev-listen dev-frontend frontend-build frontend-deploy test clean install docs format lint check-deps web-deps frontend-deps
+.PHONY: help setup build run dev dev-fullstack dev-listen dev-frontend frontend-build test clean install docs format lint check-deps frontend-deps
 
 # Default target
 help:
@@ -18,43 +18,38 @@ help:
 	@echo "===================================="
 	@echo ""
 	@echo "Available commands:"
-	@echo "  setup     - Initial project setup and dependency installation"
-	@echo "  build     - Build the application in release mode"
-	@echo "  run       - Build and run the application"
-	@echo "  dev       - Run in development mode (interactive mode selection)"
-	@echo "  dev-web   - Run development mode with web interface"
+	@echo "  setup         - Initial project setup and dependency installation"
+	@echo "  build         - Build the application in release mode"
+	@echo "  run           - Build and run the application"
+	@echo "  dev           - Run in development mode (interactive mode selection)"
 	@echo "  dev-fullstack - Run full-stack application (Leptos frontend + backend API)"
-	@echo "  dev-listen - Run development mode with voice listening"
-	@echo "  test      - Run all tests"
-	@echo "  clean     - Clean build artifacts"
-	@echo "  install   - Install the application locally"
-	@echo "  docs      - Generate and serve documentation"
-	@echo "  format    - Format code with rustfmt"
-	@echo "  lint      - Run clippy linter"
-	@echo "  check     - Run all checks (format, lint, test)"
-	@echo "  web-deps     - Install web development dependencies"
-	@echo "  web-build    - Build web assets for production"
+	@echo "  dev-listen    - Run development mode with voice listening"
+	@echo "  dev-frontend  - Run Leptos frontend in development mode (separate)"
+	@echo "  test          - Run all tests"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  install       - Install the application locally"
+	@echo "  docs          - Generate and serve documentation"
+	@echo "  format        - Format code with rustfmt"
+	@echo "  lint          - Run clippy linter"
+	@echo "  check         - Run all checks (format, lint, test)"
 	@echo "  frontend-deps - Install Leptos frontend dependencies (trunk)"
-	@echo "  dev-frontend - Run Leptos frontend in development mode"
 	@echo "  frontend-build - Build Leptos frontend for production"
-	@echo "  frontend-deploy - Build and deploy frontend to web server"
-	@echo "  config       - Generate default configuration"
-	@echo "  docker    - Build Docker image"
+	@echo "  config        - Generate default configuration"
+	@echo "  docker        - Build Docker image"
 	@echo ""
 	@echo "Development workflow:"
-	@echo "  make setup && make dev"
-	@echo "  make dev-fullstack               # Full-stack web application"
-	@echo "  VIBESPEAK_MODE=listen make dev  # Auto-start voice listening"
-	@echo "  VIBESPEAK_MODE=web make dev     # Auto-start web interface"
+	@echo "  make setup && make dev-fullstack  # Full-stack application"
+	@echo "  make dev                          # Interactive mode selection"
+	@echo "  VIBESPEAK_MODE=listen make dev   # Voice listening only"
 
 # Initial setup and dependency installation
-setup: check-deps web-deps frontend-deps config
+setup: check-deps frontend-deps config
 	@echo "Project setup complete!"
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Install Vosk models: https://alphacephei.com/vosk/models"
 	@echo "  2. Set up Tailscale: https://tailscale.com/download"
-	@echo "  3. Run 'make dev' to start development"
+	@echo "  3. Run 'make dev-fullstack' to start the application"
 
 # Check system dependencies
 check-deps:
@@ -63,17 +58,7 @@ check-deps:
 	@command -v pacman >/dev/null 2>&1 || { echo "Pacman not found (Arch Linux). Some features may not work."; }
 	@echo "Rust/Cargo found"
 
-# Install web development dependencies
-web-deps:
-	@echo "Installing web development dependencies..."
-	@command -v node >/dev/null 2>&1 || { echo "Node.js not found. Install from https://nodejs.org/"; }
-	@command -v npm >/dev/null 2>&1 || { echo "npm not found."; }
-	@if command -v npm >/dev/null 2>&1; then \
-		cd web && npm install; \
-		echo "Web dependencies installed"; \
-	else \
-		echo "Skipping web dependencies (npm not available)"; \
-	fi
+
 
 # Build the application in release mode
 build:
@@ -106,13 +91,6 @@ dev:
 			*) echo "Starting web interface mode..."; cargo run -- --mode web ;; \
 		esac; \
 	fi
-
-# Run in development mode with web interface
-dev-web:
-	@echo "Starting Vibespeak web interface (development mode)..."
-	@echo "Web UI: http://localhost:8080"
-	@echo "Press Ctrl+C to stop"
-	cargo run -- --mode web
 
 # Run full-stack application (Leptos frontend + backend API)
 dev-fullstack:
@@ -173,15 +151,7 @@ lint:
 check: format lint test
 	@echo "All checks passed!"
 
- # Build web assets for production
-web-build:
-	@echo "Building web assets..."
-	@if [ -d "web" ] && [ -f "web/package.json" ]; then \
-		cd web && npm run build; \
-		echo "Web assets built"; \
-	else \
-		echo "Web directory not found or not set up"; \
-	fi
+
 
  # Install Leptos frontend dependencies (trunk)
  frontend-deps:
@@ -196,19 +166,13 @@ web-build:
 	@echo "Press Ctrl+C to stop"
 	@cd frontend && trunk serve --port 3000
 
- # Build Leptos frontend for production
- frontend-build:
+# Build Leptos frontend for production
+frontend-build:
 	@echo "Building Leptos frontend for production..."
 	@cd frontend && trunk build --release
 	@echo "Frontend built successfully in frontend/dist/"
 
- # Build and deploy frontend to web server
- frontend-deploy: frontend-build
-	@echo "Deploying frontend to web server..."
-	@mkdir -p web/dist
-	@cp -r frontend/dist/* web/dist/
-	@echo "Frontend deployed to web/dist/"
-	@echo "Run 'make dev-web' to serve the application"
+
 
  # Generate default configuration
 config:
