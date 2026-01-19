@@ -17,8 +17,9 @@ pub fn VoiceCommands() -> impl IntoView {
         wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
+                    let count = config.commands.len();
                     set_commands.set(config.commands);
-                    set_status.set("Commands loaded".to_string());
+                    set_status.set(format!("{} commands loaded", count));
                     set_status_type.set("success".to_string());
                 }
                 Err(e) => {
@@ -26,13 +27,6 @@ pub fn VoiceCommands() -> impl IntoView {
                     set_status_type.set("error".to_string());
                 }
             }
-        });
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                set_status.set("Command loading not available in non-WASM environment".to_string());
-                set_status_type.set("warning".to_string());
-            });
         });
     });
 
@@ -47,15 +41,17 @@ pub fn VoiceCommands() -> impl IntoView {
             <div class="content">
                 <h2>"Voice Commands"</h2>
 
-                <Card title="Manage Commands">
-                    <button class="btn">"Add Command"</button>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <Card title="Available Commands">
+                    <p style="margin-bottom: 15px; color: #6c757d;">
+                        "These voice commands are recognized by the system. Say the voice text to trigger the action."
+                    </p>
+                    <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
                                 <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Voice Text"</th>
                                 <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Action"</th>
                                 <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Category"</th>
-                                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Actions"</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; background: #f8f9fa;">"Status"</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -63,23 +59,36 @@ pub fn VoiceCommands() -> impl IntoView {
                                 when=move || !commands.get().is_empty()
                                 fallback=|| view! {
                                     <tr>
-                                        <td colspan="4" style="padding: 12px; text-align: center;">"No commands configured"</td>
+                                        <td colspan="4" style="padding: 20px; text-align: center; color: #6c757d;">
+                                            "No commands configured yet."
+                                        </td>
                                     </tr>
                                 }
                             >
                                 <For
                                     each=move || commands.get()
                                     key=|cmd| cmd.id.clone()
-                                    children=move |cmd| view! {
-                                        <tr>
-                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{cmd.text.clone()}</td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{cmd.action.to_string()}</td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{cmd.category.clone()}</td>
-                                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                                <button class="btn btn-secondary" style="margin-right: 5px;">"Edit"</button>
-                                                <button class="btn btn-secondary">"Delete"</button>
-                                            </td>
-                                        </tr>
+                                    children=move |cmd| {
+                                        let enabled_class = if cmd.enabled { "success" } else { "warning" };
+                                        let enabled_text = if cmd.enabled { "Enabled" } else { "Disabled" };
+                                        view! {
+                                            <tr>
+                                                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                                                    <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">
+                                                        {cmd.text.clone()}
+                                                    </code>
+                                                </td>
+                                                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-size: 13px;">
+                                                    {cmd.action.to_string()}
+                                                </td>
+                                                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{cmd.category.clone()}</td>
+                                                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                                                    <span class=format!("status {}", enabled_class) style="padding: 4px 8px; font-size: 12px;">
+                                                        {enabled_text}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
                                 />
                             </Show>

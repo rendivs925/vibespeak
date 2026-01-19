@@ -1,24 +1,20 @@
 //! Settings page component
 
-use crate::domain::entities::TailscaleStatus;
+use crate::domain::entities::{TailscaleStatus, SystemSettings};
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
 use wasm_bindgen_futures;
-use web_sys;
 
 #[component]
 pub fn Settings() -> impl IntoView {
     let (status, set_status) = create_signal("Loading settings...".to_string());
     let (status_type, set_status_type) = create_signal("info".to_string());
-    let (config, set_config) = create_signal::<Option<crate::domain::entities::AppConfig>>(None);
-    let (loading, set_loading) = create_signal(true);
-    let (error, set_error) = create_signal::<Option<String>>(None);
 
-    let (model_path, set_model_path) =
-        create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
+    let (model_path, set_model_path) = create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
     let (sample_rate, set_sample_rate) = create_signal(16000.0_f32);
     let (enable_tts, set_enable_tts) = create_signal(true);
+    let (web_server_port, set_web_server_port) = create_signal(8080_u16);
 
     let (tailscale_status, set_tailscale_status) = create_signal::<Option<TailscaleStatus>>(None);
 
@@ -26,70 +22,77 @@ pub fn Settings() -> impl IntoView {
     create_effect(move |_| {
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
+            // Load config
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
-                    set_config.set(Some(config));
-                    set_loading.set(false);
+                    // Update form fields from loaded settings
+                    set_model_path.set(config.settings.vosk_model_path.clone());
+                    set_sample_rate.set(config.settings.sample_rate);
+                    set_enable_tts.set(config.settings.enable_tts);
+                    set_web_server_port.set(config.settings.web_server_port);
+                    set_status.set("Settings loaded".to_string());
+                    set_status_type.set("success".to_string());
                 }
                 Err(e) => {
-                    set_error.set(Some(format!("Failed to load config: {}", e)));
-                    set_loading.set(false);
+                    set_status.set(format!("Failed to load: {}", e));
+                    set_status_type.set("error".to_string());
                 }
             }
-        });
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                set_status.set("Settings save not available in non-WASM environment".to_string());
-                set_status_type.set("warning".to_string());
-            });
-        });
-    });
 
-    let load_tailscale_status = move |_: web_sys::Event| {
-        #[cfg(target_arch = "wasm32")]
-        wasm_bindgen_futures::spawn_local(async move {
+            // Also load Tailscale status
             match api::ApiClient::new_default().get_tailscale_status().await {
                 Ok(ts_status) => {
                     set_tailscale_status.set(Some(ts_status));
                 }
                 Err(_) => {
-                    // Silently ignore Tailscale status errors
+                    // Set a default status if Tailscale check fails
+                    set_tailscale_status.set(Some(TailscaleStatus {
+                        enabled: false,
+                        connected: false,
+                        hostname: None,
+                        port: 0,
+                        error: Some("Unable to check Tailscale status".to_string()),
+                    }));
                 }
             }
         });
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                // In non-WASM environment, simulate loading
-                set_error.set(Some(
-                    "Configuration loading not available in non-WASM environment".to_string(),
-                ));
-                set_loading.set(false);
-            });
-        });
-    };
+    });
 
     let save_settings = move |_| {
+        let model = model_path.get();
+        let rate = sample_rate.get();
+        let tts = enable_tts.get();
+        let port = web_server_port.get();
+
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             set_status.set("Saving settings...".to_string());
-            // TODO: Implement save
-            set_status.set("Settings saved".to_string());
-            set_status_type.set("success".to_string());
-        });
-        #[cfg(not(target_arch = "wasm32"))]
-        leptos::create_effect(move |_| {
-            leptos::spawn_local(async move {
-                // In non-WASM environment, simulate loading
-                set_tailscale_status.set(Some(crate::domain::entities::TailscaleStatus {
-                    enabled: false,
-                    connected: false,
-                    hostname: None,
-                    port: 0,
-                    error: Some("Not available in non-WASM environment".to_string()),
-                }));
-            });
+            set_status_type.set("info".to_string());
+
+            // Get current config and update settings
+            match api::ApiClient::new_default().get_config().await {
+                Ok(mut config) => {
+                    config.settings.vosk_model_path = model;
+                    config.settings.sample_rate = rate;
+                    config.settings.enable_tts = tts;
+                    config.settings.web_server_port = port;
+
+                    match api::ApiClient::new_default().update_config(&config).await {
+                        Ok(_) => {
+                            set_status.set("Settings saved successfully".to_string());
+                            set_status_type.set("success".to_string());
+                        }
+                        Err(e) => {
+                            set_status.set(format!("Failed to save: {}", e));
+                            set_status_type.set("error".to_string());
+                        }
+                    }
+                }
+                Err(e) => {
+                    set_status.set(format!("Failed to load config: {}", e));
+                    set_status_type.set("error".to_string());
+                }
+            }
         });
     };
 
