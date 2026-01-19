@@ -17,8 +17,8 @@ pub fn RemoteControl() -> impl IntoView {
     let (status_type, set_status_type) = create_signal("info".to_string());
     let (dictation_text, set_dictation_text) = create_signal(String::new());
     let (dictation_status, set_dictation_status) = create_signal("Dictation ready".to_string());
-    let (last_sent_position, set_last_sent_position) = create_signal(0);
-    let (last_sent_content, set_last_sent_content) = create_signal(String::new());
+    // Use Rc<RefCell> for immediate synchronous tracking (signals batch updates)
+    let last_processed_index: Rc<RefCell<i32>> = Rc::new(RefCell::new(-1));
     let (is_dictating, set_is_dictating) = create_signal(false);
 
     // Voice commands state
@@ -40,14 +40,6 @@ pub fn RemoteControl() -> impl IntoView {
     // Store reference to SpeechRecognition instance
     let recognition_ref: Rc<RefCell<Option<SpeechRecognition>>> = Rc::new(RefCell::new(None));
     let recognition_for_stop = recognition_ref.clone();
-
-    // Helper function to find common prefix length between two strings
-    let find_common_prefix = |s1: &str, s2: &str| -> usize {
-        s1.chars()
-            .zip(s2.chars())
-            .take_while(|(a, b)| a == b)
-            .count()
-    };
 
     let execute_command = move |command: String| {
         // Add to history
@@ -89,10 +81,10 @@ pub fn RemoteControl() -> impl IntoView {
         });
     };
 
+    let last_idx_for_clear = last_processed_index.clone();
     let clear_dictation = move |_| {
         set_dictation_text.set(String::new());
-        set_last_sent_position.set(0);
-        set_last_sent_content.set(String::new());
+        *last_idx_for_clear.borrow_mut() = -1;
         set_dictation_status.set("Dictation cleared".to_string());
     };
 
@@ -114,6 +106,7 @@ pub fn RemoteControl() -> impl IntoView {
     };
 
     // Real-time dictation with Web Speech API
+    let last_idx_for_start = last_processed_index.clone();
     let start_dictation = {
         let recognition_ref = recognition_ref.clone();
         move |_| {
@@ -133,126 +126,84 @@ pub fn RemoteControl() -> impl IntoView {
                                 .expect("Failed to create SpeechRecognition")
                                 .unchecked_into();
 
-                        // Configure recognition
+                        // Configure recognition - NO interim results for cleaner output
                         recognition.set_continuous(true);
-                        recognition.set_interim_results(true);
+                        recognition.set_interim_results(false);
                         recognition.set_lang("en-US");
 
-                        // Set up result handler
+                        // Set up result handler - SIMPLE: just type each final result
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
-                        let set_last_sent = set_last_sent_position.clone();
+                        let last_idx = last_idx_for_start.clone();
                         let on_result = Closure::wrap(Box::new(
                             move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
-                                    let mut transcript = String::new();
-                                    for i in 0..results.length() {
-                                        if let Some(result) = results.get(i) {
-                                            let alternative = result.item(0);
-                                            transcript.push_str(&alternative.transcript());
-                                            transcript.push(' ');
+                                    // Get the current result using result_index
+                                    let result_index = event.result_index() as i32;
+
+                                    // Skip if we already processed this index (synchronous check)
+                                    {
+                                        let current = *last_idx.borrow();
+                                        if result_index <= current {
+                                            return;
                                         }
+                                        // Mark as processed IMMEDIATELY to prevent duplicates
+                                        *last_idx.borrow_mut() = result_index;
                                     }
-                                    let full_transcript = transcript.trim().to_string();
-                                    set_text.set(full_transcript.clone());
 
-                                    // Smart incremental dictation updates
-                                    let previous_content = last_sent_content.get();
-                                    if full_transcript != previous_content {
-                                        if full_transcript.starts_with(&previous_content) {
-                                            // Text was appended - just send the new portion
-                                            let new_text =
-                                                &full_transcript[previous_content.len()..];
-                                            if !new_text.is_empty() {
-                                                let text_to_send = new_text.to_string();
-                                                let set_status = set_status_inner.clone();
-                                                wasm_bindgen_futures::spawn_local(async move {
-                                                    match api::ApiClient::new_default()
-                                                        .type_dictation(&text_to_send)
-                                                        .await
-                                                    {
-                                                        Ok(response) => {
-                                                            if response.success {
-                                                                set_status.set(format!(
-                                                                    "Typed {} chars",
-                                                                    response.characters_typed
-                                                                ));
-                                                            } else {
-                                                                set_status.set(
-                                                                    "Typing failed".to_string(),
-                                                                );
-                                                            }
-                                                        }
-                                                        Err(_) => {
-                                                            set_status
-                                                                .set("Network error".to_string());
-                                                        }
-                                                    }
-                                                });
-                                                set_last_sent_content.set(full_transcript.clone());
-                                            }
-                                        } else {
-                                            // Text was corrected - calculate diff and replace
-                                            let common_prefix_len = find_common_prefix(
-                                                &previous_content,
-                                                &full_transcript,
-                                            );
-                                            let backspace_count =
-                                                previous_content.len() - common_prefix_len;
-                                            let new_suffix = &full_transcript[common_prefix_len..];
+                                    if let Some(result) = results.get(result_index as u32) {
+                                        // Only process final results
+                                        if !result.is_final() {
+                                            return;
+                                        }
 
-                                            if backspace_count > 0 || !new_suffix.is_empty() {
-                                                let backspace_count_clone = backspace_count;
-                                                let new_suffix_clone = new_suffix.to_string();
-                                                let set_status = set_status_inner.clone();
-                                                wasm_bindgen_futures::spawn_local(async move {
-                                                    let mut success = true;
+                                        let alternative = result.item(0);
+                                        let confidence = alternative.confidence();
+                                        let text = alternative.transcript();
 
-                                                    // Send backspaces first
-                                                    if backspace_count_clone > 0 {
-                                                        match api::ApiClient::new_default()
-                                                            .backspace_dictation(
-                                                                backspace_count_clone,
-                                                            )
-                                                            .await
-                                                        {
-                                                            Ok(_) => {}
-                                                            Err(_) => {
-                                                                success = false;
-                                                            }
-                                                        }
-                                                    }
+                                        // Update display
+                                        set_text.set(text.clone());
 
-                                                    // Then send new text
-                                                    if !new_suffix_clone.is_empty() && success {
-                                                        match api::ApiClient::new_default()
-                                                            .type_dictation(&new_suffix_clone)
-                                                            .await
-                                                        {
-                                                            Ok(_) => {}
-                                                            Err(_) => {
-                                                                success = false;
-                                                            }
-                                                        }
-                                                    }
+                                        // Reject low confidence
+                                        if confidence < 0.5 {
+                                            set_status_inner.set(format!(
+                                                "Low confidence ({:.0}%) - ignored: \"{}\"",
+                                                confidence * 100.0,
+                                                text
+                                            ));
+                                            return;
+                                        }
 
-                                                    if success {
+                                        // Reject empty text
+                                        if text.trim().is_empty() {
+                                            return;
+                                        }
+
+                                        // Type the text with a trailing space
+                                        let text_to_type = format!("{} ", text);
+                                        let set_status = set_status_inner.clone();
+                                        wasm_bindgen_futures::spawn_local(async move {
+                                            match api::ApiClient::new_default()
+                                                .type_dictation(&text_to_type)
+                                                .await
+                                            {
+                                                Ok(response) => {
+                                                    if response.success {
                                                         set_status.set(format!(
-                                                             "Corrected text ({} backspace, {} type)",
-                                                             backspace_count_clone,
-                                                             new_suffix_clone.len()
-                                                         ));
+                                                            "Typed: \"{}\" ({:.0}%)",
+                                                            text.trim(),
+                                                            confidence * 100.0
+                                                        ));
                                                     } else {
-                                                        set_status
-                                                            .set("Correction failed".to_string());
+                                                        set_status.set("Typing failed".to_string());
                                                     }
-                                                });
-                                                set_last_sent_content.set(full_transcript.clone());
+                                                }
+                                                Err(_) => {
+                                                    set_status.set("Network error".to_string());
+                                                }
                                             }
-                                        }
+                                        });
                                     }
-
-                                    set_status_inner.set("Listening... speak now".to_string());
                                 }
                             },
                         )
@@ -304,11 +255,12 @@ pub fn RemoteControl() -> impl IntoView {
 
     let stop_dictation = {
         let recognition_ref = recognition_ref.clone();
+        let last_idx_for_stop = last_processed_index.clone();
         move |_| {
             if let Some(recognition) = &*recognition_ref.borrow() {
                 let _ = recognition.stop();
             }
-            set_last_sent_position.set(dictation_text.get().len());
+            *last_idx_for_stop.borrow_mut() = -1;
             set_dictation_status.set("Dictation stopped".to_string());
             set_is_dictating.set(false);
         }
@@ -340,10 +292,11 @@ pub fn RemoteControl() -> impl IntoView {
                                 .expect("Failed to create SpeechRecognition")
                                 .unchecked_into();
 
-                        // Configure recognition for commands (shorter, more responsive)
-                        recognition.set_continuous(false);
+                        // Configure recognition for commands - continuous mode for always listening
+                        recognition.set_continuous(true);
                         recognition.set_interim_results(false);
                         recognition.set_lang("en-US");
+                        recognition.set_max_alternatives(3);
 
                         // Set up result handler for voice commands
                         let set_text = set_text.clone();
@@ -354,89 +307,102 @@ pub fn RemoteControl() -> impl IntoView {
                         let on_result =
                             Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
                                 if let Some(results) = event.results() {
-                                    if results.length() > 0 {
-                                        if let Some(result) = results.get(0) {
-                                            let alternative = result.item(0);
-                                            let command_text =
-                                                alternative.transcript().trim().to_string();
-                                            set_text.set(command_text.clone());
-
-                                            // Process the voice command
-                                            let set_text = set_text.clone();
-                                            let set_status = set_status.clone();
-                                            let is_voice_listening = is_voice_listening_for_result.clone();
-                                            let recognition_ref = recognition_ref_for_result.clone();
-                                            wasm_bindgen_futures::spawn_local(async move {
-                                                set_status.set(format!(
-                                                    "Processing: \"{}\"",
-                                                    command_text
-                                                ));
-                                                match api::ApiClient::new_default()
-                                                    .process_voice_command(
-                                                        &command_text,
-                                                        Some(alternative.confidence()),
-                                                    )
-                                                    .await
-                                                {
-                                                    Ok(response) => {
-                                                        if response
-                                                            .get("success")
-                                                            .unwrap_or(&serde_json::Value::Bool(
-                                                                false,
-                                                            ))
-                                                            .as_bool()
-                                                            .unwrap_or(false)
-                                                        {
-                                                            set_status.set(format!(
-                                                                "Executed: {}",
-                                                                response
-                                                                    .get("message")
-                                                                    .unwrap_or(
-                                                                        &serde_json::Value::String(
-                                                                            "Command executed"
-                                                                                .to_string()
-                                                                        )
-                                                                    )
-                                                                    .as_str()
-                                                                    .unwrap_or("Command executed")
-                                                            ));
-                                                        } else {
-                                                            set_status.set(format!(
-                                                                "Failed: {}",
-                                                                response
-                                                                    .get("message")
-                                                                    .unwrap_or(
-                                                                        &serde_json::Value::String(
-                                                                            "Command failed"
-                                                                                .to_string()
-                                                                        )
-                                                                    )
-                                                                    .as_str()
-                                                                    .unwrap_or("Command failed")
-                                                            ));
-                                                        }
-                                                    }
-                                                    Err(e) => {
-                                                        set_status.set(format!("Error: {}", e));
-                                                    }
-                                                }
-
-                                                // Auto-restart voice recognition after 1 second delay
-                                                set_text.set(String::new());
-                                                set_status.set(
-                                                    "Command processed, listening again..."
-                                                        .to_string(),
-                                                );
-                                                TimeoutFuture::new(1_000).await;
-
-                                                // Only restart if not already listening
-                                                if !is_voice_listening.get() {
-                                                    if let Some(recognition) = &*recognition_ref.borrow() {
-                                                        let _ = recognition.start();
-                                                    }
-                                                }
-                                            });
+                                    // Get the latest result (last in the list)
+                                    let result_index = event.result_index();
+                                    if let Some(result) = results.get(result_index) {
+                                        // Only process final results
+                                        if !result.is_final() {
+                                            return;
                                         }
+
+                                        let alternative = result.item(0);
+                                        let confidence = alternative.confidence();
+                                        let command_text = alternative.transcript().trim().to_string();
+
+                                        // Confidence threshold - reject low confidence commands
+                                        if confidence < 0.6 {
+                                            set_status.set(format!(
+                                                "Low confidence ({:.0}%): \"{}\" - please repeat",
+                                                confidence * 100.0,
+                                                command_text
+                                            ));
+                                            return;
+                                        }
+
+                                        // Reject very short or empty commands
+                                        if command_text.len() < 2 {
+                                            return;
+                                        }
+
+                                        set_text.set(command_text.clone());
+
+                                        // Process the voice command
+                                        let set_text = set_text.clone();
+                                        let set_status = set_status.clone();
+                                        let confidence = confidence;
+                                        wasm_bindgen_futures::spawn_local(async move {
+                                            set_status.set(format!(
+                                                "Processing ({:.0}%): \"{}\"",
+                                                confidence * 100.0,
+                                                command_text
+                                            ));
+                                            match api::ApiClient::new_default()
+                                                .process_voice_command(
+                                                    &command_text,
+                                                    Some(confidence),
+                                                )
+                                                .await
+                                            {
+                                                Ok(response) => {
+                                                    if response
+                                                        .get("success")
+                                                        .unwrap_or(&serde_json::Value::Bool(
+                                                            false,
+                                                        ))
+                                                        .as_bool()
+                                                        .unwrap_or(false)
+                                                    {
+                                                        set_status.set(format!(
+                                                            "✓ {}",
+                                                            response
+                                                                .get("message")
+                                                                .unwrap_or(
+                                                                    &serde_json::Value::String(
+                                                                        "Command executed"
+                                                                            .to_string()
+                                                                    )
+                                                                )
+                                                                .as_str()
+                                                                .unwrap_or("Command executed")
+                                                        ));
+                                                    } else {
+                                                        set_status.set(format!(
+                                                            "✗ {}",
+                                                            response
+                                                                .get("message")
+                                                                .unwrap_or(
+                                                                    &serde_json::Value::String(
+                                                                        "Command failed"
+                                                                            .to_string()
+                                                                    )
+                                                                )
+                                                                .as_str()
+                                                                .unwrap_or("Command failed")
+                                                        ));
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    set_status.set(format!("Error: {}", e));
+                                                }
+                                            }
+
+                                            // Clear command text after processing
+                                            set_text.set(String::new());
+
+                                            // Update status to show we're still listening
+                                            TimeoutFuture::new(1_500).await;
+                                            set_status.set("Listening for voice commands...".to_string());
+                                        });
                                     }
                                 }
                             }) as Box<dyn FnMut(_)>);
@@ -445,19 +411,36 @@ pub fn RemoteControl() -> impl IntoView {
                         on_result.forget();
 
                         let set_status_err = set_status.clone();
+                        let is_voice_listening_err = is_voice_listening.clone();
+                        let recognition_ref_err = recognition_ref.clone();
                         recognition.set_onerror(Some(
                             Closure::wrap(Box::new(move |_: web_sys::Event| {
-                                set_status_err.set("Voice recognition error occurred".to_string());
+                                set_status_err.set("Voice recognition error - restarting...".to_string());
+                                // Auto-restart on error if still in listening mode
+                                if is_voice_listening_err.get() {
+                                    if let Some(recognition) = &*recognition_ref_err.borrow() {
+                                        let _ = recognition.start();
+                                    }
+                                }
                             }) as Box<dyn FnMut(_)>)
                             .as_ref()
                             .unchecked_ref(),
                         ));
 
                         let set_status_end = set_status.clone();
+                        let is_voice_listening_end = is_voice_listening.clone();
+                        let recognition_ref_end = recognition_ref.clone();
                         recognition.set_onend(Some(
                             Closure::wrap(Box::new(move |_: web_sys::Event| {
-                                set_status_end.set("Voice command recognition ended".to_string());
-                                set_is_voice_listening.set(false);
+                                // Auto-restart if still in listening mode (continuous listening)
+                                if is_voice_listening_end.get() {
+                                    set_status_end.set("Restarting voice recognition...".to_string());
+                                    if let Some(recognition) = &*recognition_ref_end.borrow() {
+                                        let _ = recognition.start();
+                                    }
+                                } else {
+                                    set_status_end.set("Voice commands stopped".to_string());
+                                }
                             }) as Box<dyn FnMut(_)>)
                             .as_ref()
                             .unchecked_ref(),
