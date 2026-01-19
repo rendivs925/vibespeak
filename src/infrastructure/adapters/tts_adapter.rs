@@ -84,8 +84,9 @@ impl TtsAdapter {
             piper_path.to_string_lossy().to_string()
         };
 
-        // Run Piper TTS with exact same command structure as manual usage
-        let mut child = Command::new(&piper_cmd)
+        // Set LD_LIBRARY_PATH to include piper libraries
+        let mut command = Command::new(&piper_cmd);
+        command
             .args([
                 "--espeak_data",
                 "./piper/espeak-ng-data",
@@ -94,9 +95,12 @@ impl TtsAdapter {
                 "--output_file",
                 &temp_path,
             ])
+            .env("LD_LIBRARY_PATH", "./piper/lib")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+
+        let mut child = command
             .spawn()
             .map_err(|e| Error::Infrastructure(format!("Failed to start Piper: {}", e)))?;
 

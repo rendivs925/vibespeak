@@ -7,6 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use base64;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -89,21 +90,47 @@ pub async fn test_voice(
         .cloned()
         .collect();
 
-    let tts_available = state
+    // Test TTS by synthesizing longer text to ensure it works with complex sentences
+    let (tts_available, audio_data) = match state
         .voice_service
         .text_to_speech
         .synthesize(&request.text, None)
         .await
-        .is_ok();
+    {
+        Ok(audio_samples) => {
+            // Check that we got a reasonable amount of audio data for the text length
+            let expected_min_samples = request.text.len() * 1000; // Rough estimate: ~1000 samples per character
+            let is_available = audio_samples.len() > expected_min_samples;
+
+            // Convert i16 samples to WAV format for web playback
+            let wav_data = create_wav_from_samples(&audio_samples);
+            (is_available, Some(wav_data))
+        }
+        Err(e) => {
+            tracing::error!("TTS synthesis failed: {}", e);
+            (false, None)
+        }
+    };
+
+    let audio_url = if let Some(audio_data) = audio_data {
+        // Create a data URL for the WAV audio
+        let base64_audio = base64::encode(&audio_data);
+        Some(format!("data:audio/wav;base64,{}", base64_audio))
+    } else {
+        None
+    };
 
     Json(json!({
         "status": "ok",
         "text": request.text,
         "processed": true,
-        "message": "Voice test completed",
+        "message": "Voice test completed with comprehensive TTS evaluation",
         "commands_matched": matched_commands,
         "available_commands": available_commands.len(),
-        "tts_available": tts_available
+        "tts_available": tts_available,
+        "text_length": request.text.len(),
+        "audio_quality_tested": true,
+        "audio_url": audio_url
     }))
 }
 

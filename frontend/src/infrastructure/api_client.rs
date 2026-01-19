@@ -135,12 +135,11 @@ impl ApiClient {
         Ok(bytes)
     }
 
-    /// Test voice synthesis
-    pub async fn test_voice(&self) -> Result<(), String> {
-        let _: serde_json::Value = self
-            .post("/voice/test", &serde_json::json!({"text": "test"}))
-            .await?;
-        Ok(())
+    /// Test voice synthesis with longer sentences and return audio data
+    pub async fn test_voice(&self) -> Result<serde_json::Value, String> {
+        let test_text = "Hello! This is a comprehensive voice test for Vibespeak. The text-to-speech system should be able to synthesize this longer sentence clearly and naturally, demonstrating proper audio quality and pronunciation accuracy.";
+        self.post("/voice/test", &serde_json::json!({"text": test_text}))
+            .await
     }
 
     /// Process a voice command

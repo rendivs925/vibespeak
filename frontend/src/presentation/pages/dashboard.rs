@@ -6,6 +6,7 @@ use crate::presentation::components::{
 };
 use leptos::*;
 use wasm_bindgen_futures;
+use web_sys::HtmlAudioElement;
 
 #[component]
 pub fn Dashboard() -> impl IntoView {
@@ -43,8 +44,35 @@ pub fn Dashboard() -> impl IntoView {
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(async move {
             match api_client::ApiClient::new_default().test_voice().await {
-                Ok(_) => {
-                    toast_context.show_success("Voice test completed successfully".to_string());
+                Ok(response) => {
+                    // Check if TTS is available and play audio if present
+                    if let Some(tts_available) =
+                        response.get("tts_available").and_then(|v| v.as_bool())
+                    {
+                        if tts_available {
+                            if let Some(audio_url) =
+                                response.get("audio_url").and_then(|v| v.as_str())
+                            {
+                                // Play the audio
+                                let audio = web_sys::HtmlAudioElement::new().unwrap();
+                                audio.set_src(audio_url);
+                                let _ = audio.play();
+                                toast_context.show_success(
+                                    "Voice test completed - audio playing!".to_string(),
+                                );
+                            } else {
+                                toast_context.show_success(
+                                    "Voice test completed successfully (TTS available)".to_string(),
+                                );
+                            }
+                        } else {
+                            toast_context.show_warning(
+                                "Voice test completed but TTS is not available".to_string(),
+                            );
+                        }
+                    } else {
+                        toast_context.show_success("Voice test completed successfully".to_string());
+                    }
                 }
                 Err(e) => {
                     toast_context.show_error(format!("Voice test failed: {}", e));
