@@ -4,6 +4,7 @@ use crate::infrastructure::api_client;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use crate::presentation::state::*;
 use leptos::*;
+use wasm_bindgen_futures;
 
 #[component]
 pub fn Dashboard() -> impl IntoView {
@@ -13,7 +14,7 @@ pub fn Dashboard() -> impl IntoView {
 
     // Load config on mount
     create_effect(move |_| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             // Use presentation state hooks
             let config_signal = use_app_config();
             let loading_signal = use_loading();
@@ -48,7 +49,7 @@ pub fn Dashboard() -> impl IntoView {
 
     let test_voice = move |_| {
         let text = "Hello world. This is a voice test.".to_string();
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             set_status.set("Generating voice...".to_string());
             let remote_control_service = use_remote_control();
             match remote_control_service.speak_text(text.clone()).await {
@@ -65,7 +66,7 @@ pub fn Dashboard() -> impl IntoView {
     };
 
     let refresh_config = move |_| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             set_loading.set(true);
             // Trigger a reload of initial data
             let state = crate::presentation::state::PresentationState::get();

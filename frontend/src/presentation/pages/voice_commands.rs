@@ -4,6 +4,7 @@ use crate::domain::entities::Command;
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
+use wasm_bindgen_futures;
 
 #[component]
 pub fn VoiceCommands() -> impl IntoView {
@@ -12,7 +13,7 @@ pub fn VoiceCommands() -> impl IntoView {
     let (commands, set_commands) = create_signal::<Vec<Command>>(vec![]);
 
     create_effect(move |_| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
                     set_commands.set(config.commands);

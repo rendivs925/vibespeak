@@ -4,11 +4,16 @@ use crate::domain::entities::TailscaleStatus;
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
+use wasm_bindgen_futures;
+use web_sys;
 
 #[component]
 pub fn Settings() -> impl IntoView {
     let (status, set_status) = create_signal("Loading settings...".to_string());
     let (status_type, set_status_type) = create_signal("info".to_string());
+    let (config, set_config) = create_signal::<Option<crate::domain::entities::AppConfig>>(None);
+    let (loading, set_loading) = create_signal(true);
+    let (error, set_error) = create_signal::<Option<String>>(None);
 
     let (model_path, set_model_path) =
         create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
@@ -19,22 +24,22 @@ pub fn Settings() -> impl IntoView {
 
     // Load settings on mount
     create_effect(move |_| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_config().await {
                 Ok(config) => {
-                    set_model_path.set(config.settings.vosk_model_path);
-                    set_sample_rate.set(config.settings.sample_rate);
-                    set_enable_tts.set(config.settings.enable_tts);
-                    set_status.set("Settings loaded".to_string());
-                    set_status_type.set("success".to_string());
+                    set_config.set(Some(config));
+                    set_loading.set(false);
                 }
                 Err(e) => {
-                    set_status.set(format!("Failed to load: {}", e));
-                    set_status_type.set("error".to_string());
+                    set_error.set(Some(format!("Failed to load config: {}", e)));
+                    set_loading.set(false);
                 }
             }
+        });
+    });
 
-            // Load Tailscale status
+    let load_tailscale_status = move |_: web_sys::Event| {
+        wasm_bindgen_futures::spawn_local(async move {
             match api::ApiClient::new_default().get_tailscale_status().await {
                 Ok(ts_status) => {
                     set_tailscale_status.set(Some(ts_status));
@@ -44,10 +49,10 @@ pub fn Settings() -> impl IntoView {
                 }
             }
         });
-    });
+    };
 
     let save_settings = move |_| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             set_status.set("Saving settings...".to_string());
             // TODO: Implement save
             set_status.set("Settings saved".to_string());

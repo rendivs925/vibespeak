@@ -3,6 +3,7 @@
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
+use wasm_bindgen_futures;
 
 #[component]
 pub fn RemoteControl() -> impl IntoView {
@@ -14,7 +15,7 @@ pub fn RemoteControl() -> impl IntoView {
     let (commands_history, set_commands_history) = create_signal::<Vec<String>>(vec![]);
 
     let execute_command = move |command: String| {
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             set_status.set(format!("Processing: \"{}\"", command));
             set_status_type.set("info".to_string());
 
@@ -62,7 +63,7 @@ pub fn RemoteControl() -> impl IntoView {
             return;
         }
 
-        spawn_local(async move {
+        wasm_bindgen_futures::spawn_local(async move {
             set_dictation_status.set("Sending text to desktop...".to_string());
 
             match api::ApiClient::new_default().type_dictation(&text).await {

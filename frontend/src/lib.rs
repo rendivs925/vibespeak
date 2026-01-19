@@ -35,7 +35,7 @@ pub fn App() -> impl IntoView {
 
     // Load initial data
     let state = presentation::state::PresentationState::get();
-    leptos::spawn_local(async move {
+    wasm_bindgen_futures::spawn_local(async move {
         state.load_initial_data().await;
     });
 
