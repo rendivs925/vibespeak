@@ -7,11 +7,11 @@ pub fn DataTable(#[prop(into)] headers: Vec<String>, children: Children) -> impl
     view! {
         <div class="overflow-hidden bg-white rounded-2xl shadow-sm shadow-slate-100/50 border border-slate-200/60">
             <table class="w-full">
-                <thead class="bg-slate-50/50">
+                <thead class="bg-slate-50/50 border-b border-slate-200">
                     <tr>
                         {headers.into_iter().map(|header| {
                             view! {
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-slate-200">
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                                     {header}
                                 </th>
                             }
@@ -37,7 +37,7 @@ pub fn TableRow(children: Children) -> impl IntoView {
 
 #[component]
 pub fn TableCell(#[prop(optional, into)] class: String, children: Children) -> impl IntoView {
-    let base_classes = "px-4 py-3 text-sm";
+    let base_classes = "px-4 py-3 text-sm text-slate-700";
     let classes = format!("{} {}", base_classes, class);
 
     view! {

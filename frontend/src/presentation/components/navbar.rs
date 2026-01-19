@@ -16,33 +16,29 @@ pub fn NavBar(active: &'static str) -> impl IntoView {
 
     view! {
         <nav class="w-full bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-40">
-            <div class="max-w-7xl mx-auto">
-                <ul class="flex items-center gap-8 px-8 py-3 text-sm">
-                    <For
-                        each=move || nav_items.clone()
-                        key=|(id, _, _)| *id
-                        children=move |(id, href, label)| {
-                            let is_active = id == active;
-                            let base_classes = "text-gray-500 hover:text-gray-900 transition-colors duration-200 font-medium tracking-tight";
-                            let active_classes = if is_active {
-                                "text-indigo-700 font-semibold"
-                            } else {
-                                ""
-                            };
+            <div class="flex items-center gap-8 px-8 py-3 text-sm">
+                <For
+                    each=move || nav_items.clone()
+                    key=|(id, _, _)| *id
+                    children=move |(id, href, label)| {
+                        let is_active = id == active;
+                        let base_classes = "text-slate-600 hover:text-slate-900 transition-colors duration-200 font-medium tracking-tight";
+                        let active_classes = if is_active {
+                            "text-indigo-700 font-semibold"
+                        } else {
+                            ""
+                        };
 
-                            view! {
-                                <li>
-                                    <A
-                                        href=href
-                                        class=format!("{} {}", base_classes, active_classes)
-                                    >
-                                        {label}
-                                    </A>
-                                </li>
-                            }
+                        view! {
+                            <A
+                                href=href
+                                class=format!("{} {}", base_classes, active_classes)
+                            >
+                                {label}
+                            </A>
                         }
-                    />
-                </ul>
+                    }
+                />
             </div>
         </nav>
     }

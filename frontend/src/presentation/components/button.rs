@@ -25,18 +25,18 @@ pub fn Button(
     #[prop(default = String::new())] class: String,
     children: Children,
 ) -> impl IntoView {
-    let base_classes = "font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    let base_classes = "font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     let variant_classes = match variant {
-        ButtonVariant::Primary => "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 hover:from-indigo-700 hover:to-indigo-800 focus:ring-indigo-500",
-        ButtonVariant::Secondary => "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500",
-        ButtonVariant::Danger => "bg-red-600 text-white border border-red-600 hover:bg-red-700 hover:border-red-700 shadow-md shadow-red-200/50 hover:shadow-lg hover:shadow-red-300/50 focus:ring-red-500",
-        ButtonVariant::Ghost => "text-gray-700 hover:bg-gray-100 focus:ring-gray-500",
+        ButtonVariant::Primary => "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 hover:from-indigo-700 hover:to-indigo-800",
+        ButtonVariant::Secondary => "bg-indigo-50/80 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-sm",
+        ButtonVariant::Danger => "bg-red-600 text-white border border-red-600 hover:bg-red-700 hover:border-red-700 shadow-md shadow-red-200/50 hover:shadow-lg hover:shadow-red-300/50",
+        ButtonVariant::Ghost => "text-gray-700 hover:bg-slate-50/50 hover:text-gray-900",
     };
 
     let size_classes = match size {
         ButtonSize::Small => "px-3 py-1.5 text-xs",
-        ButtonSize::Medium => "px-4 py-2 text-sm",
+        ButtonSize::Medium => "px-4 py-2.5 text-sm", // Updated to match design system
         ButtonSize::Large => "px-6 py-3 text-base",
     };
 
