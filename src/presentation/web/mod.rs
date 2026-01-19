@@ -47,21 +47,23 @@ impl WebServer {
         let sw_js = warp::path("sw.js")
             .and(warp::get())
             .map(|| {
-                warp::reply::with_header(
-                    include_str!("../../../web/sw.js"),
+                let mut response = warp::reply::Response::new(include_str!("../../../web/sw.js").into());
+                response.headers_mut().insert(
                     "content-type",
-                    "application/javascript"
-                )
+                    "application/javascript".parse().unwrap()
+                );
+                response
             });
 
         let manifest_json = warp::path("manifest.json")
             .and(warp::get())
             .map(|| {
-                warp::reply::with_header(
-                    include_str!("../../../web/manifest.json"),
+                let mut response = warp::reply::Response::new(include_str!("../../../web/manifest.json").into());
+                response.headers_mut().insert(
                     "content-type",
-                    "application/json"
-                )
+                    "application/json".parse().unwrap()
+                );
+                response
             });
 
         // API routes
