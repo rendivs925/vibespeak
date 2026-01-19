@@ -43,6 +43,15 @@ impl WebServer {
         // Static files route
         let static_files = warp::path("static").and(warp::fs::dir("web/static"));
 
+        // Service worker and PWA files
+        let sw_js = warp::path("sw.js")
+            .and(warp::get())
+            .map(|| warp::reply::html(include_str!("../../../web/sw.js")));
+
+        let manifest_json = warp::path("manifest.json")
+            .and(warp::get())
+            .map(|| warp::reply::html(include_str!("../../../web/manifest.json")));
+
         // API routes
         let api = self.api_routes();
 
@@ -51,6 +60,8 @@ impl WebServer {
             warp::path::end().map(|| warp::reply::html(include_str!("../../../web/index.html")));
 
         let routes = index
+            .or(sw_js)
+            .or(manifest_json)
             .or(static_files)
             .or(api)
             .with(warp::cors().allow_any_origin());
@@ -678,7 +689,12 @@ async fn handle_dictation_type(
 }
 
 async fn simulate_keyboard_input(text: &str) -> Result<()> {
-    tracing::info!("Starting keyboard simulation for text: '{}'", text);
+    tracing::info!("Starting keyboard simulation for text: '{}' (length: {})", text, text.len());
+
+    if text.trim().is_empty() {
+        tracing::warn!("Received empty text for keyboard simulation");
+        return Ok(());
+    }
 
     // Escape special characters that might cause issues with xdotool
     let escaped_text = text
@@ -690,8 +706,8 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
 
     // Use xdotool to type the text
     // Note: xdotool type handles most characters, but we could also use xdotool key for special keys
-    // Make sure we use the correct display and add a small delay
-    let command = format!("DISPLAY=:0 xdotool type \"{}\" && sleep 0.1", escaped_text);
+    // Make sure we use the correct display and add small delay
+    let command = format!("DISPLAY=:0 xdotool type \"{}\" && sleep 0.05", escaped_text);
 
     tracing::info!("Executing xdotool command: {}", command);
 
@@ -712,6 +728,7 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
                        output.status, stdout.trim(), stderr.trim());
         Err(Error::CommandExecution(format!("xdotool failed: {} (stdout: {})", stderr, stdout)))
     }
+}
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {
