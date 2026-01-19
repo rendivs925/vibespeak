@@ -16,46 +16,46 @@
 
 # ============================================================
 # TMUX CONTROL (pane/window)
-# Prefix assumed: Ctrl+a (as in your current setup)
+# Prefix assumed: ctrl+s (as in your current setup)
 # ============================================================
 
 # --- Pane splits ---
-"tmux split right"           = "xdotool key ctrl+a bar"
-"tmux split down"            = "xdotool key ctrl+a minus"
+"tmux split right"           = "xdotool key ctrl+s bar"
+"tmux split down"            = "xdotool key ctrl+s minus"
 
 # --- Pane focus (vim-style) ---
-"tmux focus left"            = "xdotool key ctrl+a h"
-"tmux focus down"            = "xdotool key ctrl+a j"
-"tmux focus up"              = "xdotool key ctrl+a k"
-"tmux focus right"           = "xdotool key ctrl+a l"
+"tmux focus left"            = "xdotool key ctrl+s h"
+"tmux focus down"            = "xdotool key ctrl+s j"
+"tmux focus up"              = "xdotool key ctrl+s k"
+"tmux focus right"           = "xdotool key ctrl+s l"
 
 # --- Pane resize (Shift+vim-style) ---
-"tmux resize left"           = "xdotool key ctrl+a H"
-"tmux resize down"           = "xdotool key ctrl+a J"
-"tmux resize up"             = "xdotool key ctrl+a K"
-"tmux resize right"          = "xdotool key ctrl+a L"
+"tmux resize left"           = "xdotool key ctrl+s H"
+"tmux resize down"           = "xdotool key ctrl+s J"
+"tmux resize up"             = "xdotool key ctrl+s K"
+"tmux resize right"          = "xdotool key ctrl+s L"
 
 # --- Pane utilities ---
-"tmux toggle zoom"           = "xdotool key ctrl+a m"
-"tmux copy mode"             = "xdotool key ctrl+a i"
+"tmux toggle zoom"           = "xdotool key ctrl+s m"
+"tmux copy mode"             = "xdotool key ctrl+s i"
 
 # --- Pane jump (keep only if you use it often) ---
-"tmux pane 0"                = "xdotool key ctrl+a 0"
-"tmux pane 1"                = "xdotool key ctrl+a 1"
-"tmux pane 2"                = "xdotool key ctrl+a 2"
-"tmux pane 3"                = "xdotool key ctrl+a 3"
-"tmux pane 4"                = "xdotool key ctrl+a 4"
-"tmux pane 5"                = "xdotool key ctrl+a 5"
-"tmux pane 6"                = "xdotool key ctrl+a 6"
-"tmux pane 7"                = "xdotool key ctrl+a 7"
-"tmux pane 8"                = "xdotool key ctrl+a 8"
-"tmux pane 9"                = "xdotool key ctrl+a 9"
+"tmux pane 0"                = "xdotool key ctrl+s 0"
+"tmux pane 1"                = "xdotool key ctrl+s 1"
+"tmux pane 2"                = "xdotool key ctrl+s 2"
+"tmux pane 3"                = "xdotool key ctrl+s 3"
+"tmux pane 4"                = "xdotool key ctrl+s 4"
+"tmux pane 5"                = "xdotool key ctrl+s 5"
+"tmux pane 6"                = "xdotool key ctrl+s 6"
+"tmux pane 7"                = "xdotool key ctrl+s 7"
+"tmux pane 8"                = "xdotool key ctrl+s 8"
+"tmux pane 9"                = "xdotool key ctrl+s 9"
 
 # --- Window controls ---
-"tmux new window"            = "xdotool key ctrl+a c"
-"tmux next window"           = "xdotool key ctrl+a n"
-"tmux previous window"       = "xdotool key ctrl+a p"
-"tmux reload config"         = "xdotool key ctrl+a r"
+"tmux new window"            = "xdotool key ctrl+s c"
+"tmux next window"           = "xdotool key ctrl+s n"
+"tmux previous window"       = "xdotool key ctrl+s p"
+"tmux reload config"         = "xdotool key ctrl+s r"
 
 
 # ============================================================
