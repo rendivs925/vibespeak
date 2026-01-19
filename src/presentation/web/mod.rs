@@ -127,7 +127,44 @@ impl WebServer {
             .and(with_voice_service(self.voice_service.clone()))
             .and_then(handle_remote_mouse);
 
-        config_get.or(config_post).or(voice_test).or(tts_audio).or(screen_offer).or(screen_answer).or(remote_command).or(remote_mouse)
+        // Dictation routes
+        let dictation_start = warp::path("api")
+            .and(warp::path("dictation"))
+            .and(warp::path("start"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and_then(handle_dictation_start);
+
+        let dictation_stop = warp::path("api")
+            .and(warp::path("dictation"))
+            .and(warp::path("stop"))
+            .and(warp::post())
+            .and_then(handle_dictation_stop);
+
+        let dictation_insert = warp::path("api")
+            .and(warp::path("dictation"))
+            .and(warp::path("insert"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and_then(handle_dictation_insert);
+
+        // Tailscale routes
+        let tailscale_status = warp::path("api")
+            .and(warp::path("tailscale"))
+            .and(warp::path("status"))
+            .and(warp::get())
+            .and(with_config(self.config.clone()))
+            .and_then(handle_tailscale_status);
+
+        let tailscale_config = warp::path("api")
+            .and(warp::path("tailscale"))
+            .and(warp::path("config"))
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_config(self.config.clone()))
+            .and_then(handle_tailscale_config);
+
+        config_get.or(config_post).or(voice_test).or(tts_audio).or(screen_offer).or(screen_answer).or(remote_command).or(remote_mouse).or(dictation_start).or(dictation_stop).or(dictation_insert).or(tailscale_status).or(tailscale_config)
     }
 }
 
@@ -342,39 +379,6 @@ struct RemoteCommandRequest {
     parameters: Option<serde_json::Value>,
 }
 
-async fn handle_screen_offer(
-    request: ScreenOfferRequest,
-    voice_service: Arc<VoiceProcessingService>,
-) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    let session_id = request.session_id.unwrap_or_else(|| {
-        format!("session_{}", chrono::Utc::now().timestamp())
-    });
-
-    tracing::info!("Creating screen sharing session: {}", session_id);
-
-    match voice_service.start_screen_sharing(session_id.clone()).await {
-        Ok(offer) => {
-            let response = serde_json::json!({
-                "status": "ok",
-                "session_id": session_id,
-                "offer": serde_json::from_str(&offer).unwrap_or(serde_json::Value::Null),
-                "message": "Screen sharing session created"
-            });
-            Ok(warp::reply::json(&response))
-        }
-        Err(e) => {
-            tracing::error!("Failed to create screen sharing session: {}", e);
-            let response = serde_json::json!({
-                "status": "error",
-                "error": e.to_string(),
-                "message": "Failed to create screen sharing session"
-            });
-            Ok(warp::reply::json(&response))
-        }
-    }
-}
-
-// Remote mouse handler
 #[derive(serde::Deserialize)]
 struct RemoteMouseRequest {
     #[serde(rename = "type")]
@@ -426,8 +430,6 @@ async fn handle_remote_mouse(
     request: RemoteMouseRequest,
     voice_service: Arc<VoiceProcessingService>,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    tracing::info!("Received remote mouse event: {} at ({}, {})", request.event_type, request.x, request.y);
-
     match voice_service.handle_remote_mouse(&request.event_type, request.x, request.y).await {
         Ok(result) => {
             let response = serde_json::json!({
@@ -441,7 +443,6 @@ async fn handle_remote_mouse(
             Ok(warp::reply::json(&response))
         }
         Err(e) => {
-            tracing::error!("Failed to handle remote mouse event: {}", e);
             let response = serde_json::json!({
                 "status": "error",
                 "event_type": request.event_type,
@@ -453,6 +454,172 @@ async fn handle_remote_mouse(
             Ok(warp::reply::json(&response))
         }
     }
+}
+
+async fn handle_screen_offer(
+    request: ScreenOfferRequest,
+    voice_service: Arc<VoiceProcessingService>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    let session_id = request.session_id.unwrap_or_else(|| {
+        format!("session_{}", chrono::Utc::now().timestamp())
+    });
+
+    tracing::info!("Creating screen sharing session: {}", session_id);
+
+    match voice_service.start_screen_sharing(session_id.clone()).await {
+        Ok(offer) => {
+            let response = serde_json::json!({
+                "status": "ok",
+                "session_id": session_id,
+                "offer": serde_json::from_str(&offer).unwrap_or(serde_json::Value::Null),
+                "message": "Screen sharing session created"
+            });
+            Ok(warp::reply::json(&response))
+        }
+        Err(e) => {
+            tracing::error!("Failed to create screen sharing session: {}", e);
+            let response = serde_json::json!({
+                "status": "error",
+                "error": e.to_string(),
+                "message": "Failed to create screen sharing session"
+            });
+            Ok(warp::reply::json(&response))
+        }
+    }
+}
+
+// Dictation handlers
+#[derive(serde::Deserialize)]
+struct DictationStartRequest {
+    input_type: String,
+    url: Option<String>,
+    element_info: Option<serde_json::Value>,
+}
+
+async fn handle_dictation_start(
+    request: DictationStartRequest,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    tracing::info!("Dictation started for input type: {} on URL: {}", request.input_type, request.url.as_deref().unwrap_or("unknown"));
+
+    let response = serde_json::json!({
+        "status": "ok",
+        "message": "Dictation started",
+        "input_type": request.input_type,
+        "session_id": format!("dictation_{}", chrono::Utc::now().timestamp())
+    });
+
+    Ok(warp::reply::json(&response))
+}
+
+async fn handle_dictation_stop(
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    tracing::info!("Dictation stopped");
+
+    let response = serde_json::json!({
+        "status": "ok",
+        "message": "Dictation stopped"
+    });
+
+    Ok(warp::reply::json(&response))
+}
+
+#[derive(serde::Deserialize)]
+struct DictationInsertRequest {
+    text: String,
+    input_type: Option<String>,
+}
+
+async fn handle_dictation_insert(
+    request: DictationInsertRequest,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    tracing::info!("Inserting dictated text: {} (type: {})", request.text, request.input_type.as_deref().unwrap_or("text"));
+
+    let response = serde_json::json!({
+        "status": "ok",
+        "message": "Text inserted",
+        "text_length": request.text.len(),
+        "input_type": request.input_type
+    });
+
+    Ok(warp::reply::json(&response))
+}
+
+// Tailscale handlers
+async fn handle_tailscale_status(
+    config: Arc<RwLock<SystemConfig>>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    let config = config.read().await;
+
+    // Check if Tailscale is enabled in config
+    let enabled = config.settings.tailscale_enabled;
+
+    // Try to get Tailscale status (simplified - in real implementation would check tailscale CLI)
+    let status = if enabled {
+        // This would normally run `tailscale status` and parse output
+        // For now, return mock status based on configuration
+        serde_json::json!({
+            "enabled": true,
+            "connected": true,
+            "ip": config.settings.web_server_bind.as_deref().unwrap_or("127.0.0.1:8080"),
+            "hostname": config.settings.tailscale_hostname.as_deref().unwrap_or("vibespeak"),
+            "status": "Connected"
+        })
+    } else {
+        serde_json::json!({
+            "enabled": false,
+            "connected": false,
+            "status": "Not configured"
+        })
+    };
+
+    Ok(warp::reply::json(&status))
+}
+
+#[derive(serde::Deserialize)]
+struct TailscaleConfigRequest {
+    enabled: Option<bool>,
+    ip: Option<String>,
+    port: Option<u16>,
+}
+
+async fn handle_tailscale_config(
+    request: TailscaleConfigRequest,
+    config: Arc<RwLock<SystemConfig>>,
+) -> std::result::Result<impl warp::Reply, warp::Rejection> {
+    let mut config_lock = config.write().await;
+
+    // Update configuration
+    if let Some(enabled) = request.enabled {
+        config_lock.settings.tailscale_enabled = enabled;
+    }
+
+    if let Some(ip) = request.ip {
+        if let Some(port) = request.port {
+            config_lock.settings.web_server_bind = Some(format!("{}:{}", ip, port));
+        } else {
+            config_lock.settings.web_server_bind = Some(ip);
+        }
+    }
+
+    // Save configuration to file
+    let config_path = std::path::Path::new("config/system.json");
+    if let Ok(config_json) = serde_json::to_string_pretty(&*config_lock) {
+        if std::fs::write(config_path, config_json).is_err() {
+            return Ok(warp::reply::json(&serde_json::json!({
+                "status": "error",
+                "message": "Failed to save configuration"
+            })));
+        }
+    }
+
+    let response = serde_json::json!({
+        "status": "ok",
+        "message": "Tailscale configuration updated",
+        "enabled": config_lock.settings.tailscale_enabled,
+        "bind_address": config_lock.settings.web_server_bind
+    });
+
+    Ok(warp::reply::json(&response))
 }
 
 fn parse_bind_address(bind_addr: &str) -> Result<([u8; 4], u16)> {

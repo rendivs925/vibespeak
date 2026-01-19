@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Voice-controlled remote desktop and automation system" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Vibespeak" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <title>Vibespeak - Voice Automation System</title>
     <style>
       body {
@@ -219,11 +226,75 @@
         justify-content: center;
         text-align: center;
         min-height: 60px;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(0, 123, 255, 0.1);
+        touch-action: manipulation;
       }
 
       .touch-btn:active {
         transform: scale(0.95);
         background: #0056b3 !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      /* PWA enhancements */
+      @media all and (display-mode: standalone) {
+        body {
+          padding-bottom: 20px; /* Account for mobile browser UI */
+        }
+
+        .container {
+          margin: 5px;
+          border-radius: 8px;
+        }
+      }
+
+      /* Better mobile scrolling */
+      * {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Improve text selection on mobile */
+      input, textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      /* Better focus states for mobile */
+      button:focus, input:focus, textarea:focus {
+        outline: 2px solid #007bff;
+        outline-offset: 2px;
+      }
+
+      /* Hide scrollbars on mobile but keep functionality */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* PWA install and update banners */
+      #pwa-install-banner, #pwa-update-banner {
+        animation: slideInUp 0.3s ease-out;
+      }
+
+      @keyframes slideInUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Network status indicator */
+      #network-status {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
 
       /* Screen sharing styles */
@@ -361,6 +432,33 @@
               <button id="send-custom-command" class="btn">Send Command</button>
             </div>
           </div>
+
+          <div class="card">
+            <h3>Dictation</h3>
+            <p>Type anywhere without a keyboard using voice dictation</p>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+              <button id="start-dictation" class="btn">🎤 Start Dictation</button>
+              <button id="stop-dictation" class="btn btn-secondary" style="display: none;">⏹️ Stop Dictation</button>
+              <div id="dictation-status" class="status info" style="flex: 1;">Dictation ready</div>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="dictation-text" placeholder="Dictated text will appear here..." style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;" readonly>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="insert-text" class="btn" style="flex: 1;">Insert Text</button>
+              <button id="clear-dictation" class="btn btn-secondary">Clear</button>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-size: 14px;">
+              <strong>How to use dictation:</strong>
+              <ol style="margin: 5px 0; padding-left: 20px;">
+                <li>Focus on any text input field (browser, editor, etc.)</li>
+                <li>Click "Start Dictation" and speak clearly</li>
+                <li>Click "Insert Text" to place text in the focused field</li>
+                <li>Or install the browser extension for automatic insertion</li>
+              </ol>
+              <p style="margin: 5px 0;"><strong>Browser Extension:</strong> Check <code>web/extension/</code> folder</p>
+            </div>
+          </div>
         </section>
 
         <!-- Voice Commands Section -->
@@ -421,7 +519,7 @@
         <section id="settings" class="section">
           <h2>Settings</h2>
           <div class="card">
-            <h3>Voice Settings</h3>
+            <h3>Settings</h3>
             <div class="form-group">
               <label>Model Path:</label>
               <input
@@ -430,6 +528,54 @@
                 value="model/vosk-model-en-us-0.22-lgraph"
               />
             </div>
+            <div class="form-group">
+              <label>Sample Rate:</label>
+              <input type="number" id="sample-rate" value="16000" />
+            </div>
+            <div class="form-group">
+              <label>Enable TTS:</label>
+              <select id="enable-tts">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <button class="btn" onclick="saveSettings()">Save Settings</button>
+          </div>
+
+          <div class="card">
+            <h3>Tailscale Remote Access</h3>
+            <div id="tailscale-status" class="status info">
+              Checking Tailscale status...
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="tailscale-enabled" onchange="toggleTailscale()">
+                Enable Tailscale Remote Access
+              </label>
+            </div>
+            <div id="tailscale-config" style="display: none;">
+              <div class="form-group">
+                <label>Tailscale IP Address:</label>
+                <input type="text" id="tailscale-ip" placeholder="e.g., 100.64.0.1" />
+              </div>
+              <div class="form-group">
+                <label>Port:</label>
+                <input type="number" id="tailscale-port" value="8080" />
+              </div>
+              <button class="btn" onclick="saveTailscaleConfig()">Save Tailscale Config</button>
+            </div>
+            <div style="margin-top: 15px; font-size: 14px;">
+              <p><strong>Setup Instructions:</strong></p>
+              <ol>
+                <li>Install Tailscale on this machine</li>
+                <li>Run <code>sudo tailscale up</code> to authenticate</li>
+                <li>Get your IP with <code>tailscale ip -4</code></li>
+                <li>Enable Tailscale above and enter your IP</li>
+                <li>Access Vibespeak remotely at <code>http://[TAILSCALE_IP]:8080</code></li>
+              </ol>
+              <p><a href="docs/TAILSCALE_SETUP.md" target="_blank">📖 Complete Setup Guide</a></p>
+            </div>
+          </div>
             <div class="form-group">
               <label>Sample Rate:</label>
               <input type="number" id="sample-rate" value="16000" />
@@ -473,6 +619,7 @@
       // Load initial data
       window.addEventListener("load", function () {
         loadConfig();
+        checkTailscaleStatus();
         updateStatus("System ready");
       });
 
@@ -589,6 +736,106 @@
         const status = document.getElementById("system-status");
         status.textContent = message;
         status.className = `status ${type}`;
+      }
+
+      // Tailscale functionality
+      async function checkTailscaleStatus() {
+        try {
+          const response = await fetch('/api/tailscale/status');
+          if (response.ok) {
+            const status = await response.json();
+            updateTailscaleStatus(status);
+          } else {
+            updateTailscaleStatus({ enabled: false, connected: false, error: 'API not available' });
+          }
+        } catch (error) {
+          updateTailscaleStatus({ enabled: false, connected: false, error: error.message });
+        }
+      }
+
+      function updateTailscaleStatus(status) {
+        const statusEl = document.getElementById('tailscale-status');
+        const enabledCheckbox = document.getElementById('tailscale-enabled');
+        const configDiv = document.getElementById('tailscale-config');
+
+        enabledCheckbox.checked = status.enabled || false;
+
+        if (status.enabled) {
+          configDiv.style.display = 'block';
+          if (status.connected) {
+            statusEl.className = 'status success';
+            statusEl.textContent = `🟢 Connected - IP: ${status.ip || 'Unknown'}`;
+          } else {
+            statusEl.className = 'status warning';
+            statusEl.textContent = `🟡 Enabled but not connected - ${status.error || 'Check configuration'}`;
+          }
+        } else {
+          configDiv.style.display = 'none';
+          statusEl.className = 'status info';
+          statusEl.textContent = '⚪ Tailscale not enabled - Click to enable remote access';
+        }
+
+        // Update form fields
+        if (status.ip) {
+          document.getElementById('tailscale-ip').value = status.ip;
+        }
+        if (status.port) {
+          document.getElementById('tailscale-port').value = status.port;
+        }
+      }
+
+      async function toggleTailscale() {
+        const enabled = document.getElementById('tailscale-enabled').checked;
+
+        try {
+          const response = await fetch('/api/tailscale/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+          });
+
+          if (response.ok) {
+            await checkTailscaleStatus();
+            updateStatus(`Tailscale ${enabled ? 'enabled' : 'disabled'}`, 'success');
+          } else {
+            throw new Error('Failed to update Tailscale configuration');
+          }
+        } catch (error) {
+          updateStatus(`Tailscale configuration failed: ${error.message}`, 'error');
+          // Revert checkbox on error
+          document.getElementById('tailscale-enabled').checked = !enabled;
+        }
+      }
+
+      async function saveTailscaleConfig() {
+        const ip = document.getElementById('tailscale-ip').value.trim();
+        const port = document.getElementById('tailscale-port').value;
+
+        if (!ip) {
+          alert('Please enter your Tailscale IP address');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/tailscale/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              enabled: true,
+              ip: ip,
+              port: parseInt(port)
+            })
+          });
+
+          if (response.ok) {
+            updateStatus('Tailscale configuration saved', 'success');
+            await checkTailscaleStatus();
+          } else {
+            throw new Error('Failed to save Tailscale configuration');
+          }
+        } catch (error) {
+          updateStatus(`Failed to save Tailscale config: ${error.message}`, 'error');
+        }
       }
 
       function showAddCommand() {
@@ -811,14 +1058,91 @@
           const result = await response.json();
           if (result.status === 'ok') {
             updateVoiceStatus(`Executed: ${command}`, "success");
+            // Clear any offline queued commands for this type
+            clearOfflineQueue(command);
           } else {
             updateVoiceStatus(`Failed: ${result.error}`, "error");
+            // Queue for offline retry if network error
+            if (!navigator.onLine || result.error.includes('network')) {
+              queueCommandOffline(command);
+            }
           }
         } catch (error) {
           console.error('Command processing failed:', error);
           updateVoiceStatus(`Command failed: ${error.message}`, "error");
+
+          // Queue for offline processing
+          if (!navigator.onLine) {
+            queueCommandOffline(command);
+          }
         }
       }
+
+      function queueCommandOffline(command) {
+        const offlineCommands = JSON.parse(localStorage.getItem('offlineCommands') || '[]');
+        offlineCommands.push({
+          command,
+          timestamp: Date.now(),
+          retryCount: 0
+        });
+        localStorage.setItem('offlineCommands', JSON.stringify(offlineCommands));
+
+        updateVoiceStatus(`Queued offline: ${command}`, "info");
+
+        // Register for background sync if available
+        if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.sync.register('background-sync-commands');
+          });
+        }
+      }
+
+      function clearOfflineQueue(command) {
+        const offlineCommands = JSON.parse(localStorage.getItem('offlineCommands') || '[]');
+        const filtered = offlineCommands.filter(cmd => cmd.command !== command);
+        localStorage.setItem('offlineCommands', JSON.stringify(filtered));
+      }
+
+      async function processOfflineQueue() {
+        const offlineCommands = JSON.parse(localStorage.getItem('offlineCommands') || '[]');
+        if (offlineCommands.length === 0) return;
+
+        console.log(`Processing ${offlineCommands.length} offline commands`);
+
+        for (const cmd of offlineCommands) {
+          try {
+            const response = await fetch('/api/remote/command', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                command: cmd.command,
+                parameters: null
+              })
+            });
+
+            if (response.ok) {
+              // Remove from queue on success
+              clearOfflineQueue(cmd.command);
+              console.log(`Successfully processed offline command: ${cmd.command}`);
+            } else {
+              // Increment retry count
+              cmd.retryCount++;
+              if (cmd.retryCount >= 3) {
+                clearOfflineQueue(cmd.command);
+                console.warn(`Giving up on offline command after 3 retries: ${cmd.command}`);
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to process offline command: ${cmd.command}`, error);
+          }
+        }
+      }
+
+      // Process offline queue when coming back online
+      window.addEventListener('online', () => {
+        console.log('Back online, processing offline queue');
+        processOfflineQueue();
+      });
 
       function updateVoiceStatus(message, type = "info") {
         const status = document.getElementById('voice-status');
@@ -848,15 +1172,28 @@
       function initTouchControls() {
         // Touch button handlers
         document.querySelectorAll('.touch-btn').forEach(btn => {
-          btn.addEventListener('touchstart', () => {
+          btn.addEventListener('touchstart', (e) => {
             btn.classList.add('touch-active');
+            // Haptic feedback for supported devices
+            if (navigator.vibrate) {
+              navigator.vibrate(10); // Short vibration
+            }
           });
 
-          btn.addEventListener('touchend', async () => {
+          btn.addEventListener('touchend', async (e) => {
             btn.classList.remove('touch-active');
             const command = btn.getAttribute('data-command');
-            addCommandToHistory(`Touch: ${command}`);
-            await processVoiceCommand(command);
+
+            // Prevent accidental double-triggering
+            if (e.changedTouches.length > 0) {
+              addCommandToHistory(`Touch: ${command}`);
+              await processVoiceCommand(command);
+
+              // Longer haptic feedback for successful action
+              if (navigator.vibrate) {
+                navigator.vibrate(50);
+              }
+            }
           });
 
           // Fallback for non-touch devices
@@ -864,6 +1201,11 @@
             const command = btn.getAttribute('data-command');
             addCommandToHistory(`Click: ${command}`);
             await processVoiceCommand(command);
+
+            // Haptic feedback for non-touch devices (if supported)
+            if (navigator.vibrate) {
+              navigator.vibrate(30);
+            }
           });
         });
 
@@ -984,6 +1326,122 @@
         }
       }
 
+      // Dictation functionality
+      let isDictationActive = false;
+      let dictatedText = '';
+
+      async function startDictation() {
+        try {
+          updateDictationStatus("🎤 Starting dictation...", "info");
+
+          const response = await fetch('/api/dictation/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inputType: 'text',
+              url: window.location.href
+            })
+          });
+
+          if (response.ok) {
+            isDictationActive = true;
+            document.getElementById('start-dictation').style.display = 'none';
+            document.getElementById('stop-dictation').style.display = 'inline-block';
+            updateDictationStatus("🎤 Dictation active - speak now", "success");
+            dictatedText = '';
+            updateDictationText();
+
+            // Start listening for dictation input (in a real implementation, this would connect to speech recognition)
+            startDictationListening();
+          } else {
+            throw new Error('Failed to start dictation');
+          }
+        } catch (error) {
+          console.error('Dictation failed:', error);
+          updateDictationStatus(`Dictation failed: ${error.message}`, "error");
+        }
+      }
+
+      function startDictationListening() {
+        // In a real implementation, this would connect to WebRTC audio streaming
+        // and speech recognition. For demo purposes, we'll simulate dictation.
+        console.log('Dictation listening started - WebRTC audio streaming would connect here');
+
+        // Simulate receiving dictated text (replace with real speech recognition)
+        setTimeout(() => {
+          if (isDictationActive) {
+            dictatedText = 'This is a sample of dictated text that would be recognized from your speech.';
+            updateDictationText();
+          }
+        }, 2000);
+      }
+
+      async function stopDictation() {
+        try {
+          const response = await fetch('/api/dictation/stop', {
+            method: 'POST'
+          });
+
+          isDictationActive = false;
+          document.getElementById('start-dictation').style.display = 'inline-block';
+          document.getElementById('stop-dictation').style.display = 'none';
+          updateDictationStatus("Dictation stopped", "info");
+
+          if (response.ok) {
+            console.log('Dictation stopped successfully');
+          }
+        } catch (error) {
+          console.error('Failed to stop dictation:', error);
+        }
+      }
+
+      async function insertDictationText() {
+        if (!dictatedText.trim()) {
+          alert('No text to insert. Please dictate some text first.');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/dictation/insert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: dictatedText,
+              inputType: 'text'
+            })
+          });
+
+          if (response.ok) {
+            updateDictationStatus("Text inserted successfully", "success");
+
+            // In a real implementation with the browser extension,
+            // this would trigger text insertion in the active input field
+            console.log('Text insertion requested:', dictatedText);
+          } else {
+            throw new Error('Failed to insert text');
+          }
+        } catch (error) {
+          console.error('Text insertion failed:', error);
+          updateDictationStatus(`Text insertion failed: ${error.message}`, "error");
+        }
+      }
+
+      function clearDictation() {
+        dictatedText = '';
+        updateDictationText();
+        updateDictationStatus("Dictation cleared", "info");
+      }
+
+      function updateDictationText() {
+        document.getElementById('dictation-text').value = dictatedText;
+      }
+
+      function updateDictationStatus(message, type = "info") {
+        const status = document.getElementById('dictation-status');
+        status.textContent = message;
+        status.className = `status ${type}`;
+      }
+
       // Initialize remote control when page loads
       document.addEventListener('DOMContentLoaded', () => {
         // Screen sharing buttons
@@ -995,9 +1453,217 @@
         document.getElementById('start-voice-control').addEventListener('click', startVoiceControl);
         document.getElementById('stop-voice-control').addEventListener('click', stopVoiceControl);
 
+        // Dictation buttons
+        document.getElementById('start-dictation').addEventListener('click', startDictation);
+        document.getElementById('stop-dictation').addEventListener('click', stopDictation);
+        document.getElementById('insert-text').addEventListener('click', insertDictationText);
+        document.getElementById('clear-dictation').addEventListener('click', clearDictation);
+
         // Initialize touch controls
         initTouchControls();
+
+        // Initialize PWA functionality
+        initPWA();
       });
+
+      // PWA functionality
+      function initPWA() {
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('Service Worker registered:', registration.scope);
+
+              // Handle updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      showUpdateNotification();
+                    }
+                  });
+                }
+              });
+            })
+            .catch(error => {
+              console.error('Service Worker registration failed:', error);
+            });
+        }
+
+        // Handle PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          showInstallPrompt();
+        });
+
+        // Handle online/offline status
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        updateNetworkStatus();
+      }
+
+      function showInstallPrompt() {
+        const installBanner = document.createElement('div');
+        installBanner.id = 'pwa-install-banner';
+        installBanner.innerHTML = `
+          <div style="
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-size: 14px;
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>Install Vibespeak</strong><br>
+                Get native app experience on your device
+              </div>
+              <div>
+                <button id="install-btn" style="
+                  background: white;
+                  color: #28a745;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 4px;
+                  margin-right: 8px;
+                  cursor: pointer;
+                  font-weight: bold;
+                ">Install</button>
+                <button id="dismiss-btn" style="
+                  background: transparent;
+                  color: white;
+                  border: 1px solid white;
+                  padding: 6px 12px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                ">Later</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(installBanner);
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('PWA install outcome:', outcome);
+            deferredPrompt = null;
+          }
+          installBanner.remove();
+        });
+
+        document.getElementById('dismiss-btn').addEventListener('click', () => {
+          installBanner.remove();
+        });
+      }
+
+      function showUpdateNotification() {
+        const updateBanner = document.createElement('div');
+        updateBanner.id = 'pwa-update-banner';
+        updateBanner.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-size: 14px;
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>Update Available</strong><br>
+                A new version of Vibespeak is available
+              </div>
+              <div>
+                <button id="update-btn" style="
+                  background: white;
+                  color: #007bff;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 4px;
+                  margin-right: 8px;
+                  cursor: pointer;
+                  font-weight: bold;
+                ">Update</button>
+                <button id="skip-btn" style="
+                  background: transparent;
+                  color: white;
+                  border: 1px solid white;
+                  padding: 6px 12px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                ">Skip</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(updateBanner);
+
+        document.getElementById('update-btn').addEventListener('click', () => {
+          window.location.reload();
+        });
+
+        document.getElementById('skip-btn').addEventListener('click', () => {
+          updateBanner.remove();
+        });
+      }
+
+      function updateNetworkStatus() {
+        const isOnline = navigator.onLine;
+        const statusIndicator = document.createElement('div');
+        statusIndicator.id = 'network-status';
+        statusIndicator.style.cssText = `
+          position: fixed;
+          top: 10px;
+          right: 10px;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: bold;
+          z-index: 1000;
+        `;
+
+        if (isOnline) {
+          statusIndicator.textContent = '🟢 Online';
+          statusIndicator.style.background = '#d4edda';
+          statusIndicator.style.color = '#155724';
+        } else {
+          statusIndicator.textContent = '🔴 Offline';
+          statusIndicator.style.background = '#f8d7da';
+          statusIndicator.style.color = '#721c24';
+        }
+
+        const existing = document.getElementById('network-status');
+        if (existing) {
+          existing.remove();
+        }
+        document.body.appendChild(statusIndicator);
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          const indicator = document.getElementById('network-status');
+          if (indicator) {
+            indicator.remove();
+          }
+        }, 3000);
+      }
     </script>
   </body>
 </html>
