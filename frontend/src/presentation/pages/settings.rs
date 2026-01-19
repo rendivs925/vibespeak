@@ -1,6 +1,6 @@
 //! Settings page component
 
-use crate::domain::entities::{TailscaleStatus, SystemSettings};
+use crate::domain::entities::{SystemSettings, TailscaleStatus};
 use crate::infrastructure::api_client as api;
 use crate::presentation::components::{Card, Header, NavBar, StatusBadge};
 use leptos::*;
@@ -11,7 +11,8 @@ pub fn Settings() -> impl IntoView {
     let (status, set_status) = create_signal("Loading settings...".to_string());
     let (status_type, set_status_type) = create_signal("info".to_string());
 
-    let (model_path, set_model_path) = create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
+    let (model_path, set_model_path) =
+        create_signal("model/vosk-model-en-us-0.22-lgraph".to_string());
     let (sample_rate, set_sample_rate) = create_signal(16000.0_f32);
     let (enable_tts, set_enable_tts) = create_signal(true);
     let (web_server_port, set_web_server_port) = create_signal(8080_u16);
@@ -97,8 +98,11 @@ pub fn Settings() -> impl IntoView {
     };
 
     view! {
-        <div class="container">
-            <Header title="Vibespeak" subtitle="Voice Automation System - Control your computer with your voice">
+        <div>
+            <Header
+                title="Vibespeak"
+                subtitle="Voice Automation System - Control your computer with your voice"
+            >
                 <StatusBadge message=status status_type=status_type />
             </Header>
 
@@ -134,7 +138,9 @@ pub fn Settings() -> impl IntoView {
                         <label>"Enable TTS:"</label>
                         <select
                             prop:value=move || if enable_tts.get() { "true" } else { "false" }
-                            on:change=move |ev| set_enable_tts.set(event_target_value(&ev) == "true")
+                            on:change=move |ev| {
+                                set_enable_tts.set(event_target_value(&ev) == "true")
+                            }
                             style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;"
                         >
                             <option value="true">"Yes"</option>
@@ -149,13 +155,17 @@ pub fn Settings() -> impl IntoView {
                 <Card title="Tailscale Remote Access">
                     <Show
                         when=move || tailscale_status.get().is_some()
-                        fallback=|| view! {
-                            <div class="status info">"Checking Tailscale status..."</div>
+                        fallback=|| {
+                            view! { <div class="status info">"Checking Tailscale status..."</div> }
                         }
                     >
                         {move || {
                             let ts = tailscale_status.get().unwrap();
-                            let status_class = if ts.enabled && ts.connected { "success" } else { "info" };
+                            let status_class = if ts.enabled && ts.connected {
+                                "success"
+                            } else {
+                                "info"
+                            };
                             let status_text = if ts.enabled && ts.connected {
                                 format!("Connected - Port: {}", ts.port)
                             } else if ts.enabled {
@@ -165,21 +175,24 @@ pub fn Settings() -> impl IntoView {
                             };
 
                             view! {
-                                <div class=format!("status {}", status_class)>
-                                    {status_text}
-                                </div>
+                                <div class=format!("status {}", status_class)>{status_text}</div>
                             }
                         }}
                     </Show>
 
                     <div style="margin-top: 15px; font-size: 14px;">
-                        <p><strong>"Setup Instructions:"</strong></p>
+                        <p>
+                            <strong>"Setup Instructions:"</strong>
+                        </p>
                         <ol>
                             <li>"Install Tailscale on this machine"</li>
                             <li>"Run "<code>"sudo tailscale up"</code>" to authenticate"</li>
                             <li>"Get your IP with "<code>"tailscale ip -4"</code></li>
                             <li>"Enable Tailscale above and enter your IP"</li>
-                            <li>"Access Vibespeak remotely at "<code>"http://[TAILSCALE_IP]:8080"</code></li>
+                            <li>
+                                "Access Vibespeak remotely at "
+                                <code>"http://[TAILSCALE_IP]:8080"</code>
+                            </li>
                         </ol>
                     </div>
                 </Card>
