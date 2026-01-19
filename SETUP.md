@@ -264,6 +264,59 @@ npm install  # In web/ directory
 ### Voice Configuration
 Vibespeak uses only the `en_US-amy-medium` model for optimal quality.
 
+## Building the Frontend (Leptos CSR)
+
+The frontend uses Leptos with client-side rendering and compiles to WebAssembly.
+
+### Install Trunk (WASM bundler)
+```bash
+cargo install trunk
+```
+
+### Build the Frontend
+```bash
+cd frontend
+
+# Development build
+trunk build
+
+# Production build (optimized)
+trunk build --release
+
+# The output will be in frontend/dist/
+```
+
+### Deploy the Frontend
+```bash
+# Copy built files to where Axum serves them
+cp -r frontend/dist/* web/dist/
+```
+
+### Development with Hot Reload
+```bash
+cd frontend
+trunk serve --port 3000
+```
+
+## Setting Up Keyboard Simulation (uinput)
+
+For real keyboard events that work in any application:
+
+```bash
+# Check if uinput is available
+ls -la /dev/uinput
+
+# Grant permission (temporary)
+sudo chmod 666 /dev/uinput
+
+# Grant permission (permanent via udev rule)
+sudo tee /etc/udev/rules.d/99-uinput.rules <<EOF
+KERNEL=="uinput", MODE="0666", GROUP="input"
+EOF
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
 ## Verification Checklist
 
 - [ ] Rust 1.70+ installed
@@ -275,6 +328,8 @@ Vibespeak uses only the `en_US-amy-medium` model for optimal quality.
 - [ ] TTS generates audio correctly
 - [ ] Web interface loads
 - [ ] Voice recognition works
+- [ ] Keyboard simulation works (`/dev/uinput` accessible)
+- [ ] Frontend builds with trunk (optional)
 
 ## Getting Help
 

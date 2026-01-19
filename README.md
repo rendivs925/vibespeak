@@ -6,9 +6,10 @@ A comprehensive voice-controlled automation platform that transforms your comput
 
 - **Grammar-Based Voice Recognition** - Advanced Vosk speech recognition with command-specific grammar for superior accuracy
 - **Neural Text-to-Speech** - Powered by Piper TTS for incredibly natural, human-like voice synthesis
+- **Real Keyboard Simulation** - Uses Linux uinput for kernel-level key events that work in any application
 - **Browser Automation** - Control web browsers programmatically with Chromium
 - **Extensible Plugin System** - Add custom commands, workflows, and integrations
-- **Web-Based Configuration** - Intuitive browser interface for all settings
+- **Modern Web Stack** - Axum backend with Leptos CSR frontend for reactive UI
 - **Remote Access** - Tailscale integration for global access
 - **Real-time Processing** - Low-latency voice command execution
 - **Privacy-First** - All processing local, no cloud dependencies
@@ -491,12 +492,28 @@ make format       # Format code only
 ```
 vibespeak/
 ├── src/
-│   ├── domain/           # Business logic
+│   ├── domain/           # Business logic & entities
 │   ├── application/      # Use cases & services
-│   ├── infrastructure/   # External interfaces
-│   ├── presentation/     # Web & CLI interfaces
-│   └── shared/           # Common utilities
-├── web/                  # Web interface assets
+│   ├── infrastructure/   # External interfaces & adapters
+│   │   └── adapters/
+│   │       ├── keyboard_simulator.rs  # Real keyboard via uinput
+│   │       ├── vosk_adapter.rs        # Speech recognition
+│   │       └── tts_adapter.rs         # Text-to-speech
+│   ├── presentation/
+│   │   ├── axum_server/  # Axum-based web server (new)
+│   │   │   ├── handlers/ # Request handlers
+│   │   │   ├── routes/   # Route definitions
+│   │   │   └── state.rs  # Application state
+│   │   └── cli/          # Command-line interface
+│   └── shared/           # Common utilities & types
+├── frontend/             # Leptos CSR frontend (new)
+│   ├── src/
+│   │   ├── components/   # Reusable UI components
+│   │   ├── pages/        # Page components
+│   │   ├── api.rs        # Backend API client
+│   │   └── state.rs      # Application state
+│   └── Cargo.toml        # Frontend dependencies
+├── web/                  # Legacy web assets
 ├── config/               # Configuration files
 ├── model/                # Voice recognition models
 ├── docs/                 # Documentation
@@ -764,8 +781,8 @@ cargo build --verbose
 ```
 ┌─────────────────────────────────────┐
 │         Presentation Layer          │
-│  - Web Interface                    │
-│  - REST API                         │
+│  - Leptos CSR Frontend              │
+│  - Axum REST API                    │
 │  - WebSocket                        │
 └─────────────────────────────────────┘
                     │
@@ -786,12 +803,39 @@ cargo build --verbose
                     │
 ┌─────────────────────────────────────┐
 │     Infrastructure Layer            │
-│  - Vosk Adapter                     │
-│  - TTS Adapter                      │
+│  - Vosk Adapter (Speech-to-Text)    │
+│  - TTS Adapter (Piper)              │
+│  - Keyboard Simulator (evdev/uinput)│
 │  - File System                      │
-│  - WebRTC                           │
 └─────────────────────────────────────┘
 ```
+
+### Keyboard Simulation
+
+Vibespeak uses **real kernel-level keyboard events** via Linux's uinput interface, making voice dictation work in **any application** - not just web browsers.
+
+**How it works:**
+1. Voice input is captured and converted to text via Vosk
+2. Text is sent to the `keyboard_simulator` module
+3. The module creates a virtual keyboard device via `/dev/uinput`
+4. Individual key press/release events are emitted at the kernel level
+5. The active application receives real keyboard input
+
+**Requirements:**
+- Linux with uinput support (most distributions)
+- Permission to access `/dev/uinput`:
+  ```bash
+  # Temporary (resets on reboot)
+  sudo chmod 666 /dev/uinput
+
+  # Permanent (recommended)
+  sudo tee /etc/udev/rules.d/99-uinput.rules <<EOF
+  KERNEL=="uinput", MODE="0666", GROUP="input"
+  EOF
+  sudo udevadm control --reload-rules
+  ```
+
+**Fallback:** If uinput is unavailable, Vibespeak falls back to xdotool for X11 systems.
 
 ### Plugin System
 
@@ -882,7 +926,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **ONNX Runtime**: Cross-platform ML inference engine
 - **eSpeak-ng**: Phoneme data for speech synthesis
 - **Tokio**: Async runtime for Rust
-- **Warp**: Fast web framework for the API
+- **Axum**: Modern, ergonomic web framework for the backend API
+- **Leptos**: Reactive web framework for the frontend (CSR mode)
+- **evdev**: Linux input device library for real keyboard simulation
 - **Tailscale**: Secure remote access networking
 - **Chromium**: Browser automation engine
 
