@@ -643,7 +643,8 @@ struct DictationTypeRequest {
 async fn handle_dictation_type(
     request: DictationTypeRequest,
 ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
-    tracing::info!("Typing text on desktop: '{}' (keyboard simulation: {})", request.text, request.simulate_keyboard);
+    tracing::info!("Received dictation type request - text: '{}' (length: {}), keyboard simulation: {}",
+                  request.text, request.text.len(), request.simulate_keyboard);
 
     if request.text.trim().is_empty() {
         let response = serde_json::json!({
@@ -677,6 +678,8 @@ async fn handle_dictation_type(
 }
 
 async fn simulate_keyboard_input(text: &str) -> Result<()> {
+    tracing::info!("Starting keyboard simulation for text: '{}'", text);
+
     // Escape special characters that might cause issues with xdotool
     let escaped_text = text
         .replace("\\", "\\\\")  // Escape backslashes first
@@ -687,9 +690,10 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
 
     // Use xdotool to type the text
     // Note: xdotool type handles most characters, but we could also use xdotool key for special keys
-    let command = format!("xdotool type \"{}\"", escaped_text);
+    // Make sure we use the correct display and add a small delay
+    let command = format!("DISPLAY=:0 xdotool type \"{}\" && sleep 0.1", escaped_text);
 
-    tracing::debug!("Executing xdotool command: {}", command);
+    tracing::info!("Executing xdotool command: {}", command);
 
     let output = Command::new("bash")
         .arg("-c")
@@ -703,7 +707,10 @@ async fn simulate_keyboard_input(text: &str) -> Result<()> {
         Ok(())
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        Err(Error::CommandExecution(format!("xdotool failed: {}", stderr)))
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        tracing::error!("xdotool failed - status: {}, stdout: '{}', stderr: '{}'",
+                       output.status, stdout.trim(), stderr.trim());
+        Err(Error::CommandExecution(format!("xdotool failed: {} (stdout: {})", stderr, stdout)))
     }
 }
 
