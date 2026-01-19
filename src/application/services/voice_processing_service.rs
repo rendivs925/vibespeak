@@ -2,7 +2,7 @@ use crate::domain::services::{
     CommandContext, CommandInterpreter, InterpretedCommand, SpeechRecognitionService,
     TextToSpeechService,
 };
-use crate::screen::{RemoteControlManager, ScreenSharingManager};
+use crate::infrastructure::adapters::screen::{RemoteControlManager, ScreenSharingManager};
 use crate::shared::{AudioSample, Result};
 use std::sync::Arc;
 

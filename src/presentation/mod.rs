@@ -1,6 +1,6 @@
 // Presentation layer modules
-// Provides CLI, web, and API interfaces for the voice automation system
+// Provides CLI and web interfaces for the voice automation system
 
-// New Axum-based server
+// Axum-based web server
 pub mod axum_server;
 pub mod cli;
