@@ -607,30 +607,39 @@
     </div>
 
     <script>
-      // Tab navigation
-      document.querySelectorAll(".nav-tabs a").forEach((tab) => {
-        tab.addEventListener("click", function (e) {
-          e.preventDefault();
-          const target = this.getAttribute("href").substring(1);
+      // Initialize navigation when DOM is ready
+      function initNavigation() {
+        // Tab navigation
+        document.querySelectorAll(".nav-tabs a").forEach((tab) => {
+          tab.addEventListener("click", function (e) {
+            e.preventDefault();
+            const target = this.getAttribute("href").substring(1);
 
-          // Hide all sections
-          document.querySelectorAll(".section").forEach((section) => {
-            section.classList.remove("active");
+            // Hide all sections
+            document.querySelectorAll(".section").forEach((section) => {
+              section.classList.remove("active");
+            });
+
+            // Show target section
+            const targetElement = document.getElementById(target);
+            if (targetElement) {
+              targetElement.classList.add("active");
+
+              // Update active tab
+              document.querySelectorAll(".nav-tabs a").forEach((t) => {
+                t.classList.remove("active");
+              });
+              this.classList.add("active");
+            } else {
+              console.error("Navigation target not found:", target);
+            }
           });
-
-          // Show target section
-          document.getElementById(target).classList.add("active");
-
-          // Update active tab
-          document.querySelectorAll(".nav-tabs a").forEach((t) => {
-            t.classList.remove("active");
-          });
-          this.classList.add("active");
         });
-      });
+      }
 
-      // Load initial data
-      window.addEventListener("load", function () {
+      // Initialize everything when DOM is ready
+      document.addEventListener("DOMContentLoaded", function () {
+        initNavigation();
         loadConfig();
         checkTailscaleStatus();
         updateStatus("System ready");
