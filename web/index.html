@@ -451,12 +451,16 @@
             <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-size: 14px;">
               <strong>How to use dictation:</strong>
               <ol style="margin: 5px 0; padding-left: 20px;">
-                <li>Focus on any text input field (browser, editor, etc.)</li>
-                <li>Click "Start Dictation" and speak clearly</li>
-                <li>Click "Insert Text" to place text in the focused field</li>
-                <li>Or install the browser extension for automatic insertion</li>
+                <li><strong>Focus on any text input field</strong> (click in a text box, editor, search bar, etc.)</li>
+                <li>Click "Start Dictation" and allow microphone access</li>
+                <li><strong>Speak clearly</strong> - text appears in real-time above</li>
+                <li>Click "Insert Text" to type the dictated text into the focused field</li>
+                <li>Or install the browser extension for advanced features</li>
               </ol>
-              <p style="margin: 5px 0;"><strong>Browser Extension:</strong> Check <code>web/extension/</code> folder</p>
+              <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
+                <strong>💡 Tip:</strong> Dictation works in Gmail, Google Docs, code editors, search bars, and most text inputs!
+              </div>
+              <p style="margin: 8px 0 0 0;"><strong>Browser Extension:</strong> Check <code>web/extension/</code> folder for advanced dictation features</p>
             </div>
           </div>
         </section>
@@ -1530,10 +1534,15 @@
           });
 
           if (response.ok) {
-            updateDictationStatus("Text inserted successfully", "success");
+            // Try to insert text into the currently focused input field
+            const textInserted = await insertTextIntoActiveElement(dictatedText);
 
-            // In a real implementation with the browser extension,
-            // this would trigger text insertion in the active input field
+            if (textInserted) {
+              updateDictationStatus("✅ Text inserted into focused field", "success");
+            } else {
+              updateDictationStatus("⚠️ Text sent to server, but could not insert into focused field. Make sure an input field is focused.", "warning");
+            }
+
             console.log('Text insertion requested:', dictatedText);
           } else {
             throw new Error('Failed to insert text');
@@ -1552,6 +1561,110 @@
 
       function updateDictationText() {
         document.getElementById('dictation-text').value = dictatedText;
+      }
+
+      // Insert text into the currently focused input element
+      async function insertTextIntoActiveElement(text) {
+        const activeElement = document.activeElement;
+
+        if (!activeElement) {
+          console.warn('No active element found for text insertion');
+          return false;
+        }
+
+        try {
+          // Handle different types of input elements
+          if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+            // For input and textarea elements
+            insertIntoInputElement(activeElement, text);
+          } else if (activeElement.contentEditable === 'true') {
+            // For contenteditable elements
+            insertIntoContentEditable(activeElement, text);
+          } else if (activeElement.tagName === 'DIV' && activeElement.getAttribute('role') === 'textbox') {
+            // For role="textbox" elements (like some rich editors)
+            insertIntoContentEditable(activeElement, text);
+          } else {
+            console.warn('Unsupported element type for text insertion:', activeElement.tagName, activeElement);
+            return false;
+          }
+
+          // Trigger input events to notify frameworks like React
+          triggerInputEvents(activeElement);
+
+          console.log('Text inserted into element:', activeElement.tagName, text);
+          return true;
+        } catch (error) {
+          console.error('Failed to insert text into element:', error);
+          return false;
+        }
+      }
+
+      function insertIntoInputElement(element, text) {
+        const start = element.selectionStart || element.value.length;
+        const end = element.selectionEnd || element.value.length;
+
+        // Insert text at cursor position
+        const beforeText = element.value.substring(0, start);
+        const afterText = element.value.substring(end);
+        element.value = beforeText + text + afterText;
+
+        // Move cursor to end of inserted text
+        const newCursorPos = start + text.length;
+        element.selectionStart = element.selectionEnd = newCursorPos;
+
+        // Trigger change event
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      function insertIntoContentEditable(element, text) {
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+
+        // Delete any selected content
+        range.deleteContents();
+
+        // Insert the text
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+
+        // Move cursor to end of inserted text
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // Trigger input events
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      function triggerInputEvents(element) {
+        // Trigger events that frameworks listen for
+        const events = ['input', 'change', 'keydown', 'keyup', 'keypress'];
+
+        events.forEach(eventType => {
+          try {
+            const event = new Event(eventType, {
+              bubbles: true,
+              cancelable: true
+            });
+            element.dispatchEvent(event);
+          } catch (e) {
+            // Some events might not be supported on all elements
+            console.debug(`Could not dispatch ${eventType} event:`, e);
+          }
+        });
+
+        // React-specific handling
+        if (element._valueTracker) {
+          element._valueTracker.setValue('');
+        }
+
+        // Angular/React form libraries
+        if (element.form && typeof element.form.dispatchEvent === 'function') {
+          element.form.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
 
       function updateDictationStatus(message, type = "info") {
@@ -1582,7 +1695,77 @@
 
         // Initialize PWA functionality
         initPWA();
+
+        // Initialize dictation focus tracking
+        initDictationFocusTracking();
       });
+
+      // Track focus for dictation insertion
+      function initDictationFocusTracking() {
+        let currentFocusedElement = null;
+
+        // Update focus indicator when focus changes
+        document.addEventListener('focusin', (e) => {
+          currentFocusedElement = e.target;
+          updateFocusIndicator(e.target);
+        });
+
+        document.addEventListener('focusout', (e) => {
+          if (e.target === currentFocusedElement) {
+            currentFocusedElement = null;
+            updateFocusIndicator(null);
+          }
+        });
+
+        // Initial check
+        updateFocusIndicator(document.activeElement);
+      }
+
+      function updateFocusIndicator(element) {
+        const indicator = document.getElementById('focus-indicator') || createFocusIndicator();
+
+        if (!element || element === document.body) {
+          indicator.style.display = 'none';
+          return;
+        }
+
+        // Check if it's an input element we can type into
+        const isInputElement = element.tagName === 'INPUT' ||
+                              element.tagName === 'TEXTAREA' ||
+                              element.contentEditable === 'true' ||
+                              element.getAttribute('role') === 'textbox';
+
+        if (isInputElement) {
+          const rect = element.getBoundingClientRect();
+          indicator.style.display = 'block';
+          indicator.style.left = (rect.left - 10) + 'px';
+          indicator.style.top = (rect.top - 35) + 'px';
+          indicator.textContent = '🎯 Dictation target';
+          indicator.style.background = '#28a745';
+        } else {
+          indicator.style.display = 'none';
+        }
+      }
+
+      function createFocusIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'focus-indicator';
+        indicator.style.cssText = `
+          position: absolute;
+          background: #28a745;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: bold;
+          z-index: 10000;
+          pointer-events: none;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          display: none;
+        `;
+        document.body.appendChild(indicator);
+        return indicator;
+      }
 
       // PWA functionality
       function initPWA() {
