@@ -131,78 +131,66 @@ pub fn RemoteControl() -> impl IntoView {
                         recognition.set_interim_results(true);
                         recognition.set_lang("en-US");
 
-                        // Set up result handler - real-time display, type only finals
+                        // Optimized result handler - minimal clones, fast path for interim
                         let set_text = set_dictation_text.clone();
                         let set_status_inner = set_dictation_status.clone();
                         let last_idx = last_idx_for_start.clone();
                         let on_result = Closure::wrap(Box::new(
                             move |event: SpeechRecognitionEvent| {
-                                if let Some(results) = event.results() {
-                                    let result_index = event.result_index();
+                                let results = match event.results() {
+                                    Some(r) => r,
+                                    None => return,
+                                };
+                                let result_index = event.result_index();
+                                let result = match results.get(result_index) {
+                                    Some(r) => r,
+                                    None => return,
+                                };
 
-                                    if let Some(result) = results.get(result_index) {
-                                        let alternative = result.item(0);
-                                        let text = alternative.transcript();
-                                        let confidence = alternative.confidence();
+                                let alternative = result.item(0);
+                                let text = alternative.transcript();
+                                let trimmed = text.trim();
 
-                                        // Always show current text for real-time feedback
-                                        set_text.set(text.clone());
-
-                                        if !result.is_final() {
-                                            // Show interim result status
-                                            set_status_inner.set(format!("Hearing: \"{}\"", text.trim()));
-                                            return;
-                                        }
-
-                                        // FINAL result - check if already typed
-                                        let idx = result_index as i32;
-                                        {
-                                            let current = *last_idx.borrow();
-                                            if idx <= current {
-                                                return; // Already typed this
-                                            }
-                                            *last_idx.borrow_mut() = idx;
-                                        }
-
-                                        // Skip low confidence
-                                        if confidence < 0.5 {
-                                            set_status_inner.set(format!(
-                                                "Low confidence ({:.0}%): \"{}\"",
-                                                confidence * 100.0, text.trim()
-                                            ));
-                                            return;
-                                        }
-
-                                        // Skip empty
-                                        if text.trim().is_empty() {
-                                            return;
-                                        }
-
-                                        // Type the final text
-                                        let text_to_type = format!("{} ", text);
-                                        let set_status = set_status_inner.clone();
-                                        wasm_bindgen_futures::spawn_local(async move {
-                                            match api::ApiClient::new_default()
-                                                .type_dictation(&text_to_type)
-                                                .await
-                                            {
-                                                Ok(response) => {
-                                                    if response.success {
-                                                        set_status.set(format!(
-                                                            "Typed: \"{}\"",
-                                                            text.trim()
-                                                        ));
-                                                    } else {
-                                                        set_status.set("Typing failed".to_string());
-                                                    }
-                                                }
-                                                Err(_) => {
-                                                    set_status.set("Network error".to_string());
-                                                }
-                                            }
-                                        });
-                                    }
+                                // Fast path: interim results - just display
+                                if !result.is_final() {
+                                    set_text.set(text.clone());
+                                    set_status_inner.set(format!("Hearing: \"{}\"", trimmed));
+                                    return;
                                 }
+
+                                // FINAL result - dedupe check first (cheapest)
+                                let idx = result_index as i32;
+                                if idx <= *last_idx.borrow() {
+                                    return;
+                                }
+                                *last_idx.borrow_mut() = idx;
+
+                                // Skip empty early
+                                if trimmed.is_empty() {
+                                    return;
+                                }
+
+                                let confidence = alternative.confidence();
+
+                                // Skip low confidence
+                                if confidence < 0.5 {
+                                    set_status_inner.set(format!("Low confidence ({:.0}%)", confidence * 100.0));
+                                    return;
+                                }
+
+                                // Update display and type
+                                set_text.set(text.clone());
+                                let text_to_type = format!("{} ", trimmed);
+                                let status_display = format!("Typed: \"{}\"", trimmed);
+                                let set_status = set_status_inner.clone();
+
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    if let Ok(r) = api::ApiClient::new_default().type_dictation(&text_to_type).await {
+                                        set_status.set(if r.success { status_display } else { "Typing failed".into() });
+                                    } else {
+                                        set_status.set("Network error".into());
+                                    }
+                                });
                             },
                         )
                             as Box<dyn FnMut(_)>);
@@ -268,11 +256,10 @@ pub fn RemoteControl() -> impl IntoView {
     let start_voice_commands = {
         let set_text = set_voice_command_text.clone();
         let set_status = set_voice_command_status.clone();
-        let execute_command = execute_command.clone();
         let recognition_ref = recognition_ref.clone();
         move |_| {
             set_is_voice_listening.set(true);
-            set_voice_command_status.set("Listening for voice commands...".to_string());
+            set_voice_command_status.set("Listening...".into());
 
             #[cfg(target_arch = "wasm32")]
             {
@@ -296,113 +283,67 @@ pub fn RemoteControl() -> impl IntoView {
                         recognition.set_lang("en-US");
                         recognition.set_max_alternatives(3);
 
-                        // Set up result handler for voice commands
+                        // Optimized voice command handler - fast path, minimal allocations
                         let set_text = set_text.clone();
                         let set_status = set_status.clone();
-                        let execute_command = execute_command.clone();
-                        let is_voice_listening_for_result = is_voice_listening.clone();
-                        let recognition_ref_for_result = recognition_ref.clone();
                         let on_result =
                             Closure::wrap(Box::new(move |event: SpeechRecognitionEvent| {
-                                if let Some(results) = event.results() {
-                                    // Get the latest result (last in the list)
-                                    let result_index = event.result_index();
-                                    if let Some(result) = results.get(result_index) {
-                                        // Only process final results
-                                        if !result.is_final() {
-                                            return;
-                                        }
+                                let results = match event.results() {
+                                    Some(r) => r,
+                                    None => return,
+                                };
+                                let result = match results.get(event.result_index()) {
+                                    Some(r) => r,
+                                    None => return,
+                                };
 
-                                        let alternative = result.item(0);
-                                        let confidence = alternative.confidence();
-                                        let command_text = alternative.transcript().trim().to_string();
-
-                                        // Confidence threshold - reject low confidence commands
-                                        if confidence < 0.6 {
-                                            set_status.set(format!(
-                                                "Low confidence ({:.0}%): \"{}\" - please repeat",
-                                                confidence * 100.0,
-                                                command_text
-                                            ));
-                                            return;
-                                        }
-
-                                        // Reject very short or empty commands
-                                        if command_text.len() < 2 {
-                                            return;
-                                        }
-
-                                        set_text.set(command_text.clone());
-
-                                        // Process the voice command
-                                        let set_text = set_text.clone();
-                                        let set_status = set_status.clone();
-                                        let confidence = confidence;
-                                        wasm_bindgen_futures::spawn_local(async move {
-                                            set_status.set(format!(
-                                                "Processing ({:.0}%): \"{}\"",
-                                                confidence * 100.0,
-                                                command_text
-                                            ));
-                                            match api::ApiClient::new_default()
-                                                .process_voice_command(
-                                                    &command_text,
-                                                    Some(confidence),
-                                                )
-                                                .await
-                                            {
-                                                Ok(response) => {
-                                                    if response
-                                                        .get("success")
-                                                        .unwrap_or(&serde_json::Value::Bool(
-                                                            false,
-                                                        ))
-                                                        .as_bool()
-                                                        .unwrap_or(false)
-                                                    {
-                                                        set_status.set(format!(
-                                                            "✓ {}",
-                                                            response
-                                                                .get("message")
-                                                                .unwrap_or(
-                                                                    &serde_json::Value::String(
-                                                                        "Command executed"
-                                                                            .to_string()
-                                                                    )
-                                                                )
-                                                                .as_str()
-                                                                .unwrap_or("Command executed")
-                                                        ));
-                                                    } else {
-                                                        set_status.set(format!(
-                                                            "✗ {}",
-                                                            response
-                                                                .get("message")
-                                                                .unwrap_or(
-                                                                    &serde_json::Value::String(
-                                                                        "Command failed"
-                                                                            .to_string()
-                                                                    )
-                                                                )
-                                                                .as_str()
-                                                                .unwrap_or("Command failed")
-                                                        ));
-                                                    }
-                                                }
-                                                Err(e) => {
-                                                    set_status.set(format!("Error: {}", e));
-                                                }
-                                            }
-
-                                            // Clear command text after processing
-                                            set_text.set(String::new());
-
-                                            // Update status to show we're still listening
-                                            TimeoutFuture::new(1_500).await;
-                                            set_status.set("Listening for voice commands...".to_string());
-                                        });
-                                    }
+                                // Fast exit for non-final
+                                if !result.is_final() {
+                                    return;
                                 }
+
+                                let alternative = result.item(0);
+                                let confidence = alternative.confidence();
+                                let text = alternative.transcript();
+                                let trimmed = text.trim();
+
+                                // Quick validation
+                                if trimmed.len() < 2 {
+                                    return;
+                                }
+                                if confidence < 0.6 {
+                                    set_status.set(format!("Low confidence ({:.0}%): \"{}\"", confidence * 100.0, trimmed));
+                                    return;
+                                }
+
+                                let command = trimmed.to_string();
+                                set_text.set(command.clone());
+                                set_status.set(format!("Processing: \"{}\"", trimmed));
+
+                                let set_text = set_text.clone();
+                                let set_status = set_status.clone();
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    let result = api::ApiClient::new_default()
+                                        .process_voice_command(&command, Some(confidence))
+                                        .await;
+
+                                    let status_msg = match result {
+                                        Ok(ref r) => {
+                                            let success = r.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+                                            let msg = r.get("message").and_then(|v| v.as_str()).unwrap_or(
+                                                if success { "Command executed" } else { "Command failed" }
+                                            );
+                                            format!("{} {}", if success { "✓" } else { "✗" }, msg)
+                                        }
+                                        Err(e) => format!("Error: {}", e),
+                                    };
+                                    set_status.set(status_msg);
+                                    set_text.set(String::new());
+
+                                    // Brief pause before ready status
+                                    TimeoutFuture::new(1_000).await;
+                                    set_status.set("Listening...".into());
+                                });
                             }) as Box<dyn FnMut(_)>);
 
                         recognition.set_onresult(Some(on_result.as_ref().unchecked_ref()));
