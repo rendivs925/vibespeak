@@ -1,280 +1,25 @@
 {
   "commands": [
     {
-      "id": "faeb07f8-ea1a-4e7e-b258-f7ebec5bd623",
-      "text": "close buffer",
+      "id": "a7653524-ac47-47fb-9396-94af62306491",
+      "text": "i3 move to ws 9",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key Escape colon b d Return"
+        "ShellCommand": "i3-msg move container to workspace 9"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351467121Z",
-        "updated_at": "2026-01-19T22:55:54.351467121Z",
+        "created_at": "2026-01-19T23:01:45.538289880Z",
+        "updated_at": "2026-01-19T23:01:45.538289880Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "408692c1-9ed6-49ca-a06a-8cb088819379",
-      "text": "insert mode",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key i"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351471809Z",
-        "updated_at": "2026-01-19T22:55:54.351471809Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "8ca2e6ed-ee5a-417b-8fc1-e620ae82b6aa",
-      "text": "zoom in",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+KP_Add"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351472290Z",
-        "updated_at": "2026-01-19T22:55:54.351472290Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "b35ce4d4-8e38-48fe-b99d-b25545df6477",
-      "text": "resize down",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a J"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351472831Z",
-        "updated_at": "2026-01-19T22:55:54.351472831Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "d0181d6f-f272-4832-952a-2c82666bab95",
-      "text": "show menu",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "dmenu_run"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351473212Z",
-        "updated_at": "2026-01-19T22:55:54.351473212Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "951ed6da-db4a-4592-a191-395b3d038f4b",
-      "text": "restore window",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key space w r"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351473763Z",
-        "updated_at": "2026-01-19T22:55:54.351473763Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "9f434bf7-4b84-4af5-a26b-ce0074b4cda0",
-      "text": "find text",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Escape slash"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351474244Z",
-        "updated_at": "2026-01-19T22:55:54.351474244Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "9ba45cb9-6146-4fd6-9a95-7361b7f6c6ad",
-      "text": "open files",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "ranger"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351474655Z",
-        "updated_at": "2026-01-19T22:55:54.351474655Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "10991114-4609-44e2-9925-4688fd544bb2",
-      "text": "resize left",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a H"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351475066Z",
-        "updated_at": "2026-01-19T22:55:54.351475066Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "4934eb68-f678-4c45-8f76-8095874eb453",
-      "text": "focus right",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg focus right"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351475496Z",
-        "updated_at": "2026-01-19T22:55:54.351475496Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "fbe74e59-af4d-40b4-87ce-73ecc185d1cc",
-      "text": "move right",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a l"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351475877Z",
-        "updated_at": "2026-01-19T22:55:54.351475877Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "59056b06-3e67-4782-95b6-ac78264227ab",
-      "text": "next window",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a n"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351476378Z",
-        "updated_at": "2026-01-19T22:55:54.351476378Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "06c74950-6aa3-4be0-9803-cfb01216b413",
-      "text": "open file",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key space f f"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351476779Z",
-        "updated_at": "2026-01-19T22:55:54.351476779Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "1b68765f-f515-40d3-97e4-8ac3fe98963b",
-      "text": "pane seven",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a 7"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351477169Z",
-        "updated_at": "2026-01-19T22:55:54.351477169Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "5c5f15c9-08ea-403f-a372-9ad0d15f2d32",
-      "text": "quit all",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Escape colon q a Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351477600Z",
-        "updated_at": "2026-01-19T22:55:54.351477600Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "a78edb73-9950-44b3-9855-714e735c2a1a",
-      "text": "next buffer",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Escape colon b n Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351477981Z",
-        "updated_at": "2026-01-19T22:55:54.351477981Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "4f7fe102-c30c-43ae-ac9a-3f3a81902b0d",
-      "text": "pane four",
+      "id": "03beaa90-ad85-4e79-94d8-a21bf5a96f8b",
+      "text": "tmux pane 4",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -282,32 +27,66 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351478382Z",
-        "updated_at": "2026-01-19T22:55:54.351478382Z",
+        "created_at": "2026-01-19T23:01:45.538295871Z",
+        "updated_at": "2026-01-19T23:01:45.538295871Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "d62d273d-3dac-418e-9159-af615f2795c2",
-      "text": "previous buffer",
+      "id": "946b740e-3894-435e-880a-2733a248442a",
+      "text": "git diff",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key Escape colon b p Return"
+        "ShellCommand": "xdotool type 'git diff'; xdotool key Return"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351478873Z",
-        "updated_at": "2026-01-19T22:55:54.351478873Z",
+        "created_at": "2026-01-19T23:01:45.538296422Z",
+        "updated_at": "2026-01-19T23:01:45.538296422Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "8e52ef07-fdb4-49f3-85a8-ebe032afc7e1",
+      "id": "146f8c88-f013-4432-bc8d-f0ee3beeeea7",
+      "text": "tmux split right",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a bar"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538297184Z",
+        "updated_at": "2026-01-19T23:01:45.538297184Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "990d7957-4b31-412d-8e39-da5ef1e08fe9",
+      "text": "nav forward",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key alt+Right"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538297565Z",
+        "updated_at": "2026-01-19T23:01:45.538297565Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "af445393-0c24-4d7c-8346-eae82013730b",
       "text": "scroll up",
       "confidence": 0.0,
       "category": "legacy",
@@ -316,441 +95,50 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351479253Z",
-        "updated_at": "2026-01-19T22:55:54.351479253Z",
+        "created_at": "2026-01-19T23:01:45.538298065Z",
+        "updated_at": "2026-01-19T23:01:45.538298065Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "851e02f4-398b-432c-bca6-196f6e24d0ce",
-      "text": "web browser",
+      "id": "7d31e33a-cdd2-4b51-86fc-58e66e768fdc",
+      "text": "i3 float center 1720x1020",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "google-chrome-stable"
+        "ShellCommand": "i3-msg floating enable, resize set 1720 1020, move position center"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351479624Z",
-        "updated_at": "2026-01-19T22:55:54.351479624Z",
+        "created_at": "2026-01-19T23:01:45.538298466Z",
+        "updated_at": "2026-01-19T23:01:45.538298466Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "14b7eeba-ae52-4a08-961c-7e63f8b8bd8c",
-      "text": "pane six",
+      "id": "a6cc8335-e377-4a10-b83e-3be375f174a8",
+      "text": "tmux pane 5",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a 6"
+        "ShellCommand": "xdotool key ctrl+a 5"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351480025Z",
-        "updated_at": "2026-01-19T22:55:54.351480025Z",
+        "created_at": "2026-01-19T23:01:45.538298847Z",
+        "updated_at": "2026-01-19T23:01:45.538298847Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "b387978a-be15-4f6d-90aa-f09e922e9cb5",
-      "text": "focus left",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg focus left"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351480416Z",
-        "updated_at": "2026-01-19T22:55:54.351480416Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "2470c816-3b56-4f0e-840e-cf9f28f1d00b",
-      "text": "open editor",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool type 'nvim'; xdotool key Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351480876Z",
-        "updated_at": "2026-01-19T22:55:54.351480876Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "d567c82e-8df3-45cb-ae0e-8b9ce1d0e73f",
-      "text": "page up file",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+u"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351481397Z",
-        "updated_at": "2026-01-19T22:55:54.351481397Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "35dd395e-2275-49fe-949e-89461a89d715",
-      "text": "start dev",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "tmux send-keys -t 1 'cargo leptos watch' C-m"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351481768Z",
-        "updated_at": "2026-01-19T22:55:54.351481768Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "49f7ea57-7317-4f5b-b9ea-61da4ed4d038",
-      "text": "visual mode",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key v"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351482159Z",
-        "updated_at": "2026-01-19T22:55:54.351482159Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "04aaa919-deef-405d-84f0-b6a1208802bf",
-      "text": "zoom out",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+minus"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351482550Z",
-        "updated_at": "2026-01-19T22:55:54.351482550Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "e9100202-8248-4002-96cd-6a3b0a4b29a2",
-      "text": "new window",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a c"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351482970Z",
-        "updated_at": "2026-01-19T22:55:54.351482970Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "121decdb-4a2f-45d3-bc46-c214e5534bac",
-      "text": "chrome",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "google-chrome-stable"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351483351Z",
-        "updated_at": "2026-01-19T22:55:54.351483351Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "32837a0c-5645-44d0-8687-26356ed79868",
-      "text": "new tab",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+t"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351483842Z",
-        "updated_at": "2026-01-19T22:55:54.351483842Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "cef854e6-104c-4980-a746-876aa5f86b69",
-      "text": "float window",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg floating toggle, resize set 1720 1020, move position center"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351484213Z",
-        "updated_at": "2026-01-19T22:55:54.351484213Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "a9d32d59-00d1-4258-a45a-285ba0b0112e",
-      "text": "desk two",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg workspace 2"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351484603Z",
-        "updated_at": "2026-01-19T22:55:54.351484603Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "94476073-4d4a-455f-85d4-90830ab0ea37",
-      "text": "save all",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Escape colon w a Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351484954Z",
-        "updated_at": "2026-01-19T22:55:54.351484954Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "abd4bbb4-2025-400f-b8f8-75bb3dcea114",
-      "text": "reload tmux",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a r"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351485335Z",
-        "updated_at": "2026-01-19T22:55:54.351485335Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "3a312ab1-5714-4831-bfad-67427e20d77f",
-      "text": "check code",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "tmux send-keys -t 1 'cargo check' C-m"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351485746Z",
-        "updated_at": "2026-01-19T22:55:54.351485746Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "748b8021-47ad-4028-95c4-d23ae1188f64",
-      "text": "move left",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a h"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351486247Z",
-        "updated_at": "2026-01-19T22:55:54.351486247Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "aa802b36-12be-4d4e-83f7-b8784ab444ae",
-      "text": "desk three",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg workspace 3"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351486637Z",
-        "updated_at": "2026-01-19T22:55:54.351486637Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "4c265fe1-35eb-4f5e-ab89-1607a8506111",
-      "text": "go to home",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Home"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351486998Z",
-        "updated_at": "2026-01-19T22:55:54.351486998Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "b71c100e-1cef-421e-8958-af67f3f353f5",
-      "text": "move to two",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg move container to workspace 2"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351487389Z",
-        "updated_at": "2026-01-19T22:55:54.351487389Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "0ca2cf44-1614-4278-9410-29c841938ba1",
-      "text": "pane eight",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a 8"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351487749Z",
-        "updated_at": "2026-01-19T22:55:54.351487749Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "d38d8d39-b3e3-4a82-b099-3b14a137f751",
-      "text": "move down",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a j"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351488200Z",
-        "updated_at": "2026-01-19T22:55:54.351488200Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "a237a0ab-0c32-4e39-9b7c-724f223598bd",
-      "text": "clear screen",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool type 'clear'; xdotool key Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351488711Z",
-        "updated_at": "2026-01-19T22:55:54.351488711Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "8b6fa4fb-4929-4dd8-bd3f-1c860ac3eb4f",
-      "text": "reload windows",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg reload"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351489102Z",
-        "updated_at": "2026-01-19T22:55:54.351489102Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "486f9b08-0d48-42dc-b622-190af79320cf",
-      "text": "resize right",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a L"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351489463Z",
-        "updated_at": "2026-01-19T22:55:54.351489463Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "67a372c2-cc9c-45c9-8bbe-f8662a6cfa82",
-      "text": "show processes",
+      "id": "1149daa4-dea6-4c55-a50f-b12c72591fd9",
+      "text": "term top",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -758,254 +146,16 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351489843Z",
-        "updated_at": "2026-01-19T22:55:54.351489843Z",
+        "created_at": "2026-01-19T23:01:45.538299208Z",
+        "updated_at": "2026-01-19T23:01:45.538299208Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "fa1a5b1e-c0cc-417f-9e36-23ca8515e494",
-      "text": "page down file",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+d"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351490214Z",
-        "updated_at": "2026-01-19T22:55:54.351490214Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "04a67009-6e60-4f6e-8ded-68d3fad376db",
-      "text": "focus down",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg focus down"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351490585Z",
-        "updated_at": "2026-01-19T22:55:54.351490585Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "df0475f6-1e1c-4abe-a178-52e29a951f26",
-      "text": "split pane",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a bar"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351491086Z",
-        "updated_at": "2026-01-19T22:55:54.351491086Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "86c2e373-ff1e-4a6d-9f74-8ae64b3a3d41",
-      "text": "show history",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool type 'history'; xdotool key Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351491446Z",
-        "updated_at": "2026-01-19T22:55:54.351491446Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "534bf314-38f8-4b65-9ed5-136b1d841241",
-      "text": "style",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "tmux send-keys -t 2 'yarn dev' C-m"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351491837Z",
-        "updated_at": "2026-01-19T22:55:54.351491837Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "74fe6c83-1c30-4e53-b069-81555bca1c90",
-      "text": "next tab",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+Tab"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351492238Z",
-        "updated_at": "2026-01-19T22:55:54.351492238Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "73702e5c-f480-4d67-a1f3-ca87948e7989",
-      "text": "maximize pane",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a m"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351492608Z",
-        "updated_at": "2026-01-19T22:55:54.351492608Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "4e8532a3-ac59-418c-a8ee-ecb5a4c622f1",
-      "text": "desk four",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg workspace 4"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351492989Z",
-        "updated_at": "2026-01-19T22:55:54.351492989Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "75e8b6da-02da-4625-bf87-769b2e6a92fd",
-      "text": "page down",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key space"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351493500Z",
-        "updated_at": "2026-01-19T22:55:54.351493500Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "6f121841-a22f-4968-a361-89e78962c621",
-      "text": "files",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "ranger"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351493901Z",
-        "updated_at": "2026-01-19T22:55:54.351493901Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "be99baf4-8932-4142-8034-f93ab6f29730",
-      "text": "previous tab",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+shift+Tab"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351494252Z",
-        "updated_at": "2026-01-19T22:55:54.351494252Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "f2b7b9ae-8a7c-422c-be2e-551f876bcb6e",
-      "text": "pane zero",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a 0"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351494652Z",
-        "updated_at": "2026-01-19T22:55:54.351494652Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "f04d898c-064c-4cac-9083-69bf7de23fa4",
-      "text": "open terminal",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "alacritty"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351495033Z",
-        "updated_at": "2026-01-19T22:55:54.351495033Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "24e5ea10-50c9-4444-a713-33acb7b39556",
-      "text": "quit file",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key Escape colon q Return"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351495404Z",
-        "updated_at": "2026-01-19T22:55:54.351495404Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "8255de6e-8b87-496c-9ef0-7ebc41a82b74",
-      "text": "move to one",
+      "id": "1393c550-5685-4e9d-b845-dd7b4f987b52",
+      "text": "i3 move to ws 1",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1013,84 +163,67 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351495935Z",
-        "updated_at": "2026-01-19T22:55:54.351495935Z",
+        "created_at": "2026-01-19T23:01:45.538299638Z",
+        "updated_at": "2026-01-19T23:01:45.538299638Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "df6e51ed-2d2a-4a07-8efb-16ff87f5ded9",
-      "text": "pane three",
+      "id": "33471614-0920-425b-90a4-077bd915f52d",
+      "text": "i3 ws 5",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a 3"
+        "ShellCommand": "i3-msg workspace 5"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351496305Z",
-        "updated_at": "2026-01-19T22:55:54.351496305Z",
+        "created_at": "2026-01-19T23:01:45.538300019Z",
+        "updated_at": "2026-01-19T23:01:45.538300019Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "b4b9a222-a667-41de-a72b-4993381ec2b1",
-      "text": "pane two",
+      "id": "00a5145d-2469-4590-81e0-8e39b36f05bf",
+      "text": "nvim page up",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a 2"
+        "ShellCommand": "xdotool key ctrl+u"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351496676Z",
-        "updated_at": "2026-01-19T22:55:54.351496676Z",
+        "created_at": "2026-01-19T23:01:45.538300580Z",
+        "updated_at": "2026-01-19T23:01:45.538300580Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "e1cc6336-7df8-4975-bdb3-4148cf953faa",
-      "text": "list files",
+      "id": "87ca7a88-670b-4d06-a8ab-354fd4baa682",
+      "text": "i3 focus left",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool type 'ls'; xdotool key Return"
+        "ShellCommand": "i3-msg focus left"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351497087Z",
-        "updated_at": "2026-01-19T22:55:54.351497087Z",
+        "created_at": "2026-01-19T23:01:45.538300971Z",
+        "updated_at": "2026-01-19T23:01:45.538300971Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "67e1de91-abde-4780-a8b2-058cfe355577",
-      "text": "page up",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key shift+space"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351497528Z",
-        "updated_at": "2026-01-19T22:55:54.351497528Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "eed7357d-fc88-4216-9758-305625bf8409",
-      "text": "close tab",
+      "id": "8e96b1ab-3c37-4f8a-947f-c303c73eecd9",
+      "text": "nav close tab",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1098,101 +231,84 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351497908Z",
-        "updated_at": "2026-01-19T22:55:54.351497908Z",
+        "created_at": "2026-01-19T23:01:45.538301312Z",
+        "updated_at": "2026-01-19T23:01:45.538301312Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "95ada075-8eeb-428f-981b-00457cb45326",
-      "text": "full screen",
+      "id": "5672ef04-3832-4a8c-93f5-dd68d2791eeb",
+      "text": "dev stop pane 1",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "i3-msg fullscreen toggle"
+        "ShellCommand": "tmux send-keys -t 1 C-c"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351498409Z",
-        "updated_at": "2026-01-19T22:55:54.351498409Z",
+        "created_at": "2026-01-19T23:01:45.538301662Z",
+        "updated_at": "2026-01-19T23:01:45.538301662Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "521dd1f0-4c2e-4742-93b4-d67c22577376",
-      "text": "browser",
+      "id": "785b9379-9c06-402e-8af2-fb7b22485844",
+      "text": "tmux new window",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "google-chrome-stable"
+        "ShellCommand": "xdotool key ctrl+a c"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351498800Z",
-        "updated_at": "2026-01-19T22:55:54.351498800Z",
+        "created_at": "2026-01-19T23:01:45.538302023Z",
+        "updated_at": "2026-01-19T23:01:45.538302023Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "65a66487-b283-4532-ad68-438e8915a98b",
-      "text": "desk one",
+      "id": "ae3a2b5b-c93c-4ffb-937d-4aa014ffce1c",
+      "text": "i3 move left",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "i3-msg workspace 1"
+        "ShellCommand": "i3-msg move left"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351499171Z",
-        "updated_at": "2026-01-19T22:55:54.351499171Z",
+        "created_at": "2026-01-19T23:01:45.538302364Z",
+        "updated_at": "2026-01-19T23:01:45.538302364Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "cc9e70cf-4879-460f-b0e7-16fd31c0a95f",
-      "text": "normal mode",
+      "id": "65c9e165-58d7-4220-823b-426925612573",
+      "text": "tmux next window",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key Escape"
+        "ShellCommand": "xdotool key ctrl+a n"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351499531Z",
-        "updated_at": "2026-01-19T22:55:54.351499531Z",
+        "created_at": "2026-01-19T23:01:45.538302854Z",
+        "updated_at": "2026-01-19T23:01:45.538302854Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "9f5eba81-799b-4cb7-a071-4175133dfa7f",
-      "text": "close window",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "i3-msg kill"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351499912Z",
-        "updated_at": "2026-01-19T22:55:54.351499912Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "664c7f4b-fcb3-4108-aec6-0043ae9536f6",
-      "text": "pane one",
+      "id": "90283a10-9091-479a-9f4a-bdba10b42841",
+      "text": "tmux pane 1",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1200,135 +316,152 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351500283Z",
-        "updated_at": "2026-01-19T22:55:54.351500283Z",
+        "created_at": "2026-01-19T23:01:45.538304387Z",
+        "updated_at": "2026-01-19T23:01:45.538304387Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "a80f8dd9-2bde-4e55-8b63-258e5bd28816",
-      "text": "reset zoom",
+      "id": "0ee8c2a9-ac49-4552-846d-e5ee892acbc7",
+      "text": "tmux pane 9",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+0"
+        "ShellCommand": "xdotool key ctrl+a 9"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351500784Z",
-        "updated_at": "2026-01-19T22:55:54.351500784Z",
+        "created_at": "2026-01-19T23:01:45.538304778Z",
+        "updated_at": "2026-01-19T23:01:45.538304778Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "36d9d630-dce8-4675-bc74-8ccca3c169b2",
-      "text": "save file",
+      "id": "942dca30-4384-42f2-843c-ebc5b78902ff",
+      "text": "tmux pane 0",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key Escape colon w Return"
+        "ShellCommand": "xdotool key ctrl+a 0"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351501164Z",
-        "updated_at": "2026-01-19T22:55:54.351501164Z",
+        "created_at": "2026-01-19T23:01:45.538305149Z",
+        "updated_at": "2026-01-19T23:01:45.538305149Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "dd80699e-38fc-4106-bed0-dc21755d625e",
-      "text": "split percent",
+      "id": "e8b05b6c-06bf-42fe-b492-8acad610f43e",
+      "text": "scroll page down",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a percent"
+        "ShellCommand": "xdotool key space"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351501525Z",
-        "updated_at": "2026-01-19T22:55:54.351501525Z",
+        "created_at": "2026-01-19T23:01:45.538305539Z",
+        "updated_at": "2026-01-19T23:01:45.538305539Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "202cff64-4305-4db2-8f30-cfd8d5402d68",
-      "text": "split vertical",
+      "id": "b64903d9-9cd0-4a70-aa75-df6ad02c32b0",
+      "text": "term zoom out",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a minus"
+        "ShellCommand": "xdotool key ctrl+minus"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351502206Z",
-        "updated_at": "2026-01-19T22:55:54.351502206Z",
+        "created_at": "2026-01-19T23:01:45.538305880Z",
+        "updated_at": "2026-01-19T23:01:45.538305880Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "2e8182c0-a421-4540-b843-c60f3bfc75af",
-      "text": "focus up",
+      "id": "0d663ae4-e580-40f5-a619-dcb4ceb99c47",
+      "text": "i3 restart",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "i3-msg focus up"
+        "ShellCommand": "i3-msg restart"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351502928Z",
-        "updated_at": "2026-01-19T22:55:54.351502928Z",
+        "created_at": "2026-01-19T23:01:45.538306401Z",
+        "updated_at": "2026-01-19T23:01:45.538306401Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "aa3c900c-8583-4d54-bd3a-fbb1d67aa25b",
-      "text": "resize up",
+      "id": "2bb7ff32-1446-4438-b678-8976b861189b",
+      "text": "nav back",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a K"
+        "ShellCommand": "xdotool key alt+Left"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351503659Z",
-        "updated_at": "2026-01-19T22:55:54.351503659Z",
+        "created_at": "2026-01-19T23:01:45.538306832Z",
+        "updated_at": "2026-01-19T23:01:45.538306832Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "5eda5aee-cd1c-40c2-aa3d-26a631fb0e79",
-      "text": "show info",
+      "id": "5ac3c391-713b-4d24-adad-05083dd3f094",
+      "text": "tmux prev window",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool type 'fastfetch'; xdotool key Return"
+        "ShellCommand": "xdotool key ctrl+a p"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351504661Z",
-        "updated_at": "2026-01-19T22:55:54.351504661Z",
+        "created_at": "2026-01-19T23:01:45.538307223Z",
+        "updated_at": "2026-01-19T23:01:45.538307223Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "6375bb86-5c5d-4625-9595-da1e0229d92d",
-      "text": "open browser",
+      "id": "c79c7146-a5d2-4ee1-9fa6-8388d7e5a9ad",
+      "text": "git status",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'git status'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538307603Z",
+        "updated_at": "2026-01-19T23:01:45.538307603Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "14ce8b44-dec5-41b0-839e-0fff474f7eef",
+      "text": "app browser",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1336,15 +469,542 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351505452Z",
-        "updated_at": "2026-01-19T22:55:54.351505452Z",
+        "created_at": "2026-01-19T23:01:45.538307974Z",
+        "updated_at": "2026-01-19T23:01:45.538307974Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "82642f62-e8a9-463f-92cf-b3dff256391a",
+      "id": "7188a11b-c1eb-4d86-bd7d-223c8efd548d",
+      "text": "app files",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "ranger"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538308335Z",
+        "updated_at": "2026-01-19T23:01:45.538308335Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "8eb06ec2-eafb-4571-a389-9073d602186a",
+      "text": "tmux pane 3",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a 3"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538308826Z",
+        "updated_at": "2026-01-19T23:01:45.538308826Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "92062e9f-dc88-4904-839d-883b4cdd8bc3",
+      "text": "nvim insert",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key i"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538309186Z",
+        "updated_at": "2026-01-19T23:01:45.538309186Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "3a719c72-ef1a-425f-aaee-74465d534339",
+      "text": "i3 move down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move down"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538309557Z",
+        "updated_at": "2026-01-19T23:01:45.538309557Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ef3e35ae-e76a-4f5b-afd0-fe7f999fd24b",
+      "text": "i3 stacking",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg layout stacking"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538309908Z",
+        "updated_at": "2026-01-19T23:01:45.538309908Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "33ebaf21-9056-439c-9e4c-f319144b3f2a",
+      "text": "tmux resize left",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a H"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538310308Z",
+        "updated_at": "2026-01-19T23:01:45.538310308Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "01c75302-5e1f-4f55-9bc8-5b7f2a55fb86",
+      "text": "i3 ws 4",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 4"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538310699Z",
+        "updated_at": "2026-01-19T23:01:45.538310699Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "be5f4096-2e17-42ce-9271-72ec6ddeee7f",
+      "text": "term tree",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'tree -L 2'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538311200Z",
+        "updated_at": "2026-01-19T23:01:45.538311200Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2d126363-e788-424b-b0fb-a61136274c67",
+      "text": "app menu",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "dmenu_run"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538311581Z",
+        "updated_at": "2026-01-19T23:01:45.538311581Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "14f68c20-18c5-4ef5-b42a-34f801ec26b5",
+      "text": "nvim next buffer",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon b n Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538311961Z",
+        "updated_at": "2026-01-19T23:01:45.538311961Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "60652acf-8c9f-42f2-9bd2-73efe1af5c80",
+      "text": "i3 toggle split",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg layout toggle split"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538312312Z",
+        "updated_at": "2026-01-19T23:01:45.538312312Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "491978fd-a658-4fdf-a528-fc1e59024ed5",
+      "text": "i3 move right",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move right"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538312713Z",
+        "updated_at": "2026-01-19T23:01:45.538312713Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "a55e29a9-814e-4107-9fe5-83b022660f18",
+      "text": "dev cargo check",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 1 'cargo check' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538314236Z",
+        "updated_at": "2026-01-19T23:01:45.538314236Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "e7ba1e5c-b365-48b6-9b8e-8df951ef724d",
+      "text": "term zoom reset",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+0"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538314747Z",
+        "updated_at": "2026-01-19T23:01:45.538314747Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "32d31a1c-2928-4833-aede-4b6383e46f75",
+      "text": "tmux resize right",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a L"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538315147Z",
+        "updated_at": "2026-01-19T23:01:45.538315147Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "1841adf2-8d3d-4516-a4f7-cba68b2c6e85",
+      "text": "i3 focus right",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg focus right"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538315498Z",
+        "updated_at": "2026-01-19T23:01:45.538315498Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "d6cfc53e-77b6-4f22-8870-64f33721cd3f",
+      "text": "nav address",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+l"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538315839Z",
+        "updated_at": "2026-01-19T23:01:45.538315839Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ae7609cd-2ab7-4db9-90dd-79be875c0040",
+      "text": "i3 focus up",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg focus up"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538316219Z",
+        "updated_at": "2026-01-19T23:01:45.538316219Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "3ec6decc-3f11-4714-bcc3-4b1ff8a75284",
+      "text": "i3 tabbed",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg layout tabbed"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538316570Z",
+        "updated_at": "2026-01-19T23:01:45.538316570Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "54bef0c3-4e59-4825-b3c5-bc9d0e281453",
+      "text": "tmux pane 6",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a 6"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538317061Z",
+        "updated_at": "2026-01-19T23:01:45.538317061Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "444c9cd0-45a1-4451-9731-032fdf9cf2ad",
+      "text": "nvim normal",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538317422Z",
+        "updated_at": "2026-01-19T23:01:45.538317422Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "eff9c492-438a-47a1-a7dd-55383ac9912c",
+      "text": "nav refresh",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+r"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538317802Z",
+        "updated_at": "2026-01-19T23:01:45.538317802Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "cfc2aa88-ae0e-4e29-a16d-6e27230e200b",
+      "text": "i3 move to ws 6",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 6"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538318153Z",
+        "updated_at": "2026-01-19T23:01:45.538318153Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "de899c2b-f522-4193-bfa6-f4e7c17ba99d",
+      "text": "i3 ws 1",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 1"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538318524Z",
+        "updated_at": "2026-01-19T23:01:45.538318524Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "f20682a3-1ce6-45e7-ad5a-280aa9eb6603",
+      "text": "i3 focus down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg focus down"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538318905Z",
+        "updated_at": "2026-01-19T23:01:45.538318905Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "c833bc7a-8b40-4bde-99cb-8d67c36fb591",
+      "text": "i3 move to ws 4",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 4"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538319415Z",
+        "updated_at": "2026-01-19T23:01:45.538319415Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "411e3030-a2a7-4c00-8450-64a55a44816f",
+      "text": "i3 ws 7",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 7"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538319796Z",
+        "updated_at": "2026-01-19T23:01:45.538319796Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "30b802b6-0775-4a80-a1ba-14b8dfeeb414",
+      "text": "i3 ws 8",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 8"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538320147Z",
+        "updated_at": "2026-01-19T23:01:45.538320147Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "93c8ec3b-40b4-47f2-bd41-58636de02f4e",
+      "text": "nvim find file",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key space f f"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538320497Z",
+        "updated_at": "2026-01-19T23:01:45.538320497Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "e2ecc084-102f-4294-bdc7-2996c7d0abec",
+      "text": "term history",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'history | tail -n 50'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538320858Z",
+        "updated_at": "2026-01-19T23:01:45.538320858Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "1ec414e7-3f70-4628-ac1c-c5426ee24185",
+      "text": "tmux resize up",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a K"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538321199Z",
+        "updated_at": "2026-01-19T23:01:45.538321199Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "4a66e224-4c85-4963-9e57-42276d43d0eb",
       "text": "scroll down",
       "confidence": 0.0,
       "category": "legacy",
@@ -1353,67 +1013,16 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351506204Z",
-        "updated_at": "2026-01-19T22:55:54.351506204Z",
+        "created_at": "2026-01-19T23:01:45.538321750Z",
+        "updated_at": "2026-01-19T23:01:45.538321750Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "368e0b88-c008-41cf-beaf-35007473414b",
-      "text": "pane nine",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a 9"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351506935Z",
-        "updated_at": "2026-01-19T22:55:54.351506935Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "cccafa49-147a-45f8-8aed-4f5e49b734be",
-      "text": "split horizontal",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a quotedbl"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351507647Z",
-        "updated_at": "2026-01-19T22:55:54.351507647Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "b626b307-0cc0-4b20-9ac9-c16fcad25959",
-      "text": "pane five",
-      "confidence": 0.0,
-      "category": "legacy",
-      "action": {
-        "ShellCommand": "xdotool key ctrl+a 5"
-      },
-      "enabled": true,
-      "metadata": {
-        "created_at": "2026-01-19T22:55:54.351508418Z",
-        "updated_at": "2026-01-19T22:55:54.351508418Z",
-        "usage_count": 0,
-        "last_used": null,
-        "tags": []
-      }
-    },
-    {
-      "id": "dca4ade8-0fb1-4f3e-b3e8-a2e7cc85f3b3",
-      "text": "lock screen",
+      "id": "b67e2436-ee22-4b3a-8613-008a434befa0",
+      "text": "i3 lock",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1421,50 +1030,237 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351509430Z",
-        "updated_at": "2026-01-19T22:55:54.351509430Z",
+        "created_at": "2026-01-19T23:01:45.538322141Z",
+        "updated_at": "2026-01-19T23:01:45.538322141Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "540b9392-158f-482d-9d6a-608fe1c47500",
-      "text": "move up",
+      "id": "7f40c957-ccdb-49a3-a675-7dab7b98f478",
+      "text": "term clear",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a k"
+        "ShellCommand": "xdotool type 'clear'; xdotool key Return"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351510001Z",
-        "updated_at": "2026-01-19T22:55:54.351510001Z",
+        "created_at": "2026-01-19T23:01:45.538323744Z",
+        "updated_at": "2026-01-19T23:01:45.538323744Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "e2b2e637-6308-42e6-9a93-ff414dba8693",
-      "text": "previous window",
+      "id": "ace2ce31-5801-4c88-8e92-74ffe5e3b5b4",
+      "text": "tmux focus right",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
-        "ShellCommand": "xdotool key ctrl+a p"
+        "ShellCommand": "xdotool key ctrl+a l"
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351510362Z",
-        "updated_at": "2026-01-19T22:55:54.351510362Z",
+        "created_at": "2026-01-19T23:01:45.538324154Z",
+        "updated_at": "2026-01-19T23:01:45.538324154Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "90d62dda-1026-4c7d-ac45-54bd0c4a0443",
-      "text": "copy mode",
+      "id": "f09fe713-47a5-4e26-adb1-5d906809316c",
+      "text": "nvim search",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape slash"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538324545Z",
+        "updated_at": "2026-01-19T23:01:45.538324545Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "e881e3d8-3966-4d33-bc27-a1451e7c34aa",
+      "text": "i3 reload",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg reload"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538324916Z",
+        "updated_at": "2026-01-19T23:01:45.538324916Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "e1c6b7f5-cf15-49a2-a08e-f549a0859b68",
+      "text": "i3 move to ws 0",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 10"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538325437Z",
+        "updated_at": "2026-01-19T23:01:45.538325437Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b2952432-8ca5-444f-b6c5-ef8fcb451652",
+      "text": "nvim prev buffer",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon b p Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538325797Z",
+        "updated_at": "2026-01-19T23:01:45.538325797Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "a049194e-7dfb-4bee-ae40-9df9fe8dc6cc",
+      "text": "nav new tab",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+t"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538326168Z",
+        "updated_at": "2026-01-19T23:01:45.538326168Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ddbbce7c-a42a-436a-a01c-38aea88d23f7",
+      "text": "tmux pane 2",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a 2"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538326529Z",
+        "updated_at": "2026-01-19T23:01:45.538326529Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "69a5c0d3-4d43-4457-a11b-2ae7b65ff682",
+      "text": "dev web dev",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 2 'yarn dev' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538326889Z",
+        "updated_at": "2026-01-19T23:01:45.538326889Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "d57f2382-1244-4bcd-b944-7a1387791666",
+      "text": "i3 ws 3",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 3"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538327260Z",
+        "updated_at": "2026-01-19T23:01:45.538327260Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2ce35cfb-e5a8-4d58-afce-3e0e2092eb14",
+      "text": "dev cargo clippy",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 1 'cargo clippy' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538327721Z",
+        "updated_at": "2026-01-19T23:01:45.538327721Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ee049e22-b9eb-43f1-87e6-9cb3a27d2fae",
+      "text": "nvim visual",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key v"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538328072Z",
+        "updated_at": "2026-01-19T23:01:45.538328072Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "7130e7bc-aae4-4012-a973-1d0f494af9c8",
+      "text": "i3 move up",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move up"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538328442Z",
+        "updated_at": "2026-01-19T23:01:45.538328442Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "3f4d99a4-4fa2-4409-9ec8-c83f4a7c3279",
+      "text": "tmux copy mode",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1472,16 +1268,696 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351510762Z",
-        "updated_at": "2026-01-19T22:55:54.351510762Z",
+        "created_at": "2026-01-19T23:01:45.538328803Z",
+        "updated_at": "2026-01-19T23:01:45.538328803Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
       }
     },
     {
-      "id": "562dc47d-5f95-4720-b75a-659ee06a06aa",
-      "text": "go to end",
+      "id": "39f9c9f1-2fc9-470c-b245-19ad62b23136",
+      "text": "dev cargo test",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 1 'cargo test' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538329144Z",
+        "updated_at": "2026-01-19T23:01:45.538329144Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "7f6b9a0a-4024-4dee-a080-2cb4634f410e",
+      "text": "git pull",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'git pull'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538329514Z",
+        "updated_at": "2026-01-19T23:01:45.538329514Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "5d29eeae-5d2e-47d1-9deb-736e2180a385",
+      "text": "i3 gaps outer -",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg gaps outer current minus 5"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538329995Z",
+        "updated_at": "2026-01-19T23:01:45.538329995Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "56f5e912-397d-4e14-a4e6-96a4d85731de",
+      "text": "i3 ws 9",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 9"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538330346Z",
+        "updated_at": "2026-01-19T23:01:45.538330346Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "63b72d74-0732-4ad6-acc7-cb1b2f090934",
+      "text": "i3 fullscreen",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg fullscreen toggle"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538330697Z",
+        "updated_at": "2026-01-19T23:01:45.538330697Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ce7e7037-733a-45c2-9110-8103afb1936d",
+      "text": "tmux pane 8",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a 8"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538331057Z",
+        "updated_at": "2026-01-19T23:01:45.538331057Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "86274a37-7070-4e78-a868-65217d4bb58c",
+      "text": "i3 move to ws 3",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 3"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538331448Z",
+        "updated_at": "2026-01-19T23:01:45.538331448Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "c477435b-7434-43b6-a0bd-cab54da09a78",
+      "text": "i3 ws next",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace next"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538333061Z",
+        "updated_at": "2026-01-19T23:01:45.538333061Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "8b543fe8-d079-4b35-b8ea-ebe115b4a7c2",
+      "text": "i3 ws prev",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace prev"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538333552Z",
+        "updated_at": "2026-01-19T23:01:45.538333552Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "ffa12bc0-ecce-46a5-80e5-c4521e8ed3d1",
+      "text": "nvim quit all",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon qa Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538333933Z",
+        "updated_at": "2026-01-19T23:01:45.538333933Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "c2677224-af26-4a4f-b5ce-b7014d568cf8",
+      "text": "i3 gaps inner +",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg gaps inner current plus 5"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538334323Z",
+        "updated_at": "2026-01-19T23:01:45.538334323Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "64120915-1aff-47af-a335-c1753e666716",
+      "text": "i3 split h",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg split h"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538334684Z",
+        "updated_at": "2026-01-19T23:01:45.538334684Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "bfabb31f-9101-4dd9-8fd9-964ef6bafebc",
+      "text": "nav next tab",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+Tab"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538335095Z",
+        "updated_at": "2026-01-19T23:01:45.538335095Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "edf0767e-bca7-40ad-a7b3-9d8e9d468b86",
+      "text": "dev web build",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 2 'yarn build' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538335476Z",
+        "updated_at": "2026-01-19T23:01:45.538335476Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "909bf3ff-7dd5-4307-8f90-1e08fda50e90",
+      "text": "nvim save",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon w Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538335946Z",
+        "updated_at": "2026-01-19T23:01:45.538335946Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "6a3b1a46-9b3c-487e-8d90-ef574fe23a2e",
+      "text": "i3 move to ws 2",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 2"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538336327Z",
+        "updated_at": "2026-01-19T23:01:45.538336327Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "125e61f0-3bd1-45c2-80e5-c9c7e8371d51",
+      "text": "i3 move to ws 5",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 5"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538336688Z",
+        "updated_at": "2026-01-19T23:01:45.538336688Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "c35ce282-2840-4bad-b3d1-d503e738ed2a",
+      "text": "term sysinfo",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'fastfetch'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538337028Z",
+        "updated_at": "2026-01-19T23:01:45.538337028Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "95b77af4-8402-4a47-b090-139ccd360a69",
+      "text": "i3 ws 6",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 6"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538337399Z",
+        "updated_at": "2026-01-19T23:01:45.538337399Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "8fd3a99d-d460-49f8-a748-218583ba39d6",
+      "text": "i3 gaps outer +",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg gaps outer current plus 5"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538337770Z",
+        "updated_at": "2026-01-19T23:01:45.538337770Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "7f525843-6efc-403f-a7ef-d953124e7c38",
+      "text": "app terminal",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "alacritty"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538338271Z",
+        "updated_at": "2026-01-19T23:01:45.538338271Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "c99701c2-a0f7-4571-b72f-a219727feb71",
+      "text": "term ls",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'ls -la'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538338631Z",
+        "updated_at": "2026-01-19T23:01:45.538338631Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2b168621-6ff6-49de-b38b-e2c3d158065b",
+      "text": "i3 split v",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg split v"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538339002Z",
+        "updated_at": "2026-01-19T23:01:45.538339002Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "6ed2e437-3bc5-4875-b749-339353bed9fa",
+      "text": "tmux focus down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a j"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538339373Z",
+        "updated_at": "2026-01-19T23:01:45.538339373Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "839f9db8-527c-4b60-a335-00067a223c8e",
+      "text": "tmux toggle zoom",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538339754Z",
+        "updated_at": "2026-01-19T23:01:45.538339754Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "1d20a76a-02a4-4155-bb47-556e761a162f",
+      "text": "git commit",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'git commit -m \"\"'; xdotool key Left"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538340114Z",
+        "updated_at": "2026-01-19T23:01:45.538340114Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "24074c64-32a2-42fa-bec7-64c630041240",
+      "text": "nvim save all",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon wa Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538340605Z",
+        "updated_at": "2026-01-19T23:01:45.538340605Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "4fad46c4-0449-4256-bc6a-45aefb4dd14c",
+      "text": "i3 gaps inner -",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg gaps inner current minus 5"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538340966Z",
+        "updated_at": "2026-01-19T23:01:45.538340966Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "198a2238-d79a-4f11-a0d3-20d2c2ce133f",
+      "text": "nvim open",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'nvim'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538341316Z",
+        "updated_at": "2026-01-19T23:01:45.538341316Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "988197cb-fd4e-424b-b114-57034f641744",
+      "text": "nav prev tab",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+shift+Tab"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538342970Z",
+        "updated_at": "2026-01-19T23:01:45.538342970Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b1233e35-5cd6-4d82-93b4-49dcf95f24f0",
+      "text": "term zoom in",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+KP_Add"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538343350Z",
+        "updated_at": "2026-01-19T23:01:45.538343350Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "a7600738-dbfc-45e4-9271-44f525258403",
+      "text": "tmux split down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a minus"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538343691Z",
+        "updated_at": "2026-01-19T23:01:45.538343691Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "0408d33d-85ee-429b-8af6-70b92471be6b",
+      "text": "tmux resize down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a J"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538344172Z",
+        "updated_at": "2026-01-19T23:01:45.538344172Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2f1fd526-713b-4a06-a418-6b76b2be4766",
+      "text": "tmux focus left",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a h"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538344563Z",
+        "updated_at": "2026-01-19T23:01:45.538344563Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b9fd1c6c-f164-4b96-bd49-61f965cc58ab",
+      "text": "scroll home",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Home"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538344903Z",
+        "updated_at": "2026-01-19T23:01:45.538344903Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b2c68ba5-2e0e-48ec-bcfa-47fee170b8e4",
+      "text": "dev cargo fmt",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 1 'cargo fmt' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538345254Z",
+        "updated_at": "2026-01-19T23:01:45.538345254Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b18afde0-461b-4a4c-8c8c-8ed3441f1fe1",
+      "text": "tmux focus up",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a k"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538345615Z",
+        "updated_at": "2026-01-19T23:01:45.538345615Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "921ff031-399d-45fe-af36-8625174dbee6",
+      "text": "nvim page down",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+d"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538346005Z",
+        "updated_at": "2026-01-19T23:01:45.538346005Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "4bea47ba-23b9-4c50-81c2-a0209a68727f",
+      "text": "nvim quit",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon q Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538346496Z",
+        "updated_at": "2026-01-19T23:01:45.538346496Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "afcdb763-de80-49cb-9c58-81e7fab1962d",
+      "text": "dev leptos watch",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 1 'cargo leptos watch' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538346867Z",
+        "updated_at": "2026-01-19T23:01:45.538346867Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "b07f0981-6e3b-46b4-b8dc-ec7f385ec706",
+      "text": "scroll end",
       "confidence": 0.0,
       "category": "legacy",
       "action": {
@@ -1489,8 +1965,246 @@
       },
       "enabled": true,
       "metadata": {
-        "created_at": "2026-01-19T22:55:54.351511143Z",
-        "updated_at": "2026-01-19T22:55:54.351511143Z",
+        "created_at": "2026-01-19T23:01:45.538347238Z",
+        "updated_at": "2026-01-19T23:01:45.538347238Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "faab843b-d291-4cd0-b102-5f0676cc4e92",
+      "text": "dev web test",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 2 'yarn test' C-m"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538347588Z",
+        "updated_at": "2026-01-19T23:01:45.538347588Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "23c0e4f7-2aa2-4dee-97fd-49886d2aac33",
+      "text": "git log",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'git log --oneline --decorate -n 20'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538347979Z",
+        "updated_at": "2026-01-19T23:01:45.538347979Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "17a4aca4-5454-4c61-961e-b692dce9e286",
+      "text": "git push",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool type 'git push'; xdotool key Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538348320Z",
+        "updated_at": "2026-01-19T23:01:45.538348320Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "cea8355a-79a2-4b6f-95b1-7fe4807ff4d4",
+      "text": "i3 move to ws 7",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 7"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538348801Z",
+        "updated_at": "2026-01-19T23:01:45.538348801Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "f11324c5-d878-4847-8b74-70b90712a4dc",
+      "text": "i3 ws 0",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 10"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538349181Z",
+        "updated_at": "2026-01-19T23:01:45.538349181Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "7a047f28-5cdf-4eed-a2e4-1ced1e970f5b",
+      "text": "scroll page up",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key shift+space"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538349532Z",
+        "updated_at": "2026-01-19T23:01:45.538349532Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "4802e5c6-db04-4e1c-b699-736652cdf22c",
+      "text": "tmux pane 7",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a 7"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538349893Z",
+        "updated_at": "2026-01-19T23:01:45.538349893Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "fbf9272e-c595-4922-ac5f-ef04897b5580",
+      "text": "dev stop pane 2",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "tmux send-keys -t 2 C-c"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538350263Z",
+        "updated_at": "2026-01-19T23:01:45.538350263Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "decf6b0e-f236-48e7-92c2-99724a27374b",
+      "text": "i3 ws 2",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg workspace 2"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538350614Z",
+        "updated_at": "2026-01-19T23:01:45.538350614Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "9e4b795c-120f-417e-aba7-beb105cc8bd9",
+      "text": "tmux reload config",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key ctrl+a r"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538351145Z",
+        "updated_at": "2026-01-19T23:01:45.538351145Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2ef03c7b-470e-46fd-a045-f7881ae835ee",
+      "text": "nvim close buffer",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "xdotool key Escape colon b d Return"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538351506Z",
+        "updated_at": "2026-01-19T23:01:45.538351506Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "2d9c9d4b-eaa8-44d8-bd09-a4f92d7c8855",
+      "text": "i3 kill window",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg kill"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538351876Z",
+        "updated_at": "2026-01-19T23:01:45.538351876Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "7f6616ac-6340-47d0-b072-02b4afbf48f0",
+      "text": "i3 move to ws 8",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg move container to workspace 8"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538352227Z",
+        "updated_at": "2026-01-19T23:01:45.538352227Z",
+        "usage_count": 0,
+        "last_used": null,
+        "tags": []
+      }
+    },
+    {
+      "id": "280821ee-19ea-48a4-9b49-065de5c3c9f9",
+      "text": "i3 floating toggle",
+      "confidence": 0.0,
+      "category": "legacy",
+      "action": {
+        "ShellCommand": "i3-msg floating toggle"
+      },
+      "enabled": true,
+      "metadata": {
+        "created_at": "2026-01-19T23:01:45.538352588Z",
+        "updated_at": "2026-01-19T23:01:45.538352588Z",
         "usage_count": 0,
         "last_used": null,
         "tags": []
